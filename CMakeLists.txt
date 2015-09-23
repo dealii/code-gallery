@@ -15,5 +15,6 @@
 
 
 MESSAGE(STATUS "This is the deal.II code gallery")
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
 ADD_CUSTOM_TARGET(install)
