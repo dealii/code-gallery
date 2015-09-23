@@ -15,3 +15,5 @@
 
 
 MESSAGE(STATUS "This is the deal.II code gallery")
+
+ADD_CUSTOM_TARGET(install)
