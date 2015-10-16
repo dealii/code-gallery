@@ -1,0 +1,9 @@
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/ElastoplasticTorsion.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/debug.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/distclean.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/help.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/info.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/release.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/run.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/runclean.dir
+/home/localadm/Dropbox/Multipliers/code-gallery/Elastoplastic Torsion/CMakeFiles/strip_comments.dir
