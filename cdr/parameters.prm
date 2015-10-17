@@ -1,0 +1,27 @@
+subsection Geometry
+  set inner_radius = 1.0
+  set outer_radius = 2.0
+end
+
+subsection Physical Parameters
+  set diffusion_coefficient = 1.0e-3
+  set reaction_coefficient = 1.0e-4
+  set time_dependent_forcing = true
+end
+
+subsection Finite Element
+  set initial_refinement_level = 3
+  set max_refinement_level = 4
+  set fe_order = 2
+end
+
+subsection Time Step
+  set start_time = 0.0
+  set stop_time = 2.0
+  set n_time_steps = 200
+end
+
+subsection Output
+  set save_interval = 1
+  set patch_level = 1
+end
