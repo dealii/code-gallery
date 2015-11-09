@@ -1,0 +1,71 @@
+# Listing of Parameters For the ElastoplasticTorsion Solver
+
+
+subsection Global Parameters
+	# Penalization parameter
+	set p = 100.0
+
+	# Boolean whether exact solution to compare exists
+	set known_solution=true
+end
+
+
+subsection Mesh & Refinement Parameters
+
+	# Choose the domain: 0 (circle), 1 (rectangle) or 2 (Glowinski's)
+	set Code for the domain=0 	
+
+	# Number of global mesh refinement steps applied to initial coarse grid
+	set No of initial refinements=5
+
+	# Number of global adaptive mesh refinements
+	set No of adaptive refinements=7	
+
+	# Refinement threshold
+	set top_fraction_of_cells=0.2
+
+	# Coarsening threshold
+	set bottom_fraction_of_cells=0.05
+end
+
+subsection Algorithm Parameters
+
+	#Choose of the method 0: Preconditioned descent, 1: Newton Method
+	set Descent_direction=1
+
+	# initial p
+	set init_p=25
+	
+	# step for increasing p
+	set delta_p=25
+	
+	# Maximum Number of CG iterations
+	set Max_CG_it=2000
+	
+	# Tolerance for CG iterations
+	set CG_tol=1e-9
+	
+	# initial step-length	
+	set init_step_length=1e-1
+
+	# Maximum Number of Line-Search iterations
+	set max_LS_it=50
+
+	# Line-Search tolerance constant (c1 in Nocedal-Wright)
+	set line_search_tolerence=1e-3
+		
+	# Maximum Number of inner iterations
+	set Max_inner=1000
+		
+	# Threshold on norm of the derivative to declare optimality achieved
+	set eps=1e-6	
+		
+	# Threshold on norm of the derivative to declare optimality achieved in highly refined mesh
+	set hi_eps=1e-7
+	# Number of adaptive refinement before change convergence threshold
+	set hi_th=7
+end
+
+
+
+
