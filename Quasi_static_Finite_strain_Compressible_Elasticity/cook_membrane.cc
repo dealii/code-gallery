@@ -40,7 +40,6 @@
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_boundary_lib.h>
-#include <deal.II/grid/grid_out.h> // TEMP
 
 #include <deal.II/fe/fe_dgp_monomial.h>
 #include <deal.II/fe/fe_q.h>
@@ -48,6 +47,7 @@
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q_eulerian.h>
+#include <deal.II/fe/mapping_q.h>
 
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/block_vector.h>
@@ -1747,9 +1747,18 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
         if (cell->vertex(v).distance(soln_pt) < 1e-6)
       {
-        // Create some object to help us extract the solution value at 
-        // the desired point
-        const Quadrature<dim> soln_qrule (soln_pt);
+        // Extract y-component of solution at the given point
+        // This point is coindicent with a vertex, so we can
+        // extract it directly as we're using FE_Q finite elements
+        // that have support at the vertices
+        vertical_tip_displacement = solution_n(cell->vertex_dof_index(v,u_dof+1));
+        
+        // Sanity check using alternate method to extract the solution
+        // at the given point. To do this, we must create an FEValues instance
+        // to help us extract the solution value at the desired point
+        const MappingQ<dim> mapping (parameters.poly_degree);
+        const Point<dim> qp_unit = mapping.transform_real_to_unit_cell(cell,soln_pt);
+        const Quadrature<dim> soln_qrule (qp_unit);
         AssertThrow(soln_qrule.size() == 1, ExcInternalError());
         FEValues<dim> fe_values_soln (fe, soln_qrule, update_values);
         fe_values_soln.reinit(cell);
@@ -1758,12 +1767,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
         std::vector< Tensor<1,dim> > soln_values (soln_qrule.size());
         fe_values_soln[u_fe].get_function_values(solution_n,
                                                  soln_values);
-        vertical_tip_displacement = soln_values[0][u_dof+1];
-        
-        // Sanity Check
-        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
-          if (cell->vertex(v).distance(soln_pt) < 1e-6)
-            vertical_tip_displacement_check = solution_n(cell->vertex_dof_index(v,u_dof+1));
+        vertical_tip_displacement_check = soln_values[0][u_dof+1];
         
         break;
       }
