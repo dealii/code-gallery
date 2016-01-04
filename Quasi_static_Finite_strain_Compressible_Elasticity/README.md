@@ -29,8 +29,9 @@ is prevented in order to impose plane strain conditions.
 
 ![Problem geometry](./doc/problem_setup.png)
 
-Note that we perform a three-dimensional computation as two-dimensional 
-elasticity corresponds to neither plane-strain nor plane-stress conditions.
+Note that we perform a three-dimensional computation as, for this particular 
+formulation, the two-dimensional case corresponds to neither plane-strain 
+nor plane-stress conditions.
 
  
 ## Requirements
@@ -58,10 +59,10 @@ make run
 
 
 ## Recommended Literature
-* C. Miehe (1994), Aspects of the formulation and finite element implementation of large strain isotropic elasticity International Journal for Numerical Methods in Engineering 37 , 12, 1981-2004;
-* G.A. Holzapfel (2001), Nonlinear Solid Mechanics. A Continuum Approach for Engineering, John Wiley & Sons;
-* P. Wriggers (2008), Nonlinear finite element methods, Springer;
-* T.J.R. Hughes (2000), The Finite Element Method: Linear Static and Dynamic Finite Element Analysis, Dover. 
+* C. Miehe (1994), Aspects of the formulation and finite element implementation of large strain isotropic elasticity International Journal for Numerical Methods in Engineering 37 , 12, 1981-2004. DOI: [10.1002/nme.1620371202](http://doi.org/10.1002/nme.1620371202);
+* G.A. Holzapfel (2001), Nonlinear Solid Mechanics. A Continuum Approach for Engineering, John Wiley & Sons. ISBN: [978-0-471-82319-3](http://eu.wiley.com/WileyCDA/WileyTitle/productCd-0471823198.html);
+* P. Wriggers (2008), Nonlinear finite element methods, Springer. DOI: [10.1007/978-3-540-71001-1](http://doi.org/10.1007/978-3-540-71001-1);
+* T.J.R. Hughes (2000), The Finite Element Method: Linear Static and Dynamic Finite Element Analysis, Dover. ISBN: [978-0486411811](http://store.doverpublications.com/0486411818.html)
 
 The derivation of the finite-element problem, namely the definition and 
 linearisation of the residual and their subsequent discretisation are quite 
@@ -89,8 +90,10 @@ And an example of the displaced solution is given in the next image.
 
 Below we briefly document the tip displacement as predicted for different
 discretisation levels and ansatz for the displacement field.
-A direct comparison of the following results can be made with those found 
-in Miehe (1994).
+A direct and, by visual inspection, favourable comparison of the following 
+results can be made with those found in Miehe (1994).
+Since the material is compressible, shear-locking is not exhibited by the
+beam for low-order elements.
 
 #### Number of degrees of freedom
 

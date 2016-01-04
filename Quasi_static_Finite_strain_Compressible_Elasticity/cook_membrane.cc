@@ -31,6 +31,7 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/work_stream.h>
+#include <deal.II/base/std_cxx11/shared_ptr.h>
 
 #include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -589,7 +590,7 @@ namespace Cook_Membrane
       return det_F;
     }
 
-  protected:
+  private:
     // Define constitutive model parameters $\kappa$ (bulk modulus) and the
     // neo-Hookean model parameter $c_1$:
     const double kappa;
@@ -679,17 +680,13 @@ namespace Cook_Membrane
   public:
     PointHistory()
       :
-      material(NULL),
       F_inv(StandardTensors<dim>::I),
       tau(SymmetricTensor<2, dim>()),
       Jc(SymmetricTensor<4, dim>())
     {}
 
     virtual ~PointHistory()
-    {
-      delete material;
-      material = NULL;
-    }
+    {}
 
     // The first function is used to create a material object and to
     // initialize all tensors correctly: The second one updates the stored
@@ -697,8 +694,8 @@ namespace Cook_Membrane
     // $\textrm{Grad}\mathbf{u}_{\textrm{n}}$.
     void setup_lqp (const Parameters::AllParameters &parameters)
     {
-      material = new Material_Compressible_Neo_Hook_One_Field<dim>(parameters.mu,
-          parameters.nu);
+      material.reset(new Material_Compressible_Neo_Hook_One_Field<dim>(parameters.mu,
+          parameters.nu));
       update_values(Tensor<2, dim>());
     }
 
@@ -766,7 +763,7 @@ namespace Cook_Membrane
     // materials are used in different regions of the domain, as well as the
     // inverse of the deformation gradient...
   private:
-    Material_Compressible_Neo_Hook_One_Field<dim> *material;
+    std_cxx11::shared_ptr< Material_Compressible_Neo_Hook_One_Field<dim> > material;
 
     Tensor<2, dim> F_inv;
 
@@ -1351,11 +1348,14 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // (modelling a plane strain condition)
     if (dim == 3)
       repetitions[dim-1] = 1;
+      
+    const Point<dim> bottom_left = (dim == 3 ? Point<dim>(0.0, 0.0, -0.5) : Point<dim>(0.0, 0.0));
+    const Point<dim> top_right = (dim == 3 ? Point<dim>(48.0, 44.0, 0.5) : Point<dim>(48.0, 44.0));
 
     GridGenerator::subdivided_hyper_rectangle(triangulation, 
                                               repetitions,
-                                               Point<dim>(0.0, 0.0, -0.5),
-                                               Point<dim>(48.0, 44.0, 0.5));
+                                              bottom_left,
+                                              top_right);
 
    // Since we wish to apply a Neumann BC to the right-hand surface, we
    // must find the cell faces in this part of the domain and mark them with
