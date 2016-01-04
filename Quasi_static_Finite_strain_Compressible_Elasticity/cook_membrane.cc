@@ -1373,11 +1373,11 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
        if (cell->face(face)->at_boundary() == true)
        {
          if (std::abs(cell->face(face)->center()[0] - 0.0) < tol_boundary)
-           cell->face(face)->set_boundary_indicator(1); // -X faces
+           cell->face(face)->set_boundary_id(1); // -X faces
          else if (std::abs(cell->face(face)->center()[0] - 48.0) < tol_boundary)
-           cell->face(face)->set_boundary_indicator(11); // +X faces
+           cell->face(face)->set_boundary_id(11); // +X faces
          else if (std::abs(std::abs(cell->face(face)->center()[0]) - 0.5) < tol_boundary)
-           cell->face(face)->set_boundary_indicator(2); // +Z and -Z faces
+           cell->face(face)->set_boundary_id(2); // +Z and -Z faces
        }
    
     // Transform the hyper-rectangle into the beam shape
@@ -1422,7 +1422,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     {
       const types::global_dof_index n_dofs_u = dofs_per_block[u_dof];
 
-      BlockCompressedSimpleSparsityPattern csp(n_blocks, n_blocks);
+      BlockDynamicSparsityPattern csp(n_blocks, n_blocks);
 
       csp.block(u_dof, u_dof).reinit(n_dofs_u, n_dofs_u);
       csp.collect_sizes();
@@ -2084,7 +2084,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
          ++face)
       if (cell->face(face)->at_boundary() == true
-          && cell->face(face)->boundary_indicator() == 11)
+          && cell->face(face)->boundary_id() == 11)
         {
           scratch.fe_face_values_ref.reinit(cell, face);
 
@@ -2316,7 +2316,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     Vector<double> soln(solution_n.size());
     for (unsigned int i = 0; i < soln.size(); ++i)
       soln(i) = solution_n(i);
-    MappingQEulerian<dim> q_mapping(degree, soln, dof_handler_ref);
+    MappingQEulerian<dim> q_mapping(degree, dof_handler_ref, soln);
     data_out.build_patches(q_mapping, degree);
 
     std::ostringstream filename;
