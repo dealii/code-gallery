@@ -31,6 +31,7 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/work_stream.h>
+#include <deal.II/base/std_cxx11/shared_ptr.h>
 
 #include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -589,7 +590,7 @@ namespace Cook_Membrane
       return det_F;
     }
 
-  protected:
+  private:
     // Define constitutive model parameters $\kappa$ (bulk modulus) and the
     // neo-Hookean model parameter $c_1$:
     const double kappa;
@@ -679,17 +680,13 @@ namespace Cook_Membrane
   public:
     PointHistory()
       :
-      material(NULL),
       F_inv(StandardTensors<dim>::I),
       tau(SymmetricTensor<2, dim>()),
       Jc(SymmetricTensor<4, dim>())
     {}
 
     virtual ~PointHistory()
-    {
-      delete material;
-      material = NULL;
-    }
+    {}
 
     // The first function is used to create a material object and to
     // initialize all tensors correctly: The second one updates the stored
@@ -697,8 +694,8 @@ namespace Cook_Membrane
     // $\textrm{Grad}\mathbf{u}_{\textrm{n}}$.
     void setup_lqp (const Parameters::AllParameters &parameters)
     {
-      material = new Material_Compressible_Neo_Hook_One_Field<dim>(parameters.mu,
-          parameters.nu);
+      material.reset(new Material_Compressible_Neo_Hook_One_Field<dim>(parameters.mu,
+          parameters.nu));
       update_values(Tensor<2, dim>());
     }
 
@@ -766,7 +763,7 @@ namespace Cook_Membrane
     // materials are used in different regions of the domain, as well as the
     // inverse of the deformation gradient...
   private:
-    Material_Compressible_Neo_Hook_One_Field<dim> *material;
+    std_cxx11::shared_ptr< Material_Compressible_Neo_Hook_One_Field<dim> > material;
 
     Tensor<2, dim> F_inv;
 
@@ -1351,11 +1348,14 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // (modelling a plane strain condition)
     if (dim == 3)
       repetitions[dim-1] = 1;
+      
+    const Point<dim> bottom_left = (dim == 3 ? Point<dim>(0.0, 0.0, -0.5) : Point<dim>(0.0, 0.0));
+    const Point<dim> top_right = (dim == 3 ? Point<dim>(48.0, 44.0, 0.5) : Point<dim>(48.0, 44.0));
 
     GridGenerator::subdivided_hyper_rectangle(triangulation, 
                                               repetitions,
-                                               Point<dim>(0.0, 0.0, -0.5),
-                                               Point<dim>(48.0, 44.0, 0.5));
+                                              bottom_left,
+                                              top_right);
 
    // Since we wish to apply a Neumann BC to the right-hand surface, we
    // must find the cell faces in this part of the domain and mark them with
@@ -1373,11 +1373,11 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
        if (cell->face(face)->at_boundary() == true)
        {
          if (std::abs(cell->face(face)->center()[0] - 0.0) < tol_boundary)
-           cell->face(face)->set_boundary_indicator(1); // -X faces
+           cell->face(face)->set_boundary_id(1); // -X faces
          else if (std::abs(cell->face(face)->center()[0] - 48.0) < tol_boundary)
-           cell->face(face)->set_boundary_indicator(11); // +X faces
+           cell->face(face)->set_boundary_id(11); // +X faces
          else if (std::abs(std::abs(cell->face(face)->center()[0]) - 0.5) < tol_boundary)
-           cell->face(face)->set_boundary_indicator(2); // +Z and -Z faces
+           cell->face(face)->set_boundary_id(2); // +Z and -Z faces
        }
    
     // Transform the hyper-rectangle into the beam shape
@@ -1422,7 +1422,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     {
       const types::global_dof_index n_dofs_u = dofs_per_block[u_dof];
 
-      BlockCompressedSimpleSparsityPattern csp(n_blocks, n_blocks);
+      BlockDynamicSparsityPattern csp(n_blocks, n_blocks);
 
       csp.block(u_dof, u_dof).reinit(n_dofs_u, n_dofs_u);
       csp.collect_sizes();
@@ -2084,7 +2084,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
          ++face)
       if (cell->face(face)->at_boundary() == true
-          && cell->face(face)->boundary_indicator() == 11)
+          && cell->face(face)->boundary_id() == 11)
         {
           scratch.fe_face_values_ref.reinit(cell, face);
 
@@ -2316,7 +2316,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     Vector<double> soln(solution_n.size());
     for (unsigned int i = 0; i < soln.size(); ++i)
       soln(i) = solution_n(i);
-    MappingQEulerian<dim> q_mapping(degree, soln, dof_handler_ref);
+    MappingQEulerian<dim> q_mapping(degree, dof_handler_ref, soln);
     data_out.build_patches(q_mapping, degree);
 
     std::ostringstream filename;
