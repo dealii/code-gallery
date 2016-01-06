@@ -1,6 +1,3 @@
-# Gallery Entry: deal.II-Quasi-static_Finite_strain_Compressible_Elasticity
-
-
 ## Overview
 The Cook membrane (or cantilever) problem is a classic benchmark test for 
 finite element formulations for solid mechanics. It is typically used to 
