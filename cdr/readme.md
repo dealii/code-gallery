@@ -1,6 +1,3 @@
-# Gallery Entry: deal.II-cdr
-
-
 ## Overview
 I started this project with the intent of better understanding adaptive mesh
 refinement, parallel computing, and `CMake`. In particular, I started by writing
