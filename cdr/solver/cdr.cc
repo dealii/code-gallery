@@ -103,20 +103,20 @@ CDRProblem<dim>::CDRProblem(const CDR::Parameters &parameters) :
                  Triangulation<dim>::smoothing_on_coarsening)),
   dof_handler(triangulation),
   convection_function
-{
-  [](const Point<dim> p) -> Tensor<1, dim>
-  {Tensor<1, dim> v; v[0] = -p[1]; v[1] = p[0]; return v;}},
-forcing_function
-{
-  [](double t, const Point<dim> p) -> double
   {
-    return std::exp(-8*t)*std::exp(-40*Utilities::fixed_power<6>(p[0] - 1.5))
-    *std::exp(-40*Utilities::fixed_power<6>(p[1]));
-  }},
-first_run {true},
-          pcout (std::cout,
-                 (Utilities::MPI::this_mpi_process(mpi_communicator)
-                  == 0))
+    [](const Point<dim> p) -> Tensor<1, dim>
+      {Tensor<1, dim> v; v[0] = -p[1]; v[1] = p[0]; return v;}
+  },
+  forcing_function
+  {
+    [](double t, const Point<dim> p) -> double
+      {
+        return std::exp(-8*t)*std::exp(-40*Utilities::fixed_power<6>(p[0] - 1.5))
+          *std::exp(-40*Utilities::fixed_power<6>(p[1]));
+      }
+  },
+  first_run {true},
+  pcout (std::cout, this_mpi_process == 0)
 {
   Assert(dim == 2, ExcNotImplemented());
 }

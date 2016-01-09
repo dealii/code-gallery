@@ -23,10 +23,10 @@ namespace CDR
   void internal_create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)> convection_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
    const CDR::Parameters                                 &parameters,
-   const double                                          time_step,
-   UpdateFunction                                        update_system_matrix)
+   const double                                           time_step,
+   UpdateFunction                                         update_system_matrix)
   {
     auto &fe = dof_handler.get_fe();
     const auto dofs_per_cell = fe.dofs_per_cell;
@@ -77,9 +77,9 @@ namespace CDR
   void create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)> convection_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
    const CDR::Parameters                                 &parameters,
-   const double                                          time_step,
+   const double                                           time_step,
    const ConstraintMatrix                                &constraints,
    MatrixType                                            &system_matrix)
   {
@@ -97,9 +97,9 @@ namespace CDR
   void create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)> convection_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
    const CDR::Parameters                                 &parameters,
-   const double                                          time_step,
+   const double                                           time_step,
    MatrixType                                            &system_matrix)
   {
     internal_create_system_matrix<dim>

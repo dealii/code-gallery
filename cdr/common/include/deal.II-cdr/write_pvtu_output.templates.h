@@ -22,8 +22,8 @@ namespace CDR
   template<int dim, typename VectorType>
   void WritePVTUOutput::write_output(const DoFHandler<dim> &dof_handler,
                                      const VectorType      &solution,
-                                     const unsigned int    time_step_n,
-                                     const double          current_time)
+                                     const unsigned int     time_step_n,
+                                     const double           current_time)
   {
     DataOut<dim> data_out;
     data_out.attach_dof_handler(dof_handler);

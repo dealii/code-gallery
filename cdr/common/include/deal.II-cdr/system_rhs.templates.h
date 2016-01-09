@@ -26,12 +26,12 @@ namespace CDR
   void create_system_rhs
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)> convection_function,
-   const std::function<double(double, const Point<dim>)> forcing_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
+   const std::function<double(double, const Point<dim>)>  forcing_function,
    const CDR::Parameters                                 &parameters,
    const VectorType                                      &previous_solution,
    const ConstraintMatrix                                &constraints,
-   const double                                          current_time,
+   const double                                           current_time,
    VectorType                                            &system_rhs)
   {
     auto &fe = dof_handler.get_fe();
