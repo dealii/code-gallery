@@ -104,7 +104,7 @@ CDRProblem<dim>::CDRProblem(const CDR::Parameters &parameters) :
   n_mpi_processes {Utilities::MPI::n_mpi_processes(mpi_communicator)},
   this_mpi_process {Utilities::MPI::this_mpi_process(mpi_communicator)},
   fe(parameters.fe_order),
-  quad(3*(2 + parameters.fe_order)/2),
+  quad(parameters.fe_order + 2),
   boundary_description(Point<dim>()),
   triangulation(mpi_communicator, typename Triangulation<dim>::MeshSmoothing
                 (Triangulation<dim>::smoothing_on_refinement |
