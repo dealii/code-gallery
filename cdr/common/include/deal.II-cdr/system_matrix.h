@@ -14,16 +14,16 @@ namespace CDR
 {
   using namespace dealii;
 
-  template<int dim, typename Matrix>
+  template<int dim, typename MatrixType>
   void create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
    const std::function<Tensor<1, dim>(const Point<dim>)> convection_function,
    const CDR::Parameters                                 &parameters,
    const double                                           time_step,
-   Matrix                                                &system_matrix);
+   MatrixType                                            &system_matrix);
 
-  template<int dim, typename Matrix>
+  template<int dim, typename MatrixType>
   void create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
@@ -31,6 +31,6 @@ namespace CDR
    const CDR::Parameters                                 &parameters,
    const double                                          time_step,
    const ConstraintMatrix                                &constraints,
-   Matrix                                                &system_matrix);
+   MatrixType                                            &system_matrix);
 }
 #endif
