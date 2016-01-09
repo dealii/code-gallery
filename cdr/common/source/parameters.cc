@@ -62,7 +62,7 @@ namespace CDR
     parameter_handler.leave_subsection();
   }
 
-  void Parameters::read_parameter_file(std::string file_name)
+  void Parameters::read_parameter_file(const std::string &file_name)
   {
     ParameterHandler parameter_handler;
     {

@@ -36,7 +36,7 @@ namespace CDR
     unsigned int save_interval;
     unsigned int patch_level;
 
-    void read_parameter_file(std::string file_name);
+    void read_parameter_file(const std::string &file_name);
   private:
     void configure_parameter_handler(ParameterHandler &parameter_handler);
   };
