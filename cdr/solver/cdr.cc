@@ -14,7 +14,7 @@
 
 #include <deal.II/numerics/error_estimator.h>
 
-// for distributed computations
+// These headers are for distributed computations:
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/distributed/tria.h>
@@ -40,7 +40,8 @@ using namespace dealii;
 
 constexpr int manifold_id {0};
 
-
+// This is the actual solver class which performs time iteration and calls the
+// appropriate library functions to do it.
 template<int dim>
 class CDRProblem
 {
@@ -70,6 +71,13 @@ private:
 
   ConstraintMatrix constraints;
   bool first_run;
+
+  // As is usual in parallel programs, I keep two copies of parts of the
+  // complete solution: <code>locally_relevant_solution</code> contains both
+  // the locally calculated solution as well as the layer of cells at its
+  // boundary (the @ref GlossGhostCells "ghost cells") while
+  // <code>completely_distributed_solution</code> only contains the parts of
+  // the solution computed on the current @ref GlossMPIProcess "MPI process".
   TrilinosWrappers::MPI::Vector locally_relevant_solution;
   TrilinosWrappers::MPI::Vector completely_distributed_solution;
   TrilinosWrappers::MPI::Vector system_rhs;
@@ -284,6 +292,8 @@ constexpr int dim {2};
 
 int main(int argc, char *argv[])
 {
+  // One of the new features in C++11 is the <code>chrono</code> component of
+  // the standard library. This gives us an easy way to time the output.
   auto t0 = std::chrono::high_resolution_clock::now();
 
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);

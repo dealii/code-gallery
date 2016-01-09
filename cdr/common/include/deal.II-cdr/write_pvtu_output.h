@@ -2,6 +2,7 @@
 #define dealii__cdr_write_pvtu_output_h
 #include <deal.II/dofs/dof_handler.h>
 
+// This is a small class which handles PVTU output.
 namespace CDR
 {
   using namespace dealii;

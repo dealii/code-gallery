@@ -5,6 +5,10 @@
 #include <deal.II-cdr/system_matrix.h>
 #include <deal.II-cdr/system_matrix.templates.h>
 
+// This file exists just to build template specializations of
+// <code>create_system_matrix</code>. Even though the solver is run in
+// parallel with Trilinos objects, other serial solvers can use the same
+// function without recompilation by compiling everything here just one time.
 namespace CDR
 {
   using namespace dealii;

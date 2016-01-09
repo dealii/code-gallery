@@ -3,6 +3,8 @@
 
 #include <deal.II-cdr/write_pvtu_output.templates.h>
 
+// Again, this file just compiles the constructor and also the templated
+// functions.
 namespace CDR
 {
   using namespace dealii;

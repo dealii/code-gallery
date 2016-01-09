@@ -10,6 +10,10 @@
 
 #include <functional>
 
+// One of the goals I had in writing this entry was to split up functions into
+// different compilation units instead of using one large file. This is the
+// header file for a pair of functions (only one of which I ultimately use)
+// which build the system matrix.
 namespace CDR
 {
   using namespace dealii;

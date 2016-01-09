@@ -15,6 +15,8 @@
 #include <fstream>
 #include <vector>
 
+// Here is the implementation of the important function. This is similar to
+// what is presented in step-40.
 namespace CDR
 {
   using namespace dealii;
@@ -39,6 +41,8 @@ namespace CDR
 
     DataOutBase::VtkFlags flags;
     flags.time = current_time;
+    // While the default flag is for the best compression level, using
+    // <code>best_speed</code> makes this function much faster.
     flags.compression_level = DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
     data_out.set_flags(flags);
 

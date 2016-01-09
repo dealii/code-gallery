@@ -19,6 +19,9 @@ namespace CDR
 {
   using namespace dealii;
 
+  // This is the actual implementation of the <code>create_system_matrix</code>
+  // function described in the header file. It is similar to the system matrix
+  // assembly routine in step-40.
   template<int dim, typename UpdateFunction>
   void internal_create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
@@ -55,13 +58,13 @@ namespace CDR
                         const auto convection_contribution = current_convection
                           *fe_values.shape_grad(j, q);
                         cell_matrix(i, j) += fe_values.JxW(q)*
-                          // mass and reaction part
+                          // Here are the time step, mass, and reaction parts:
                           ((1.0 + time_step/2.0*parameters.reaction_coefficient)
                            *fe_values.shape_value(i, q)*fe_values.shape_value(j, q)
                            + time_step/2.0*
-                           // convection part
+                           // and the convection part:
                            (fe_values.shape_value(i, q)*convection_contribution
-                            // Laplacian part
+                            // and, finally, the diffusion part:
                             + parameters.diffusion_coefficient
                             *(fe_values.shape_grad(i, q)*fe_values.shape_grad(j, q)))
                            );

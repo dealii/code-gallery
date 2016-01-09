@@ -78,17 +78,17 @@ namespace CDR
                           *fe_values.shape_grad(j, q);
 
                         cell_rhs(i) += fe_values.JxW(q)*
-                          // mass and reaction part
+                          // Here are the mass and reaction part:
                           (((1.0 - time_step/2.0*parameters.reaction_coefficient)
                             *fe_values.shape_value(i, q)*fe_values.shape_value(j, q)
                             - time_step/2.0*
-                            // convection part
+                            // the convection part:
                             (fe_values.shape_value(i, q)*convection_contribution
-                             // Laplacian part
+                             // the diffusion part:
                              + parameters.diffusion_coefficient
                              *(fe_values.shape_grad(i, q)*fe_values.shape_grad(j, q))))
                            *current_fe_coefficients[j]
-                           // forcing parts
+                           // and, finally, the forcing function part:
                            + time_step/2.0*
                            (current_forcing + previous_forcing)
                            *fe_values.shape_value(i, q));

@@ -12,6 +12,8 @@
 
 #include <functional>
 
+// Similarly to <code>create_system_matrix</code>, I wrote a separate function
+// to compute the right hand side.
 namespace CDR
 {
   using namespace dealii;

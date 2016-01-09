@@ -5,6 +5,8 @@
 
 #include <deal.II-cdr/system_rhs.templates.h>
 
+// Like <code>system_matrix.cc</code>, this file just compiles template
+// specializations.
 namespace CDR
 {
   using namespace dealii;
