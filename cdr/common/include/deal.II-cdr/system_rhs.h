@@ -1,12 +1,16 @@
 #ifndef dealii__cdr_system_rhs_h
 #define dealii__cdr_system_rhs_h
+#include <deal.II/base/point.h>
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/tensor.h>
 
 #include <deal.II/dofs/dof_handler.h>
 
 #include <deal.II/lac/constraint_matrix.h>
 
 #include <deal.II-cdr/parameters.h>
+
+#include <functional>
 
 namespace CDR
 {

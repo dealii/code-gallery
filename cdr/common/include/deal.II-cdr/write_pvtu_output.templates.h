@@ -3,6 +3,8 @@
 #include <deal.II/base/data_out_base.h>
 #include <deal.II/base/utilities.h>
 
+#include <deal.II/dofs/dof_handler.h>
+
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>

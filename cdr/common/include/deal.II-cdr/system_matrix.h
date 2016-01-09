@@ -8,6 +8,8 @@
 
 #include <deal.II-cdr/parameters.h>
 
+#include <functional>
+
 namespace CDR
 {
   using namespace dealii;

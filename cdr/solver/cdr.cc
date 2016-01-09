@@ -1,12 +1,10 @@
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/function_parser.h>
 #include <deal.II/base/quadrature_lib.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
 #include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/manifold_lib.h>
@@ -15,8 +13,6 @@
 #include <deal.II/lac/constraint_matrix.h>
 
 #include <deal.II/numerics/error_estimator.h>
-#include <deal.II/numerics/matrix_tools.h>
-#include <deal.II/numerics/vector_tools.h>
 
 // for distributed computations
 #include <deal.II/base/utilities.h>
@@ -31,11 +27,9 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_vector.h>
 
-#include <array>
-#include <functional>
 #include <chrono>
+#include <functional>
 #include <iostream>
-#include <vector>
 
 #include <deal.II-cdr/system_matrix.h>
 #include <deal.II-cdr/system_rhs.h>

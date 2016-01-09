@@ -1,5 +1,8 @@
 #include <deal.II-cdr/parameters.h>
 
+#include <fstream>
+#include <string>
+
 namespace CDR
 {
   void Parameters::configure_parameter_handler(ParameterHandler &parameter_handler)

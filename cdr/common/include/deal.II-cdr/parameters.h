@@ -1,10 +1,9 @@
 #ifndef dealii__cdr_parameters_h
 #define dealii__cdr_parameters_h
 
-#include <fstream>
-#include <string>
-
 #include <deal.II/base/parameter_handler.h>
+
+#include <string>
 
 namespace CDR
 {

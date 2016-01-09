@@ -9,7 +9,6 @@
 
 #include <deal.II/lac/constraint_matrix.h>
 
-#include <array>
 #include <functional>
 
 #include <deal.II-cdr/parameters.h>

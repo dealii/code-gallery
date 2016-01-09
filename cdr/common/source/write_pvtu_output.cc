@@ -1,4 +1,5 @@
 #include <deal.II/lac/trilinos_vector.h>
+#include <deal.II/lac/vector.h>
 
 #include <deal.II-cdr/write_pvtu_output.templates.h>
 
