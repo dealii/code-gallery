@@ -273,11 +273,23 @@ void CDRProblem<dim>::refine_mesh()
 
   setup_dofs();
 
+  // The <code>solution_transfer</code> object stores a pointer to
+  // <code>locally_relevant_solution</code>, so when
+  // parallel::distributed::SolutionTransfer::interpolate is called it uses
+  // those values to populate <code>temporary</code>.
   TrilinosWrappers::MPI::Vector temporary
-  (locally_owned_dofs, mpi_communicator);
+    (locally_owned_dofs, mpi_communicator);
   solution_transfer.interpolate(temporary);
-  locally_relevant_solution = temporary;
-  constraints.distribute(locally_relevant_solution);
+  // After <code>temporary</code> has the correct value, this call correctly
+  // populates <code>completely_distributed_solution</code>, which had its
+  // index set updated above with the call to <code>setup_dofs</code>.
+  completely_distributed_solution = temporary;
+  // Constraints cannot be applied to
+  // @ref GlossGhostedVector "vectors with ghost entries" since the ghost
+  // entries are write only, so this first goes through the completely
+  // distributed vector.
+  constraints.distribute(completely_distributed_solution);
+  locally_relevant_solution = completely_distributed_solution;
   setup_system();
 }
 
