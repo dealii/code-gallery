@@ -231,15 +231,15 @@ void CDRProblem<dim>::time_iterate()
 template<int dim>
 void CDRProblem<dim>::refine_mesh()
 {
-  parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
-  solution_transfer(dof_handler);
-
   Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
   KellyErrorEstimator<dim>::estimate
   (dof_handler, QGauss<dim - 1>(fe.degree + 1), typename FunctionMap<dim>::type(),
    locally_relevant_solution, estimated_error_per_cell);
 
-  // Poor man's version of refine and coarsen
+  // This solver uses a crude refinement strategy where cells with relatively
+  // high errors are refined and cells with relatively low errors are
+  // coarsened. The maximum refinement level is capped to prevent run-away
+  // refinement.
   for (const auto &cell : triangulation.active_cell_iterators())
     {
       if (std::abs(estimated_error_per_cell[cell->active_cell_index()]) >= 1e-3)
@@ -261,9 +261,14 @@ void CDRProblem<dim>::refine_mesh()
         }
     }
 
+  // Transferring the solution between different grids is ultimately just a
+  // few function calls but they must be made in exactly the right order.
+  parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
+    solution_transfer(dof_handler);
+
   triangulation.prepare_coarsening_and_refinement();
   solution_transfer.prepare_for_coarsening_and_refinement
-  (locally_relevant_solution);
+    (locally_relevant_solution);
   triangulation.execute_coarsening_and_refinement();
 
   setup_dofs();
