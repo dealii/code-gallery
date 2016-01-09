@@ -139,7 +139,7 @@ void CDRProblem<dim>::setup_geometry()
   triangulation.set_manifold(manifold_id, boundary_description);
   for (const auto &cell : triangulation.active_cell_iterators())
     {
-      cell->set_all_manifold_ids(0);
+      cell->set_all_manifold_ids(manifold_id);
     }
   triangulation.refine_global(parameters.initial_refinement_level);
 }
