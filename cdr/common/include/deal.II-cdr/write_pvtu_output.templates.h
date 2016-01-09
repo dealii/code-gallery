@@ -31,10 +31,11 @@ namespace CDR
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, "u");
 
-    Vector<float> subdomain (dof_handler.get_tria().n_active_cells());
+    const auto &triangulation = dof_handler.get_triangulation();
+    Vector<float> subdomain (triangulation.n_active_cells());
     for (auto &domain : subdomain)
       {
-        domain = dof_handler.get_tria().locally_owned_subdomain();
+        domain = triangulation.locally_owned_subdomain();
       }
     data_out.add_data_vector(subdomain, "subdomain");
     data_out.build_patches(patch_level);
@@ -53,7 +54,7 @@ namespace CDR
       }
     else
       {
-        subdomain_n = dof_handler.get_tria().locally_owned_subdomain();
+        subdomain_n = triangulation.locally_owned_subdomain();
       }
 
     std::ofstream output
