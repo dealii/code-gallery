@@ -3,6 +3,8 @@
 #include <deal.II/base/data_out_base.h>
 #include <deal.II/base/utilities.h>
 
+#include <deal.II/dofs/dof_handler.h>
+
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>
@@ -13,6 +15,8 @@
 #include <fstream>
 #include <vector>
 
+// Here is the implementation of the important function. This is similar to
+// what is presented in step-40.
 namespace CDR
 {
   using namespace dealii;
@@ -20,23 +24,26 @@ namespace CDR
   template<int dim, typename VectorType>
   void WritePVTUOutput::write_output(const DoFHandler<dim> &dof_handler,
                                      const VectorType      &solution,
-                                     const unsigned int    time_step_n,
-                                     const double          current_time)
+                                     const unsigned int     time_step_n,
+                                     const double           current_time)
   {
     DataOut<dim> data_out;
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, "u");
 
-    Vector<float> subdomain (dof_handler.get_tria().n_active_cells());
+    const auto &triangulation = dof_handler.get_triangulation();
+    Vector<float> subdomain (triangulation.n_active_cells());
     for (auto &domain : subdomain)
       {
-        domain = dof_handler.get_tria().locally_owned_subdomain();
+        domain = triangulation.locally_owned_subdomain();
       }
     data_out.add_data_vector(subdomain, "subdomain");
     data_out.build_patches(patch_level);
 
     DataOutBase::VtkFlags flags;
     flags.time = current_time;
+    // While the default flag is for the best compression level, using
+    // <code>best_speed</code> makes this function much faster.
     flags.compression_level = DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
     data_out.set_flags(flags);
 
@@ -47,7 +54,7 @@ namespace CDR
       }
     else
       {
-        subdomain_n = dof_handler.get_tria().locally_owned_subdomain();
+        subdomain_n = triangulation.locally_owned_subdomain();
       }
 
     std::ofstream output

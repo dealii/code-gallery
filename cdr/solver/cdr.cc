@@ -1,12 +1,10 @@
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/function_parser.h>
 #include <deal.II/base/quadrature_lib.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
 #include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/manifold_lib.h>
@@ -15,10 +13,8 @@
 #include <deal.II/lac/constraint_matrix.h>
 
 #include <deal.II/numerics/error_estimator.h>
-#include <deal.II/numerics/matrix_tools.h>
-#include <deal.II/numerics/vector_tools.h>
 
-// for distributed computations
+// These headers are for distributed computations:
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/distributed/tria.h>
@@ -31,11 +27,9 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_vector.h>
 
-#include <array>
-#include <functional>
 #include <chrono>
+#include <functional>
 #include <iostream>
-#include <vector>
 
 #include <deal.II-cdr/system_matrix.h>
 #include <deal.II-cdr/system_rhs.h>
@@ -46,7 +40,8 @@ using namespace dealii;
 
 constexpr int manifold_id {0};
 
-
+// This is the actual solver class which performs time iteration and calls the
+// appropriate library functions to do it.
 template<int dim>
 class CDRProblem
 {
@@ -76,6 +71,13 @@ private:
 
   ConstraintMatrix constraints;
   bool first_run;
+
+  // As is usual in parallel programs, I keep two copies of parts of the
+  // complete solution: <code>locally_relevant_solution</code> contains both
+  // the locally calculated solution as well as the layer of cells at its
+  // boundary (the @ref GlossGhostCells "ghost cells") while
+  // <code>completely_distributed_solution</code> only contains the parts of
+  // the solution computed on the current @ref GlossMPIProcess "MPI process".
   TrilinosWrappers::MPI::Vector locally_relevant_solution;
   TrilinosWrappers::MPI::Vector completely_distributed_solution;
   TrilinosWrappers::MPI::Vector system_rhs;
@@ -102,27 +104,27 @@ CDRProblem<dim>::CDRProblem(const CDR::Parameters &parameters) :
   n_mpi_processes {Utilities::MPI::n_mpi_processes(mpi_communicator)},
   this_mpi_process {Utilities::MPI::this_mpi_process(mpi_communicator)},
   fe(parameters.fe_order),
-  quad(3*(2 + parameters.fe_order)/2),
+  quad(parameters.fe_order + 2),
   boundary_description(Point<dim>()),
   triangulation(mpi_communicator, typename Triangulation<dim>::MeshSmoothing
                 (Triangulation<dim>::smoothing_on_refinement |
                  Triangulation<dim>::smoothing_on_coarsening)),
   dof_handler(triangulation),
   convection_function
-{
-  [](const Point<dim> p) -> Tensor<1, dim>
-  {Tensor<1, dim> v; v[0] = -p[1]; v[1] = p[0]; return v;}},
-forcing_function
-{
-  [](double t, const Point<dim> p) -> double
   {
-    return std::exp(-8*t)*std::exp(-40*Utilities::fixed_power<6>(p[0] - 1.5))
-    *std::exp(-40*Utilities::fixed_power<6>(p[1]));
-  }},
-first_run {true},
-          pcout (std::cout,
-                 (Utilities::MPI::this_mpi_process(mpi_communicator)
-                  == 0))
+    [](const Point<dim> p) -> Tensor<1, dim>
+      {Tensor<1, dim> v; v[0] = -p[1]; v[1] = p[0]; return v;}
+  },
+  forcing_function
+  {
+    [](double t, const Point<dim> p) -> double
+      {
+        return std::exp(-8*t)*std::exp(-40*Utilities::fixed_power<6>(p[0] - 1.5))
+          *std::exp(-40*Utilities::fixed_power<6>(p[1]));
+      }
+  },
+  first_run {true},
+  pcout (std::cout, this_mpi_process == 0)
 {
   Assert(dim == 2, ExcNotImplemented());
 }
@@ -137,7 +139,7 @@ void CDRProblem<dim>::setup_geometry()
   triangulation.set_manifold(manifold_id, boundary_description);
   for (const auto &cell : triangulation.active_cell_iterators())
     {
-      cell->set_all_manifold_ids(0);
+      cell->set_all_manifold_ids(manifold_id);
     }
   triangulation.refine_global(parameters.initial_refinement_level);
 }
@@ -229,15 +231,15 @@ void CDRProblem<dim>::time_iterate()
 template<int dim>
 void CDRProblem<dim>::refine_mesh()
 {
-  parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
-  solution_transfer(dof_handler);
-
   Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
   KellyErrorEstimator<dim>::estimate
   (dof_handler, QGauss<dim - 1>(fe.degree + 1), typename FunctionMap<dim>::type(),
    locally_relevant_solution, estimated_error_per_cell);
 
-  // Poor man's version of refine and coarsen
+  // This solver uses a crude refinement strategy where cells with relatively
+  // high errors are refined and cells with relatively low errors are
+  // coarsened. The maximum refinement level is capped to prevent run-away
+  // refinement.
   for (const auto &cell : triangulation.active_cell_iterators())
     {
       if (std::abs(estimated_error_per_cell[cell->active_cell_index()]) >= 1e-3)
@@ -259,18 +261,35 @@ void CDRProblem<dim>::refine_mesh()
         }
     }
 
+  // Transferring the solution between different grids is ultimately just a
+  // few function calls but they must be made in exactly the right order.
+  parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
+    solution_transfer(dof_handler);
+
   triangulation.prepare_coarsening_and_refinement();
   solution_transfer.prepare_for_coarsening_and_refinement
-  (locally_relevant_solution);
+    (locally_relevant_solution);
   triangulation.execute_coarsening_and_refinement();
 
   setup_dofs();
 
+  // The <code>solution_transfer</code> object stores a pointer to
+  // <code>locally_relevant_solution</code>, so when
+  // parallel::distributed::SolutionTransfer::interpolate is called it uses
+  // those values to populate <code>temporary</code>.
   TrilinosWrappers::MPI::Vector temporary
-  (locally_owned_dofs, mpi_communicator);
+    (locally_owned_dofs, mpi_communicator);
   solution_transfer.interpolate(temporary);
-  locally_relevant_solution = temporary;
-  constraints.distribute(locally_relevant_solution);
+  // After <code>temporary</code> has the correct value, this call correctly
+  // populates <code>completely_distributed_solution</code>, which had its
+  // index set updated above with the call to <code>setup_dofs</code>.
+  completely_distributed_solution = temporary;
+  // Constraints cannot be applied to
+  // @ref GlossGhostedVector "vectors with ghost entries" since the ghost
+  // entries are write only, so this first goes through the completely
+  // distributed vector.
+  constraints.distribute(completely_distributed_solution);
+  locally_relevant_solution = completely_distributed_solution;
   setup_system();
 }
 
@@ -290,6 +309,8 @@ constexpr int dim {2};
 
 int main(int argc, char *argv[])
 {
+  // One of the new features in C++11 is the <code>chrono</code> component of
+  // the standard library. This gives us an easy way to time the output.
   auto t0 = std::chrono::high_resolution_clock::now();
 
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);

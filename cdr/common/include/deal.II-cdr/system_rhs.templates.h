@@ -1,13 +1,22 @@
 #ifndef dealii__cdr_system_rhs_templates_h
 #define dealii__cdr_system_rhs_templates_h
+#include <deal.II/base/point.h>
+#include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/tensor.h>
+
+#include <deal.II/dofs/dof_handler.h>
+
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_values.h>
 
+#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/vector.h>
 
-#include <vector>
-
+#include <deal.II-cdr/parameters.h>
 #include <deal.II-cdr/system_rhs.h>
+
+#include <functional>
+#include <vector>
 
 namespace CDR
 {
@@ -17,12 +26,12 @@ namespace CDR
   void create_system_rhs
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)> convection_function,
-   const std::function<double(double, const Point<dim>)> forcing_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
+   const std::function<double(double, const Point<dim>)>  forcing_function,
    const CDR::Parameters                                 &parameters,
    const VectorType                                      &previous_solution,
    const ConstraintMatrix                                &constraints,
-   const double                                          current_time,
+   const double                                           current_time,
    VectorType                                            &system_rhs)
   {
     auto &fe = dof_handler.get_fe();
@@ -69,17 +78,17 @@ namespace CDR
                           *fe_values.shape_grad(j, q);
 
                         cell_rhs(i) += fe_values.JxW(q)*
-                          // mass and reaction part
+                          // Here are the mass and reaction part:
                           (((1.0 - time_step/2.0*parameters.reaction_coefficient)
                             *fe_values.shape_value(i, q)*fe_values.shape_value(j, q)
                             - time_step/2.0*
-                            // convection part
+                            // the convection part:
                             (fe_values.shape_value(i, q)*convection_contribution
-                             // Laplacian part
+                             // the diffusion part:
                              + parameters.diffusion_coefficient
                              *(fe_values.shape_grad(i, q)*fe_values.shape_grad(j, q))))
                            *current_fe_coefficients[j]
-                           // forcing parts
+                           // and, finally, the forcing function part:
                            + time_step/2.0*
                            (current_forcing + previous_forcing)
                            *fe_values.shape_value(i, q));
