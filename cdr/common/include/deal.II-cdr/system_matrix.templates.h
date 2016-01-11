@@ -26,7 +26,7 @@ namespace CDR
   void internal_create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)> &convection_function,
    const CDR::Parameters                                 &parameters,
    const double                                           time_step,
    UpdateFunction                                         update_system_matrix)
@@ -80,7 +80,7 @@ namespace CDR
   void create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)> &convection_function,
    const CDR::Parameters                                 &parameters,
    const double                                           time_step,
    const ConstraintMatrix                                &constraints,
@@ -100,7 +100,7 @@ namespace CDR
   void create_system_matrix
   (const DoFHandler<dim>                                 &dof_handler,
    const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)>  convection_function,
+   const std::function<Tensor<1, dim>(const Point<dim>)> &convection_function,
    const CDR::Parameters                                 &parameters,
    const double                                           time_step,
    MatrixType                                            &system_matrix)
