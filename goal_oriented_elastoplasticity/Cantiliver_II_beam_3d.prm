@@ -1,0 +1,21 @@
+set polynomial degree             = 1
+set number of initial refinements = 0
+set refinement strategy           = percentage
+set error estimation strategy     = weighted_residual_error
+set maximum relative error        = 3.9e7
+set output directory              = Results/DWR_VM_1
+set transfer solution             = true
+set base mesh                     = Cantiliver_beam_3d
+set elasticity modulus		  	  = 7.e10
+set Poissons ratio		  		  = 0.3
+set yield stress		  		  = 2.43e8
+set isotropic hardening parameter = 0.0401097
+set show stresses		  		  = true
+
+
+
+
+# refinement strategy		: global / percentage
+# error estimation strategy: kelly_error / residual_error / weighted_residual_error
+# base mesh				: Timoshenko beam / Thick_tube_internal_pressure
+#                         / Perforated_strip_tension / Cantiliver_beam_3d
