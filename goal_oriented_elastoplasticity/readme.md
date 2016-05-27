@@ -7,7 +7,8 @@ the mesh is then refined/coarsened. Afterwards, the solution is projected to the
 
 The applied methodology and the solved numerical examples can be found in the following paper:
 
-> Ghorashi SSh, Rabczuk T. "Goal-Oriented Error Estimation and Mesh Adaptivity in
-3d Elastoplasticity Problems".
+> Ghorashi SSh, Rabczuk T.:
+> "Goal-Oriented Error Estimation and Mesh
+>  Adaptivity in 3d Elastoplasticity Problems".
 > International Journal of Fracture. Accepted. 2016.
 
