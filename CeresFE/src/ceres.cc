@@ -687,8 +687,9 @@ void StokesProblem<dim>::assemble_system() {
 				ExcInternalError());
 		
 		double cell_area = cell->measure();
+		
 		if(cell_area<0)
-			append_physical_times(-1);
+			append_physical_times(-1); // This writes final line to physical_times.txt if step terminates prematurely
 		AssertThrow(cell_area > 0
 			,
 		  ExcInternalError());
