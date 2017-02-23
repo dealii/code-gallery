@@ -741,12 +741,6 @@ void StokesProblem<dim>::assemble_system() {
 						local_quadrature_points_history[q].old_phiphi_stress;
 				double r_value = fe_values.quadrature_point(q)[0];
 				double z_value = fe_values.quadrature_point(q)[1];
-				
-				// if(system_parameters::present_timestep == system_parameters::initial_elastic_iterations)
-				// {
-				// 	old_stress *= 0;
-				// 	local_old_phiphi_stress = 0;
-				// }
 
 				// get local density based on mat id
 				double local_density = system_parameters::rho[m_id];
