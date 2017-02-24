@@ -1,0 +1,102 @@
+# Listing of Parameters
+# ---------------------
+subsection Boundary conditions
+  # Driver boundary condition for the problem
+  set Driver           = Neumann
+
+  # Positive stretch applied length-ways to the strip (Driver = Dirichlet)
+  set Final stretch    = 2.0
+  
+  # Hydrostatic pressure applied to top surface of the strip  (Driver = Neumann)
+  # Some reasonablly interesting choices here are -150 and +50
+  set Applied pressure = -150.0
+  
+  # Total time over which the stretch/pressure is ramped up
+  set Load time        = 1.0
+end
+
+subsection Finite element system
+  # Displacement system polynomial order
+  set Polynomial degree = 1
+
+  # Gauss quadrature order
+  set Quadrature order  = 2
+end
+
+
+subsection Geometry
+  # Total sample length
+  set Length = 100.0
+  
+  # Total sample width
+  set Width = 50.0
+  
+  # Total sample thickness
+  set Thickness = 5.0
+  
+  # Hole diameter
+  set Hole diameter = 20.0
+  
+  # A geometric factor affecting the discretisation near the hole
+  set Hole division fraction = 0.5
+  
+  # Number of initial grid subdivisions in the cross-section
+  set Number of subdivisions in cross-section = 2
+  
+  # Number of initial grid subdivisions through the thickness
+  set Number of subdivisions thickness = 6
+
+  # Global refinement level
+  set Global refinement   = 1
+
+  # Global grid scaling factor
+  set Grid scale          = 1e-3
+end
+
+
+subsection Linear solver
+  # Linear solver iterations (multiples of the system matrix size)
+  set Max iteration multiplier  = 1
+
+  # Linear solver residual (scaled by residual norm)
+  set Residual                  = 1e-6
+
+  # Type of solver used to solve the linear system
+  set Solver type               = cg
+end
+
+
+subsection Material properties
+  # Poisson's ratio
+  set Poisson's ratio = 0.4995
+
+  # Elastic shear modulus
+  set Elastic shear modulus   = 80.0e6
+  
+  # Viscous shear modulus
+  set Viscous shear modulus   = 160.0e6
+  
+  # Viscous relaxation time
+  set Viscous relaxation time = 2.5
+end
+
+
+subsection Nonlinear solver
+  # Number of Newton-Raphson iterations allowed
+  set Max iterations Newton-Raphson = 10
+
+  # Displacement error tolerance
+  set Tolerance displacement        = 1.0e-6
+
+  # Force residual tolerance
+  set Tolerance force               = 1.0e-9
+end
+
+
+subsection Time
+  # End time
+  set End time       = 25.0
+
+  # Time step size
+  set Time step size = 0.1
+end
