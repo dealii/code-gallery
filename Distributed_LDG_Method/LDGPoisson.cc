@@ -93,29 +93,29 @@ private:
                              Vector<double>         &cell_vector);
 
     void assemble_Neumann_boundary_terms(const FEFaceValues<dim>    &face_fe,
-                                         FullMatrix<double>         &local_matrix,
-                                         Vector<double>             &local_vector);
+                                    FullMatrix<double>         &local_matrix,
+                                    Vector<double>             &local_vector);
 
     void assemble_Dirichlet_boundary_terms(const FEFaceValues<dim>  &face_fe,
-                                           FullMatrix<double>       &local_matrix,
-                                           Vector<double>           &local_vector,
-                                           const double             & h);
+                                      FullMatrix<double>       &local_matrix,
+                                      Vector<double>           &local_vector,
+                                      const double             & h);
 
-    void assemble_flux_terms(const FEFaceValuesBase<dim>    &fe_face_values,
-                             const FEFaceValuesBase<dim>    &fe_neighbor_face_values,
-                             FullMatrix<double>             &vi_ui_matrix,
-                             FullMatrix<double>             &vi_ue_matrix,
-                             FullMatrix<double>             &ve_ui_matrix,
-                             FullMatrix<double>             &ve_ue_matrix,
-                             const double                   & h);
+    void assemble_flux_terms(const FEFaceValuesBase<dim>  &fe_face_values,
+                        const FEFaceValuesBase<dim>  &fe_neighbor_face_values,
+                        FullMatrix<double>           &vi_ui_matrix,
+                        FullMatrix<double>           &vi_ue_matrix,
+                        FullMatrix<double>           &ve_ui_matrix,
+                        FullMatrix<double>           &ve_ue_matrix,
+                        const double                 & h);
 
     void distribute_local_flux_to_global(
-          const FullMatrix<double> & vi_ui_matrix,
-          const FullMatrix<double> & vi_ue_matrix,
-          const FullMatrix<double> & ve_ui_matrix,
-          const FullMatrix<double> & ve_ue_matrix,
-          const std::vector<types::global_dof_index> & local_dof_indices,
-          const std::vector<types::global_dof_index> & local_neighbor_dof_indices);
+      const FullMatrix<double> & vi_ui_matrix,
+      const FullMatrix<double> & vi_ue_matrix,
+      const FullMatrix<double> & ve_ui_matrix,
+      const FullMatrix<double> & ve_ue_matrix,
+      const std::vector<types::global_dof_index> & local_dof_indices,
+      const std::vector<types::global_dof_index> & local_neighbor_dof_indices);
 
     void solve();
 
@@ -161,9 +161,9 @@ private:
 // The constructor and destructor for this class is very much like the 
 // like those for step-40.  The difference being that we'll be passing 
 // in an integer, <code>degree</code>, which tells us the maxiumum order 
-// of the polynomial to use as well as <code>n_refine</code> which is the global 
-// number of times we refine our mesh.  The other main differences are 
-// that we use a FESystem object for our choice of basis 
+// of the polynomial to use as well as <code>n_refine</code> which is the 
+// global number of times we refine our mesh.  The other main differences 
+// are that we use a FESystem object for our choice of basis 
 // functions. This is reminiscent of the mixed finite element method in
 // step-20, however, in our case we use a FESystem
 // of the form,
@@ -250,7 +250,7 @@ make_grid()
         {
             if((cell->center()[1]) > 0.9 )
             {
-                if((cell->center()[0] > 0.9)  || (cell->center()[0] < 0.1) )
+                if((cell->center()[0] > 0.9)  || (cell->center()[0] < 0.1))
                     cell->set_refine_flag();
             }
         }
@@ -339,8 +339,8 @@ make_dofs()
     // in order handle hanging nodes is no longer necessary. However,
     // we will continue to use the constraint matrices inorder to efficiently
     // distribute local computations to the global system, i.e. to the
-    // <code>system_matrix</code> and <code>system_rhs</code>.  Therefore, we just 
-    // instantiate the constraints matrix object, clear and close it.
+    // <code>system_matrix</code> and <code>system_rhs</code>.  Therefore, we  
+    // just instantiate the constraints matrix object, clear and close it.
     constraints.clear();
     constraints.close();
 
@@ -438,7 +438,8 @@ assemble_system()
                                             
     const unsigned int dofs_per_cell = fe.dofs_per_cell;
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-    std::vector<types::global_dof_index> local_neighbor_dof_indices(dofs_per_cell);                                      
+    std::vector<types::global_dof_index> 
+                                local_neighbor_dof_indices(dofs_per_cell);                                      
 
     // We first remark that we have the FEValues objects for 
     // the values of our cell basis functions as was done in most
@@ -447,12 +448,12 @@ assemble_system()
     // FEFaceValues object, <code>fe_face_values</code>, 
     // for evaluating the basis functions
     // on one side of an element face as well as another FEFaceValues object, 
-    // <code>fe_neighbor_face_values</code>, for evaluting the basis functions on the 
-    // opposite side of the face, i.e. on the neighoring element's face. In 
-    // addition, we also introduce a FESubfaceValues object,
+    // <code>fe_neighbor_face_values</code>, for evaluting the basis functions 
+    // on the opposite side of the face, i.e. on the neighoring element's face. 
+    // In addition, we also introduce a FESubfaceValues object,
     // <code>fe_subface_values</code>, that
-    // will be used for dealing with faces that have multiple refinement levels,
-    // i.e. hanging nodes. When we have to evaulate the fluxes across
+    // will be used for dealing with faces that have multiple refinement 
+    // levels, i.e. hanging nodes. When we have to evaulate the fluxes across
     // a face that multiple refinement levels, we need to evaluate the 
     // fluxes across all its childrens' faces; we'll explain this more when 
     // the time comes.
@@ -461,8 +462,9 @@ assemble_system()
     FEFaceValues<dim>       fe_face_values(fe,face_quadrature_formula, 
                                           face_update_flags);
 
-    FEFaceValues<dim>       fe_neighbor_face_values(fe, face_quadrature_formula,
-                                                    face_update_flags);
+    FEFaceValues<dim>       fe_neighbor_face_values(fe, 
+                                                face_quadrature_formula,
+                                                face_update_flags);
 
     FESubfaceValues<dim>    fe_subface_values(fe, face_quadrature_formula,
                                               face_update_flags);
@@ -547,16 +549,17 @@ assemble_system()
             // and construct the local contribtuions from the numerical fluxes.
             // The numerical fluxes will be due to 3 contributions: the
             // interior faces, the faces on the Neumann boundary and the faces
-            // on the Dirichlet boundary.  We instantate a <code>face_iterator</code>
-            // to loop
+            // on the Dirichlet boundary.  We instantate a 
+            // <code>face_iterator</code> to loop
             // over all the faces of this cell and first see if the face is on 
             // the boundary. Notice how we do not reinitiaize the
             //  <code>fe_face_values</code>
-            // object for the face until we know that we are actually on face that 
-            // lies on the boundary of the domain. The reason for doing this is for
-            // computational efficiency; reinitializing the FEFaceValues for each face
-            // is expensive and we do not want to do it unless  we are actually
-            // going use it to do computations.  After this, we test if the face 
+            // object for the face until we know that we are actually on face 
+            // that lies on the boundary of the domain. The reason for doing this 
+            // is for computational efficiency; reinitializing the FEFaceValues 
+            // for each face is expensive and we do not want to do it unless  we 
+            // are actually going use it to do computations.  After this, we test
+            // if the face 
             // is on the a Dirichlet or a Neumann segment of the boundary and 
             // call the appropriate subroutine to assemble the contributions for
             // that boundary.  Note that this assembles the flux contribution
@@ -567,7 +570,8 @@ assemble_system()
                     face_no< GeometryInfo<dim>::faces_per_cell;
                     face_no++)
             {
-                typename DoFHandler<dim>::face_iterator  face = cell->face(face_no);
+                typename DoFHandler<dim>::face_iterator  face = 
+                                                      cell->face(face_no);
 
                 if(face->at_boundary() )
                 {
@@ -598,55 +602,64 @@ assemble_system()
                 }
                 else
                 {
-                    // At this point we know that the face we are on is an interior 
-                    // face. We can begin to assemble the interior flux matrices, but
-                    // first we want to make sure that the neighbor cell to this face 
-                    // is a valid cell.  Once we know that the neighbor is a valid cell
-                    // then we also want to get the meighbor cell that shares this cell's
-                    // face.
-                    Assert(cell->neighbor(face_no).state() == IteratorState::valid,
-                           ExcInternalError());
+                    // At this point we know that the face we are on is an 
+                    // interior face. We can begin to assemble the interior 
+                    // flux matrices, but first we want to make sure that the
+                    // neighbor cell to this face is a valid cell.  Once we know
+                    // that the neighbor is a valid cell then we also want to get
+                    // the meighbor cell that shares this cell's face.
+                    // 
+                    Assert(cell->neighbor(face_no).state() == 
+                                                          IteratorState::valid,
+                                                          ExcInternalError());
 
                     typename DoFHandler<dim>::cell_iterator neighbor =
                         cell->neighbor(face_no);
 
-                    // Now that we have the two cells whose face we want to compute 
-                    // the numerical flux across, we need to know if the face has 
-                    // been refined, i.e. if it has children faces. This occurs when
-                    // one of the cells has a different level of refinement than 
-                    // the other cell.  If this is the case, then this face has a
-                    // different level of refinement than the other faces of the cell, 
-                    // i.e. on this face there is a hanging node. Hanging nodes are 
-                    // not a problem in DG methods, the only time we have to watch 
-                    // out for them is at this step and as you will see the changes 
-                    // we have to our make are minor.  
+                    // Now that we have the two cells whose face we want to 
+                    // compute the numerical flux across, we need to know
+                    // if the face has been refined, i.e. if it has children
+                    // faces. This occurs when one of the cells has a
+                    // different level of refinement than 
+                    // the other cell.  If this is the case, then this face 
+                    // has a different level of refinement than the other faces
+                    // of the cell, i.e. on this face there is a hanging node. 
+                    // Hanging nodes are not a problem in DG methods, the only 
+                    // time we have to watch out for them is at this step
+                    // and as you will see the changes we have to our make
+                    // are minor. 
                     if(face->has_children())
                     {
-                        // We now need to find the face of our neighbor cell such that 
-                        // neighbor(neigh_face_no) = cell(face_no).
+                        // We now need to find the face of our neighbor cell 
+                        // such that neighbor(neigh_face_no) = cell(face_no).
                         const unsigned int neighbor_face_no =
                             cell->neighbor_of_neighbor(face_no);
 
-                        // Once we do this we then have to loop over all the subfaces 
-                        // (children faces) of our cell's face and compute the interior
-                        // fluxes across the children faces and the neighbor's face.
+                        // Once we do this we then have to loop over all the 
+                        // subfaces (children faces) of our cell's face and 
+                        // compute the interior fluxes across the children faces
+                        // and the neighbor's face.
                         for(unsigned int subface_no=0;
                                 subface_no < face->number_of_children();
                                 ++subface_no)
                         {
-                            // We then get the neighbor cell's subface that matches our
-                            // cell face's subface and the specific subface number. 
-                            // We assert that the parent face cannot be more than one
-                            // level of refinement above the child's face.  This is
-                            // because the deal.ii library does not allow neighboring 
-                            // cells to have refinement levels that are more than 
-                            // one level in difference.
+                            // We then get the neighbor cell's subface that 
+                            // matches our cell face's subface and the
+                            // specific subface number. We assert that the parent
+                            // face cannot be more than one Level of
+                            // refinement above the child's face.  This is
+                            // because the deal.ii library does not allow 
+                            // neighboring cells to have refinement levels
+                            // that are more than one level in difference.
                             typename DoFHandler<dim>::cell_iterator neighbor_child =
-                                cell->neighbor_child_on_subface(face_no, subface_no);
+                                     cell->neighbor_child_on_subface(face_no, 
+                                                                     subface_no);
 
-                            Assert(!neighbor_child->has_children(), ExcInternalError());
+                            Assert(!neighbor_child->has_children(), 
+                                    ExcInternalError());
 
-                            // Now that we are ready to build the local flux matrices for
+                            // Now that we are ready to build the local flux
+                            // matrices for
                             // this face we reset them e zero and                           
                             // reinitialize this <code>fe_values</code> 
                             // to this cell's subface and
@@ -662,15 +675,15 @@ assemble_system()
                             fe_neighbor_face_values.reinit(neighbor_child, 
                                                            neighbor_face_no);
 
-                            // In addition, we get the minimum of diameters of the two cells
-                            // to include in the penalty term.
+                            // In addition, we get the minimum of diameters of 
+                            // the two cells to include in the penalty term
                             double h = std::min(cell->diameter(), 
                                                 neighbor_child->diameter());
 
-                            // We now finally assemble the interior fluxes for the
-                            // case of a face which has been refined using exactly 
-                            // the same subroutine as we do when both cells have 
-                            // the same refinement level.
+                            // We now finally assemble the interior fluxes for 
+                            // the case of a face which has been refined using 
+                            // exactly the same subroutine as we do when both 
+                            // cells have the same refinement level.
                             assemble_flux_terms(fe_subface_values,
                                                 fe_neighbor_face_values,
                                                 vi_ui_matrix,
@@ -679,50 +692,54 @@ assemble_system()
                                                 ve_ue_matrix,
                                                 h);
 
-                            // Now all that is left to be done before distribuing the
-                            // local flux matrices to the global system is get the neighbor 
-                            // child faces dof indices.  
+                            // Now all that is left to be done before distribuing
+                            // the local flux matrices to the global system 
+                            // is get the neighbor child faces dof indices.  
                             neighbor_child->get_dof_indices(local_neighbor_dof_indices);
 
-                            // Once we have this cells dof indices and the neighboring 
-                            // cell's dof indices we can use the ConstraintMatrix to
-                            // distribute the local flux matrices to the global system
-                            // matrix.  This is done through the class function
+                            // Once we have this cells dof indices and the 
+                            // neighboring cell's dof indices we can use the 
+                            // ConstraintMatrix to distribute the local flux 
+                            // matrices to the global system matrix.
+                            // This is done through the class function
                             // <code>distribute_local_flux_to_global()</code>.
-                            distribute_local_flux_to_global(vi_ui_matrix,
-                                                          vi_ue_matrix,
-                                                          ve_ui_matrix,
-                                                          ve_ue_matrix,
-                                                          local_dof_indices,
-                                                          local_neighbor_dof_indices);
+                            distribute_local_flux_to_global(
+                                                      vi_ui_matrix,
+                                                      vi_ue_matrix,
+                                                      ve_ui_matrix,
+                                                      ve_ue_matrix,
+                                                      local_dof_indices,
+                                                      local_neighbor_dof_indices);
                         } 
                     } 
                     else
                     {
-                        // At this point we know that this cell and the neighbor of 
-                        // this cell are on the same refinement level and the work
-                        // to assemble the interior flux matrices is very much the 
-                        // same as before. Infact it is much simpler since we do 
-                        // not have to loop through the subfaces.  However, we do 
-                        // have to check that we do not compute the same contribution 
-                        // twice. Since we are 
-                        // looping over all the faces of all the cells in the mesh, 
+                        // At this point we know that this cell and the neighbor
+                        // of this cell are on the same refinement level and
+                        // the work to assemble the interior flux matrices 
+                        // is very much the same as before. Infact it is
+                        // much simpler since we do not have to loop through the
+                        // subfaces.  However, we do have to check that we do
+                        // not compute the same contribution twice. Since we are
+                        // looping over all the faces of all the cells in the mesh,
                         // we pass over each face twice.  If we do not take this 
                         // into consideration when assembling the interior flux 
                         // matrices we might compute the local interior flux matrix
                         // twice. To avoid doing this we only compute the interior 
-                        // fluxes once for each face by restricting that the following
-                        // computation only occur on the on the cell face with 
-                        // the lower index number.
+                        // fluxes once for each face by restricting that the 
+                        // following computation only occur on the on 
+                        // the cell face with the lower index number.
                         if(neighbor->level() == cell->level() &&
                             neighbor->index() > cell->index() )
                         {
                             // Here we find the neighbor face such that 
-                            // neighbor(neigh_face_no) = cell(face_no). In addition 
-                            // we, reinitialize the FEFaceValues and neighbor cell's
-                            // FEFaceValues on their respective cells' faces,
-                            // as well as get the minimum diameter of this cell
-                            // and the neighbor cell and assign it to <code>h</code>.
+                            // neighbor(neigh_face_no) = cell(face_no). 
+                            // In addition we, reinitialize the FEFaceValues
+                            // and neighbor cell's FEFaceValues on their
+                            // respective cells' faces, as well as get the
+                            // minimum diameter of this cell
+                            // and the neighbor cell and assign 
+                            // it to <code>h</code>.
                             const unsigned int neighbor_face_no =
                                 cell->neighbor_of_neighbor(face_no);
 
@@ -732,17 +749,20 @@ assemble_system()
                             ve_ue_matrix = 0;
 
                             fe_face_values.reinit(cell, face_no);
-                            fe_neighbor_face_values.reinit(neighbor, neighbor_face_no);
+                            fe_neighbor_face_values.reinit(neighbor, 
+                                                          neighbor_face_no);
 
                             double h = std::min(cell->diameter(), 
                                                 neighbor->diameter());
 
-                            // Just as before we assemble the interior fluxes using the
+                            // Just as before we assemble the interior fluxes
+                            //  using the
                             // <code>assemble_flux_terms</code> subroutine, 
                             // get the neighbor cell's
                             // face dof indices and use the constraint matrix to
                             // distribute the local flux matrices to the global 
-                            // <code>system_matrix</code> using the class function
+                            // <code>system_matrix</code> using the class 
+                            // function 
                             // <code>distribute_local_flux_to_global()</code>
                             assemble_flux_terms(fe_face_values,
                                                 fe_neighbor_face_values,
@@ -754,12 +774,13 @@ assemble_system()
 
                             neighbor->get_dof_indices(local_neighbor_dof_indices);
                             
-                            distribute_local_flux_to_global(vi_ui_matrix,
-                                                          vi_ue_matrix,
-                                                          ve_ui_matrix,
-                                                          ve_ue_matrix,
-                                                          local_dof_indices,
-                                                          local_neighbor_dof_indices);
+                            distribute_local_flux_to_global(
+                                                    vi_ui_matrix,
+                                                    vi_ue_matrix,
+                                                    ve_ui_matrix,
+                                                    ve_ue_matrix,
+                                                    local_dof_indices,
+                                                    local_neighbor_dof_indices);
 
                           
                         } 
@@ -838,10 +859,10 @@ assemble_cell_terms(
     {
         for(unsigned int i=0; i<dofs_per_cell; i++)
         {
-            const Tensor<1, dim>  psi_i_field           = cell_fe[VectorField].value(i,q);
-            const double          div_psi_i_field       = cell_fe[VectorField].divergence(i,q);
-            const double          psi_i_potential       = cell_fe[Potential].value(i,q);
-            const Tensor<1, dim>  grad_psi_i_potential  = cell_fe[Potential].gradient(i,q);
+            const Tensor<1, dim> psi_i_field          = cell_fe[VectorField].value(i,q);
+            const double         div_psi_i_field      = cell_fe[VectorField].divergence(i,q);
+            const double         psi_i_potential      = cell_fe[Potential].value(i,q);
+            const Tensor<1, dim> grad_psi_i_potential = cell_fe[Potential].gradient(i,q);
 
             for(unsigned int j=0; j<dofs_per_cell; j++)
             {
@@ -908,13 +929,13 @@ assemble_Dirichlet_boundary_terms(
     {
         for(unsigned int i=0; i<dofs_per_cell; i++)
         {
-            const Tensor<1, dim>  psi_i_field            = face_fe[VectorField].value(i,q);
-            const double          psi_i_potential        = face_fe[Potential].value(i,q);
+            const Tensor<1, dim> psi_i_field     = face_fe[VectorField].value(i,q);
+            const double         psi_i_potential = face_fe[Potential].value(i,q);
 
             for(unsigned int j=0; j<dofs_per_cell; j++)
             {
-                const Tensor<1, dim>  psi_j_field     = face_fe[VectorField].value(j,q);
-                const double          psi_j_potential        = face_fe[Potential].value(j,q);
+                const Tensor<1, dim> psi_j_field    = face_fe[VectorField].value(j,q);
+                const double         psi_j_potential = face_fe[Potential].value(j,q);
         
                 // We compute contribution for the flux $\widehat{q}$ on 
                 // the Dirichlet boundary which enters our system matrix as,
@@ -927,7 +948,7 @@ assemble_Dirichlet_boundary_terms(
                                          +
                                          (penalty/h) *
                                          psi_j_potential) *
-                                     	 face_fe.JxW(q);
+                                     	   face_fe.JxW(q);
 
             } 
 
@@ -976,13 +997,13 @@ assemble_Neumann_boundary_terms(
     {
         for(unsigned int i=0; i<dofs_per_cell; i++)
         {
-            const Tensor<1, dim>  psi_i_field        = face_fe[VectorField].value(i,q);
-            const double          psi_i_potential    = face_fe[Potential].value(i,q);
+            const Tensor<1, dim> psi_i_field     = face_fe[VectorField].value(i,q);
+            const double         psi_i_potential = face_fe[Potential].value(i,q);
 
             for(unsigned int j=0; j<dofs_per_cell; j++)
             {
 
-                const double    psi_j_potential      = face_fe[Potential].value(j,q);
+                const double    psi_j_potential = face_fe[Potential].value(j,q);
 
                 // We compute contribution for the flux $\widehat{u}$ on the
                 // Neumann boundary which enters our system matrix as,
@@ -1063,7 +1084,8 @@ assemble_flux_terms(
                 // the interior as,
                 //
                 // $\int_{\text{face}}
-                //            \left( \frac{1}{2} \,  n^{-} \cdot ( \textbf{w}^{-} u^{-} 
+                //            \left( \frac{1}{2} \,  n^{-} 
+                //            \cdot ( \textbf{w}^{-} u^{-} 
                 //            + w^{-} \textbf{q}^{-}) 
                 //            + \boldsymbol \beta \cdot \textbf{w}^{-} u^{-} 
                 //            - w^{-} \boldsymbol \beta \cdot \textbf{q}^{-} 
@@ -1105,7 +1127,8 @@ assemble_flux_terms(
                 // to the computation,
                 //
                 // $\int_{\text{face}}
-                //              \left( \frac{1}{2} \, n^{-} \cdot ( \textbf{w}^{-} u^{+} 
+                //              \left( \frac{1}{2} \, n^{-} \cdot 
+                //              ( \textbf{w}^{-} u^{+} 
                 //             + w^{-} \textbf{q}^{+}) 
                 //             - \boldsymbol \beta \cdot \textbf{w}^{-} u^{+}
                 //             + w^{-} \boldsymbol \beta \cdot  \textbf{q}^{+} 
@@ -1156,7 +1179,8 @@ assemble_flux_terms(
                 // to the computation,
                 //
                 // $ \int_{\text{face}}
-                //           \left( -\frac{1}{2}\, n^{-} \cdot (\textbf{w}^{+} u^{-} 
+                //           \left( -\frac{1}{2}\, n^{-} \cdot 
+                //              (\textbf{w}^{+} u^{-} 
                 //              +  w^{+} \textbf{q}^{-} )
                 //              - \boldsymbol \beta \cdot \textbf{w}^{+} u^{-}
                 //              +  w^{+} \boldsymbol \beta \cdot \textbf{q}^{-}
@@ -1197,7 +1221,8 @@ assemble_flux_terms(
                 // cell to this face.  This corresponds to the computation,
                 //
                 // $\int_{\text{face}}
-                //             \left( -\frac{1}{2}\, n^{-} \cdot ( \textbf{w}^{+} u^{+}
+                //             \left( -\frac{1}{2}\, n^{-} \cdot 
+                //              ( \textbf{w}^{+} u^{+}
                 //             + w^{+} \textbf{q}^{+} )
                 //             + \boldsymbol \beta \cdot \textbf{w}^{+} u^{+} 
                 //             -  w^{+} \boldsymbol \beta \cdot \textbf{q}^{+}
@@ -1261,12 +1286,12 @@ template<int dim>
 void 
 LDGPoissonProblem<dim>::
 distribute_local_flux_to_global(
-          const FullMatrix<double> & vi_ui_matrix,
-          const FullMatrix<double> & vi_ue_matrix,
-          const FullMatrix<double> & ve_ui_matrix,
-          const FullMatrix<double> & ve_ue_matrix,
-          const std::vector<types::global_dof_index>  & local_dof_indices,
-          const std::vector<types::global_dof_index> & local_neighbor_dof_indices)
+        const FullMatrix<double> & vi_ui_matrix,
+        const FullMatrix<double> & vi_ue_matrix,
+        const FullMatrix<double> & ve_ui_matrix,
+        const FullMatrix<double> & ve_ue_matrix,
+        const std::vector<types::global_dof_index> & local_dof_indices,
+        const std::vector<types::global_dof_index> & local_neighbor_dof_indices)
 {
   constraints.distribute_local_to_global(vi_ui_matrix,
                                          local_dof_indices,
@@ -1400,7 +1425,7 @@ output_results()    const
 
     const std::string filename = ("solution."   +
                                   Utilities::int_to_string(
-                                      triangulation.locally_owned_subdomain(),4));
+                                  triangulation.locally_owned_subdomain(),4));
 
     std::ofstream output((filename + ".vtu").c_str());
     data_out.write_vtu(output);
