@@ -14,7 +14,9 @@ u &= g_{D}(\textbf{x}) && \mbox{on}  \ \partial \Omega_{D}. \nonumber
 
 in 2D and 3D using the local discontinuous Galerkin (LDG) method</a> from 
 scratch. The tutorial codes step-12 and step-39 use the MeshWorker interface
-to build discontinuous Galerkin (DG) methods. While this is very convenient, 
+to build
+<a href="https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method">
+discontinuous Galerkin (DG) methods</a>. While this is very convenient, 
 I could not use this framework for solving my research problem and I 
 needed write the LDG method from scratch. I thought it 
 would be helpful for others to have access to 
@@ -22,16 +24,19 @@ this example that goes through writing a discontinuous Galerkin method from
 scatch and also shows how to do it in a distributed setting using the 
 <a href="https://www.trilinos.org">Trilinos</a> library. This example may also
 be of interest to users that wish to use the LDG method, as the method is 
-distinctly different from the Interior Penalty Discontinuous Galerkin (IPDG) 
+distinctly different from the 
+<a href="http://www3.nd.edu/~zxu2/acms60790S14/unified-analy-dg-elliptic-eq.pdf">
+Interior Penalty Discontinuous Galerkin (IPDG)</a>
 methods and was not covered in other tutorials on DG methods.  The LDG method
 is very useful when one is working with a differential equation and desires 
-both approximations to the scalar unknown function as well as its flux.  The 
-mixed method is another method where one can obtain both the scalar unknown 
-function as well as its flux, however, the LDG method has less degrees of 
-freedom compared to the mixed method with the Raviart-Thomas element. It also
-approximates the scalar unknown function and its flux using discontinuous 
-polynomial basis functions and are much more suitable when one wishes to use 
-local refinement.
+both approximations to the scalar unknown function as well as its flux. 
+The application of a mixed method offers a mechanism whereby one 
+can obtain both the scalar unknown function as well as its flux, however, 
+the LDG method has less degrees of freedom compared to the 
+<a href="https://link.springer.com/chapter/10.1007/BFb0064470">mixed method with 
+the Raviart-Thomas element</a>. It also approximates the scalar unknown function 
+and its flux using discontinuous polynomial basis functions and are much more 
+suitable when one wishes to use local refinement.
 
 ## Compiling and Running
 To generate a makefile for this code using CMake, type the following command 
@@ -57,17 +62,21 @@ the terminal from the main directory,
 
 The output of the code will be in <code>.vtu</code> and <code>.pvtu</code> 
 format and be written to disk in parallel.  The results can be viewed using 
-<a href="http://www.paraview.org/">ParaView</a>. 
+<a href="http://www.paraview.org/">ParaView</a>.  The visualization of the
+solution $u(x,y)$ from the results of the test case in this code can be 
+seen below.  
+
+![u](image/poisson.png)
 
 
 ## Local Discontinuous Galerkin Method
 
 In this section we discuss the LDG method and first introduce some notation. 
 Let $\mathcal{T}_{h} = \mathcal{T}_{h}(\Omega) \, = \, \left\{ \, \Omega_{e} 
-\, \right\}_{e=1}^{N}$ be  the general triangulation of a domain $\Omega \; 
+\, \right\}_{e=1}^{N}$ be the general triangulation of a domain $\Omega \; 
 \subset \; \mathbb{R}^{d}, \; d \, = \, 1, 2, 3$, into $N$ non-overlapping 
 elements $\Omega_{e}$ of diameter $h_{e}$.  The maximum size of the diameters
-of all the elements is $h = \max( \, h_{e}\, )$.  We define $\mathcal{E}_{h}$ 
+of all elements is $h = \max( \, h_{e}\, )$.  We define $\mathcal{E}_{h}$ 
 to be the set of all element faces and $\mathcal{E}_{h}^{i} $ to be the set of
 all interior faces of elements which do not intersect the total boundary 
 $(\partial \Omega)$. We define $\mathcal{E}_{D}$ and $\mathcal{E}_{N}$ to be
@@ -104,7 +113,7 @@ and,
 @f}
 
 where $f$ is a scalar function and $\textbf{f}$ is vector-valued function. 
-We note that for a faces that are on the boundary of the domain we have,
+We note that for faces that are on the boundary of the domain we have,
 @f{align}
 \left[ f \right] \; = \; f \,  \textbf{n} 
 \qquad \mbox{and}\qquad  
@@ -116,7 +125,8 @@ We denote the volume integrals and surface integrals using the $L^{2}(\Omega)$
 inner products by $( \, \cdot \, , \, \cdot \, )_{\Omega}$ and $\langle  \, 
 \cdot \, , \, \cdot \,  \rangle_{\partial \Omega}$ respectively. 
 
-As with the mixed finite element method, the LDG discretization requires the 
+As with the mixed finite element method with the Raviart-Thomas element, 
+the LDG discretization requires the 
 Poisson equations be written as a first-order system.  We do this by 
 introducing an auxiliary variable which we call the current flux variable 
 $\textbf{q}$:
@@ -206,7 +216,8 @@ for all $(w,\textbf{w}) \in W_{h,k} \times \textbf{W}_{h,k}$.
 
 The terms $\widehat{\textbf{q}_{h}}$ and $\widehat{u_{h}}$ are the numerical 
 fluxes. The numerical fluxes are introduced to ensure consistency, stability, 
-and enforce the boundary conditions weakly.  The flux $\widehat{u_{h}}$ is,
+and enforce the boundary conditions weakly, see (.  The flux $\widehat{u_{h}}$
+is,
 
 @f{align} 
 \widehat{u_{h}} \; = \; \left\{
@@ -241,7 +252,11 @@ parallel to any element face in $ \mathcal{E}_{h}^{i}$.  For
 $\boldsymbol \beta =  0$,  $\widehat{\textbf{q}_{h}}$ and $\widehat{u_{h}}$ 
 are called the central or Brezzi et. al. fluxes. For 
 $\boldsymbol \beta \neq  0$, $\widehat{\textbf{q}_{h}}$ and $\widehat{u_{h}}$ 
-are called the LDG/alternating fluxes.  The term $\sigma$ is the penalty 
+are called the LDG/alternating fluxes, see 
+<a href="http://www3.nd.edu/~zxu2/acms60790S14/unified-analy-dg-elliptic-eq.pdf">
+here</a> and <a href="http://www.springer.com/us/book/9780387720654">here</a>.
+
+The term $\sigma$ is the penalty 
 parameter that is defined as,
 @f{align}
 \sigma \; = \; \left\{ 
@@ -342,6 +357,35 @@ As discussed in step-20, we won't be assembling the bilinear terms explicitly,
 instead we will assemble all the solid integrals and fluxes at once.  We note 
 that in order to actually build the flux terms in our local flux matrices we 
 will substitute in the definitions in the bilinear terms above.
+
+## Useful References
+
+These are some useful references on the LDG and DG methods:
+
+- <a href="http://epubs.siam.org/doi/abs/10.1137/s0036142997316712">
+The Local Discontinuous Galerkin Method for Time-Dependent 
+Convection-Diffusion Systems</a>
+
+- <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.26.7688">
+Some Extensions Of The Local Discontinuous Galerkin Method For 
+Convection-Diffusion Equations In Multidimensions</a>
+
+- <a href="http://epubs.siam.org/doi/abs/10.1137/S1064827502410657">
+Preconditioning Methods for Local Discontinuous Galerkin Discretizations</a>
+
+- <a href="http://epubs.siam.org/doi/abs/10.1137/S0036142900371003">
+An A Priori Error Analysis of the Local Discontinuous Galerkin
+Method for Elliptic Problems</a>
+
+- <a href="http://www3.nd.edu/~zxu2/acms60790S14/unified-analy-dg-elliptic-eq.pdf">
+Unified Analysis Of Discontinuous Galerkin Methods For Elliptic Problems</a>
+
+- <a href="http://www.springer.com/us/book/9780387720654">
+Nodal Discontinuous Galerkin Methods</a>
+
+- <a href="http://epubs.siam.org/doi/book/10.1137/1.9780898717440">
+Discontinuous Galerkin Methods for Solving Elliptic and Parabolic 
+Equations: Theory and Implementation</a>
 
 
 # The Commented Code
