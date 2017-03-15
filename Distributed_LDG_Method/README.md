@@ -216,7 +216,9 @@ for all $(w,\textbf{w}) \in W_{h,k} \times \textbf{W}_{h,k}$.
 
 The terms $\widehat{\textbf{q}_{h}}$ and $\widehat{u_{h}}$ are the numerical 
 fluxes. The numerical fluxes are introduced to ensure consistency, stability, 
-and enforce the boundary conditions weakly, see (.  The flux $\widehat{u_{h}}$
+and enforce the boundary conditions weakly, for more info see the book:
+<a href="http://www.springer.com/us/book/9780387720654">
+Nodal Discontinuous Galerkin Methods</a>. The flux $\widehat{u_{h}}$
 is,
 
 @f{align} 
@@ -271,7 +273,11 @@ parameter that is defined as,
 @f}
 
 
-with $\tilde{\sigma}$ being a positive constant.
+with $\tilde{\sigma}$ being a positive constant.  There are other choices of
+penalty values $\sigma$, but the one above produces in appoximations to solutions
+that are the most accurate, see this 
+<a href="http://epubs.siam.org/doi/abs/10.1137/S0036142900371003">
+reference</a> for more info.
 
 
 We can now substitute (16) and (17) into (14) and (15) to obtain the solution 

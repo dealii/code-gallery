@@ -38,7 +38,7 @@
 #include <deal.II/numerics/data_out.h>
 
 
-// Now we have to load in the deal.II files that will allow us to use
+// Now we have to load in the deal.ii files that will allow us to use
 // a distributed computing framework.
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/index_set.h>
@@ -65,8 +65,8 @@ using namespace dealii;
 // Here is the main class for the Local Discontinuous Galerkin method 
 // applied to Poisson's equation, we won't explain much of the 
 // the class and method declarations, but dive deeper into describing the 
-// functions when the are defined.  The only thing I will menion 
-// about the class declaration is that  here is where I labeled 
+// functions when they are defined.  The only thing I will menion 
+// about the class declaration is that this is where I labeled 
 // the different types of boundaries using enums.
 template <int dim>
 class LDGPoissonProblem
@@ -177,9 +177,9 @@ private:
 // of order <code>degree</code> in each of the <code>dim</code> dimensions
 // for the vector field.  For the scalar unknown we
 // use a discontinuous polynomial of the order <code>degree</code>. 
-// The LDG method solves for both the primary variable as well as
-// its gradient, just like the mixed finite element method.  However,
-// unlike the mixed method, the LDG method ues discontinuous 
+// The LDG method for Poisson equations solves for both the primary variable 
+// as well as its gradient, just like the mixed finite element method.  
+// However, unlike the mixed method, the LDG method uses discontinuous 
 // polynomials to approximate both variables.
 // The other difference bewteen our constructor and that of step-40 is that
 // we all instantiate our linear solver in the constructor definition.
@@ -311,7 +311,7 @@ make_dofs()
     dof_handler.distribute_dofs(fe);
 
     // We now renumber the dofs so that the vector of unkonwn dofs 
-    // that we are solving for, <code>locally_relevant_solution</code>
+    // that we are solving for, <code>locally_relevant_solution</code>,
     // corresponds to a vector of the form,
     //
     // $ \left[\begin{matrix} \textbf{Q} \\  \textbf{U} \end{matrix}\right] $
@@ -365,7 +365,8 @@ make_dofs()
             locally_relevant_dofs);
 
     // Here is one area that I had to learn the hard way. The local
-    // discontinuous Galerkin method like the Mixed Method is written
+    // discontinuous Galerkin method like the mixed method with the
+    // Raviart-Thomas element is written
     // in mixed form and will lead to a block-structured matrix.  
     // In step-20 we see that we that we initialize the
     // <code>system_martrix</code>
@@ -399,7 +400,7 @@ make_dofs()
                       true);
 
     const unsigned int n_vector_field = dim * dofs_per_component[0];
-    const unsigned int n_potential = dofs_per_component[1];
+    const unsigned int n_potential = dofs_per_component[dim];
 
     pcout << "Number of active cells : "
           << triangulation.n_global_active_cells()
@@ -413,8 +414,8 @@ make_dofs()
 //@sect4{assemble_system}
 // This is the function that will assemble the global system matrix and 
 // global right hand side vector for the LDG method. It starts out 
-// like many of the deal.ii tutorial codes: declaring quadrature and 
-// UpdateFlags objects, as well as vectors to that will hold the
+// like many of the deal.ii tutorial codes: declaring quadrature formulas
+// and UpdateFlags objects, as well as vectors that will hold the
 // dof indices for the cells we are working on in the global system.
 template <int dim>
 void
@@ -448,12 +449,12 @@ assemble_system()
     // FEFaceValues object, <code>fe_face_values</code>, 
     // for evaluating the basis functions
     // on one side of an element face as well as another FEFaceValues object, 
-    // <code>fe_neighbor_face_values</code>, for evaluting the basis functions 
+    // <code>fe_neighbor_face_values</code>, for evaluating the basis functions 
     // on the opposite side of the face, i.e. on the neighoring element's face. 
     // In addition, we also introduce a FESubfaceValues object,
     // <code>fe_subface_values</code>, that
     // will be used for dealing with faces that have multiple refinement 
-    // levels, i.e. hanging nodes. When we have to evaulate the fluxes across
+    // levels, i.e. hanging nodes. When we have to evaluate the fluxes across
     // a face that multiple refinement levels, we need to evaluate the 
     // fluxes across all its childrens' faces; we'll explain this more when 
     // the time comes.
@@ -485,7 +486,7 @@ assemble_system()
     FullMatrix<double>      ve_ue_matrix(dofs_per_cell, dofs_per_cell);
     // As explained in the section on the LDG method we take our test
     // function to be v and multiply it on the left side of our differential 
-    // equation that is on u and peform integration by parts as explain in the 
+    // equation that is on u and peform integration by parts as explained in the 
     // introduction. Using this notation for test and solution function,
     // the matrices below will then stand for:
     //
@@ -517,7 +518,7 @@ assemble_system()
     {
         // Now, since we are working in a distributed setting, 
         // we can only work on cells and write to dofs in the
-        //  <code>system_matrix</code>
+        // <code>system_matrix</code>
         // and <code>rhs_vector</code>
         // that corresponds to cells that are locally owned
         // by this processor.  We note that while we can only write to locally
@@ -545,15 +546,15 @@ assemble_system()
             // interior fluxes.
             cell->get_dof_indices(local_dof_indices);
 
-            // Now is where were start to loop over all the faces of the cell
+            // Now is where we start to loop over all the faces of the cell
             // and construct the local contribtuions from the numerical fluxes.
             // The numerical fluxes will be due to 3 contributions: the
             // interior faces, the faces on the Neumann boundary and the faces
-            // on the Dirichlet boundary.  We instantate a 
+            // on the Dirichlet boundary.  We instantiate a 
             // <code>face_iterator</code> to loop
             // over all the faces of this cell and first see if the face is on 
             // the boundary. Notice how we do not reinitiaize the
-            //  <code>fe_face_values</code>
+            // <code>fe_face_values</code>
             // object for the face until we know that we are actually on face 
             // that lies on the boundary of the domain. The reason for doing this 
             // is for computational efficiency; reinitializing the FEFaceValues 
@@ -579,7 +580,7 @@ assemble_system()
 
                     if(face->boundary_id() == Dirichlet)
                     {
-                        // Notice here that in order to assemble the
+                        // Here notice that in order to assemble the
                         // flux due to the penalty term for the the
                         // Dirichlet boundary condition we need the
                         // local cell diameter size and we can get
@@ -646,7 +647,7 @@ assemble_system()
                             // We then get the neighbor cell's subface that 
                             // matches our cell face's subface and the
                             // specific subface number. We assert that the parent
-                            // face cannot be more than one Level of
+                            // face cannot be more than one level of
                             // refinement above the child's face.  This is
                             // because the deal.ii library does not allow 
                             // neighboring cells to have refinement levels
@@ -719,18 +720,18 @@ assemble_system()
                         // the work to assemble the interior flux matrices 
                         // is very much the same as before. Infact it is
                         // much simpler since we do not have to loop through the
-                        // subfaces.  However, we do have to check that we do
-                        // not compute the same contribution twice. Since we are
-                        // looping over all the faces of all the cells in the mesh,
-                        // we pass over each face twice.  If we do not take this 
-                        // into consideration when assembling the interior flux 
-                        // matrices we might compute the local interior flux matrix
-                        // twice. To avoid doing this we only compute the interior 
-                        // fluxes once for each face by restricting that the 
-                        // following computation only occur on the on 
-                        // the cell face with the lower index number.
+                        // subfaces.  However, we have to check that we do
+                        // not compute the same contribution twice. This would 
+                        // happen because we are looping over all the faces of 
+                        // all the cells in the mesh
+                        // and assembling the interior flux matrices for each face.
+                        // To avoid doing assembling the interior flux matrices 
+                        // twice we only compute the 
+                        // interior fluxes once for each face by restricting that
+                        // the following computation only occur on the on 
+                        // the cell face with the lower CellId.
                         if(neighbor->level() == cell->level() &&
-                            neighbor->index() > cell->index() )
+                            cell->id() < neighbor->id())
                         {
                             // Here we find the neighbor face such that 
                             // neighbor(neigh_face_no) = cell(face_no). 
@@ -943,12 +944,12 @@ assemble_Dirichlet_boundary_terms(
                 // $ \int_{\text{face}} w \, ( \textbf{n} \cdot \textbf{q}
                 //                        + \sigma u)  ds $
                 local_matrix(i,j) += psi_i_potential * (
-                                         face_fe.normal_vector(q) *
-                                         psi_j_field
-                                         +
-                                         (penalty/h) *
-                                         psi_j_potential) *
-                                     	   face_fe.JxW(q);
+                                        face_fe.normal_vector(q) *
+                                        psi_j_field
+                                        +
+                                        (penalty/h) *
+                                        psi_j_potential) *
+                                        face_fe.JxW(q);
 
             } 
 
@@ -1084,7 +1085,7 @@ assemble_flux_terms(
                 // the interior as,
                 //
                 // $\int_{\text{face}}
-                //            \left( \frac{1}{2} \,  n^{-} 
+                //            \left( \frac{1}{2} \,  \textbf{n}^{-} 
                 //            \cdot ( \textbf{w}^{-} u^{-} 
                 //            + w^{-} \textbf{q}^{-}) 
                 //            + \boldsymbol \beta \cdot \textbf{w}^{-} u^{-} 
@@ -1127,7 +1128,7 @@ assemble_flux_terms(
                 // to the computation,
                 //
                 // $\int_{\text{face}}
-                //              \left( \frac{1}{2} \, n^{-} \cdot 
+                //              \left( \frac{1}{2} \, \textbf{n}^{-} \cdot 
                 //              ( \textbf{w}^{-} u^{+} 
                 //             + w^{-} \textbf{q}^{+}) 
                 //             - \boldsymbol \beta \cdot \textbf{w}^{-} u^{+}
@@ -1179,7 +1180,7 @@ assemble_flux_terms(
                 // to the computation,
                 //
                 // $ \int_{\text{face}}
-                //           \left( -\frac{1}{2}\, n^{-} \cdot 
+                //           \left( -\frac{1}{2}\, \textbf{n}^{-} \cdot 
                 //              (\textbf{w}^{+} u^{-} 
                 //              +  w^{+} \textbf{q}^{-} )
                 //              - \boldsymbol \beta \cdot \textbf{w}^{+} u^{-}
@@ -1221,7 +1222,7 @@ assemble_flux_terms(
                 // cell to this face.  This corresponds to the computation,
                 //
                 // $\int_{\text{face}}
-                //             \left( -\frac{1}{2}\, n^{-} \cdot 
+                //             \left( -\frac{1}{2}\, \textbf{n}^{-} \cdot 
                 //              ( \textbf{w}^{+} u^{+}
                 //             + w^{+} \textbf{q}^{+} )
                 //             + \boldsymbol \beta \cdot \textbf{w}^{+} u^{+} 
@@ -1320,7 +1321,10 @@ distribute_local_flux_to_global(
 // method applied to the Poisson equation. One could also
 // use a iterative sovler, however, we then need to use 
 // a preconditoner and that was something I did not wanted
-// to get into. The uses of a direct sovler here is
+// to get into. For information on preconditioners
+// for the LDG Method see this 
+// <a href="http://epubs.siam.org/doi/abs/10.1137/S1064827502410657">
+// paper</a>. The uses of a direct sovler here is
 // somewhat of a limitation.  The built-in distributed 
 // direct solver in Trilinos reduces everything to one 
 // processor, solves the system and then distributes 
