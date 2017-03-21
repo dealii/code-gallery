@@ -1,0 +1,32 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\begin{document}
+\begin{tikzpicture}
+  \pgfplotstableread[col sep=comma]{displacement_POI.csv}\loadedtable;
+  \begin{axis}[
+    width = 10cm,
+    height = 6cm,
+    xlabel={Time [s]},
+    ylabel={X-displacement [mm]},
+%    yticklabel style={
+%            /pgf/number format/fixed,
+%            /pgf/number format/precision=2
+%    },
+%    axis x line* = bottom,
+%    axis y line* = left,
+    xmin = 0,
+    xmax = 3,
+    ymin = -75,
+    ymax = +75,
+    ymajorgrids=true,
+    ytick distance=25,
+%    clip=false,
+    legend style={at={(0.84,+0.175)},anchor=north,font=\footnotesize}
+  ]
+  \addplot[red, very thick] table [x={Time [s]}, y={X-displacement [mm]}] {\loadedtable};
+  \addlegendentry{$\mathbf{u}^{\textnormal{insertion}}_{x}$};
+  \end{axis}
+\end{tikzpicture}
+\end{document}

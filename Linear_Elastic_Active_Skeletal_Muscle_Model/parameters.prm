@@ -1,0 +1,66 @@
+# Listing of Parameters
+# ---------------------
+subsection Finite element system
+  # Displacement system polynomial order
+  set Polynomial degree = 1
+
+  # Gauss quadrature order
+  set Quadrature order  = 2
+end
+
+
+subsection Problem
+  # Choose the problem to be solved
+  # Options: IsotonicContraction ; BicepsBrachii
+  set Problem  = IsotonicContraction
+end
+
+
+subsection Biceps Brachii geometry
+  # Axial length of the muscle
+  set Axial length                = 250 # (in millimetres)
+
+  # Insertion and origin radius
+  set Radius insertion and origin = 10 # (in millimetres)
+
+  # Radius at the midpoint of the muscle
+  set Radius midpoint             = 40 # (in millimetres)
+
+  # Global grid scaling factor (metres -> millimetres)
+  set Grid scale                  = 1e-3
+
+  # Number of elements along the muscle axis
+  set Elements along axis         = 40
+
+  # Control the discretisation in the radial direction
+  set Radial refinements          = 3
+
+  # Choose whether to include gravitational
+  # effects (in the y-direction; perpendicular
+  # to the muscle axis)
+  set Gravity                     = false
+
+  # Applied distributed axial force (in Newtons)
+  set Axial force                 = 20
+end
+
+
+subsection Neurological signal
+  # Time at which to start muscle activation
+  set Start time = 1.0
+
+  # Time at which to remove muscle activation signal
+  set End time   = 2.0
+end
+
+
+subsection Time
+  # End time
+  set End time       = 3.0
+
+  # Force ramp end time
+  set End ramp time  = 1.0
+
+  # Time step size
+  set Time step size = 0.1
+end
