@@ -62,11 +62,7 @@ the terminal from the main directory,
 
 The output of the code will be in <code>.vtu</code> and <code>.pvtu</code> 
 format and be written to disk in parallel.  The results can be viewed using 
-<a href="http://www.paraview.org/">ParaView</a>.  The visualization of the
-solution $u(x,y)$ from the results of the test case in this code can be 
-seen below.  
-
-![u](image/poisson.png)
+<a href="http://www.paraview.org/">ParaView</a>. 
 
 
 ## Local Discontinuous Galerkin Method
@@ -192,20 +188,20 @@ Find $u_{h} \in W_{h,k}$ and $\textbf{q}_{h} \in  \textbf{W}_{h,k} $ such that,
 -
 \sum_{e} \left( \nabla w,  \,  \textbf{q}_{h}  \right)_{\Omega_{e}}
  +
-\langle  \llbracket \,  w \, \rrbracket \, , \,  \widehat{\textbf{q}_{h} } 
+\langle  \left[ \,  w \, \right] \, , \,  \widehat{\textbf{q}_{h} } 
 \rangle_{\mathcal{E}_{h}^{i} }
  +
-\langle  \llbracket \,  w \, \rrbracket \, , \,  \widehat{\textbf{q}_{h} } 
+\langle  \left[ \,  w \, \right] \, , \,  \widehat{\textbf{q}_{h} } 
 \rangle_{\mathcal{E}_{D} \cup \mathcal{E}_{N}} \ &= \  
 \sum_{e} \left( w , \, f  \right)_{\Omega_{e}}   \\
 \sum_{e} \left( \textbf{w} \, , \, \textbf{q}_{h} \right)_{\Omega_{e}}
 -
 \sum_{e} \left(  \nabla \cdot \textbf{w} , \,  u_{h} \right)_{\Omega_{e}}
 +  
-\langle \, \llbracket \,  \textbf{w} \, \rrbracket \, ,   \, \widehat{u_{h}}
+\langle \, \left[ \,  \textbf{w} \, \right] \, ,   \, \widehat{u_{h}}
 \rangle_{\mathcal{E}_{h}^{i}}
 + 
-\langle  \llbracket \,  \textbf{w} \, \rrbracket \, , \,  \widehat{u_{h}}  
+\langle  \left[ \,  \textbf{w} \, \right] \, , \,  \widehat{u_{h}}  
 \rangle_{\mathcal{E}_{D} \cup \mathcal{E}_{N}} 
 \ &= \
 0 
@@ -224,7 +220,7 @@ is,
 @f{align} 
 \widehat{u_{h}} \; = \; \left\{
 \begin{array}{cl}
-\left\{ u_{h} \right\} \ + \ \boldsymbol \beta \cdot \left[ u_{h} \rrbracket &
+\left\{ u_{h} \right\} \ + \ \boldsymbol \beta \cdot [ u_{h} ] \, &
 \ \text{in} \  \mathcal{E}_{h}^{i} \\
 u_{h} &  \ \text{in} \ \mathcal{E}_{N}\\
 g_{D}(\textbf{x})  & \ \text{in} \ \mathcal{E}_{D} \\
