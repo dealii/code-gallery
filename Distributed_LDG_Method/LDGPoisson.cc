@@ -1454,7 +1454,7 @@ output_results()    const
 // @sect4{run}
 // The only public function of this class is pretty much exactly
 // the same as all the other deal.ii examples except I setting
-// the constant in the DG penalty ($\tilde{\sigma}}$) to be 1.
+// the constant in the DG penalty ($\tilde{\sigma}$) to be 1.
 template<int dim>
 void
 LDGPoissonProblem<dim>::
