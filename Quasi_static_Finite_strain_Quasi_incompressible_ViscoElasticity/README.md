@@ -72,6 +72,15 @@ This program can be run in `2d` or `3d`; this choice can be made by making
 the appropriate changes in the `main()` function.
 
 
+## Reference for this work
+If you use this program as a basis for your own work, please consider citing it in your list of references.
+The initial version of this work was contributed to the deal.II project by the authors listed in the following citation:
+* J-P. V. Pelteret, The deal.II code gallery: Quasi-static Finite-Strain Quasi-incompressible Visco-elasticity, 2017. DOI: [10.5281/zenodo.437604](http://doi.org/10.5281/zenodo.437604) <img style="float: right;" src="https://zenodo.org/badge/DOI/10.5281/zenodo.437604.svg">
+
+### Acknowledgements
+The support of this work by the European Research Council (ERC) through the Advanced Grant 289049 MOCOPOLY is gratefully acknowledged by the author.
+
+
 ## Recommended Literature
 * C. Miehe (1994), Aspects of the formulation and finite element implementation of large strain isotropic elasticity. International Journal for Numerical Methods in Engineering 37 , 12, 1981-2004. DOI: [10.1002/nme.1620371202](http://doi.org/10.1002/nme.1620371202);
 * G.A. Holzapfel (2001), Nonlinear Solid Mechanics. A Continuum Approach for Engineering, John Wiley & Sons. ISBN: [978-0-471-82319-3](http://eu.wiley.com/WileyCDA/WileyTitle/productCd-0471823198.html);
