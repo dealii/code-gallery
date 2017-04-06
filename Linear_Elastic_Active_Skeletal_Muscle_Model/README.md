@@ -92,6 +92,15 @@ reduced geometry used to reproduce the linearised counterpart of the isotonic
 contraction numerical experiments conducted by Martins.
 
 
+## Reference for this work
+If you use this program as a basis for your own work, please consider citing it in your list of references.
+The initial version of this work was contributed to the deal.II project by the authors listed in the following citation:
+* J-P. V. Pelteret and T. Hamann, The deal.II code gallery: Linear Elastic Active Skeletal Muscle Mode, 2017. DOI: [10.5281/zenodo.437608](http://doi.org/10.5281/zenodo.437608) <img style="float: right;" src="https://zenodo.org/badge/DOI/10.5281/zenodo.437608.svg">
+
+### Acknowledgements
+The support of this work by the European Research Council (ERC) through the Advanced Grant 289049 MOCOPOLY is gratefully acknowledged by the first author.
+
+
 ## Recommended Literature
 * Kajee, Y. and Pelteret, J-P. V. and Reddy, B. D. (2013),
 The biomechanics of the human tongue.
