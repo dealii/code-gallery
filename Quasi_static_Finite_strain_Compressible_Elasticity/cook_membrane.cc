@@ -542,7 +542,7 @@ namespace Cook_Membrane
     void update_material_data(const Tensor<2, dim> &F)
     {
       det_F = determinant(F);
-      b_bar = std::pow(det_F, -2.0 / 3.0) * symmetrize(F * transpose(F));
+      b_bar = std::pow(det_F, -2.0 / dim) * symmetrize(F * transpose(F));
 
       Assert(det_F > 0, ExcInternalError());
     }
@@ -651,9 +651,9 @@ namespace Cook_Membrane
                         tau_iso);
       const SymmetricTensor<4, dim> c_bar = get_c_bar();
 
-      return (2.0 / 3.0) * trace(tau_bar)
+      return (2.0 / dim) * trace(tau_bar)
              * StandardTensors<dim>::dev_P
-             - (2.0 / 3.0) * (tau_iso_x_I + I_x_tau_iso)
+             - (2.0 / dim) * (tau_iso_x_I + I_x_tau_iso)
              + StandardTensors<dim>::dev_P * c_bar
              * StandardTensors<dim>::dev_P;
     }
@@ -1735,7 +1735,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       std::cout << "_";
     std::cout << std::endl;
     
-    const Point<dim> soln_pt (48.0*parameters.scale,60.0*parameters.scale,0.5*parameters.scale);
+    Point<dim> soln_pt (48.0*parameters.scale,60.0*parameters.scale);
+    if (dim == 3)
+      soln_pt[2] = 0.5*parameters.scale;
     double vertical_tip_displacement = 0.0;
     double vertical_tip_displacement_check = 0.0;
     
@@ -2102,7 +2104,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
               // vector.
               const double time_ramp = (time.current() / time.end());
               const double magnitude  = (1.0/(16.0*parameters.scale*1.0*parameters.scale))*time_ramp; // (Total force) / (RHS surface area)
-              static const Tensor<1, dim> dir ({0.0,1.0,0.0});
+              Tensor<1,dim> dir;
+              dir[1] = 1.0;
               const Tensor<1, dim> traction  = magnitude*dir;
 
               for (unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -2165,9 +2168,6 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // provide it with an extractor object for the component we wish to
     // select. To this end we first set up such extractor objects and later
     // use it when generating the relevant component masks:
-    const FEValuesExtractors::Scalar x_displacement(0);
-    const FEValuesExtractors::Scalar y_displacement(1);
-    const FEValuesExtractors::Scalar z_displacement(2);
 
     // Fixed left hand side of the beam
     {
@@ -2178,23 +2178,21 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                                  boundary_id,
                                                  ZeroFunction<dim>(n_components),
                                                  constraints,
-                                                 fe.component_mask(x_displacement) | 
-                                                 fe.component_mask(y_displacement) | 
-                                                 fe.component_mask(z_displacement));
+                                                 fe.component_mask(u_fe));
       else
         VectorTools::interpolate_boundary_values(dof_handler_ref,
                                                  boundary_id,
                                                  ZeroFunction<dim>(n_components),
                                                  constraints,
-                                                 fe.component_mask(x_displacement) | 
-                                                 fe.component_mask(y_displacement) | 
-                                                 fe.component_mask(z_displacement));
+                                                 fe.component_mask(u_fe));
     }
     
     // Zero Z-displacement through thickness direction
     // This corresponds to a plane strain condition being imposed on the beam
+    if (dim == 3)
     {
       const int boundary_id = 2;
+      const FEValuesExtractors::Scalar z_displacement(2);
 
       if (apply_dirichlet_bc == true)
         VectorTools::interpolate_boundary_values(dof_handler_ref,
