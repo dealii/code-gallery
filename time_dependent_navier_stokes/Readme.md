@@ -17,7 +17,7 @@ end up with the following linear system:
 m(u^{n+1}, v) + \Delta{t}\cdot a((u^{n+1}, p^{n+1}), (v, q))=m(u^n, v)-\Delta{t}c(u^n;u^n, v)
 @f}
 
-where $a((u, p), (v, q))$ is the bilinear form of the diffusion term:
+where $a((u, p), (v, q))$ is the bilinear form of the diffusion term plus the pressure gradient and its transpose (the divergence constraints):
 @f{eqnarray*}
 a((u, p), (v, q)) = \int_\Omega \nu\nabla{u}\nabla{v}-p\nabla\cdot v-q\nabla\cdot ud\Omega
 @f}
@@ -26,7 +26,6 @@ $m(u, v)$ is the mass matrix:
 @f{eqnarray*}
 m(u, v) = \int_{\Omega} u \cdot v d\Omega
 @f}
-
 and $c(u;u, v)$ is the convection term:
 @f{eqnarray*}
 c(u;u, v) = \int_{\Omega} (u \cdot \nabla u) \cdot v d\Omega
@@ -65,8 +64,13 @@ The system we want to solve can be written in matrix form:
 
 #### Grad-Div stablization ####
 
-Similar to step-57, we add $\gamma B^T M_p^{-1} B$ to the upper left block of the system,
-thus the system becomes:
+Similar to step-57, we add $\gamma B^T M_p^{-1} B$ to the upper left block of the system. This is a 
+term that is consistent, i.e., the corresponding operators applied to the exact solution would
+be zero. (This is because $\gamma B^T M_p^{-1} B$ applied to the velocity vector corresponds to
+the operator $\gamma\text{grad}\;\text{div}$ applied to the velocity field -- which is of course
+zero because of the incompressibility constraint $\text{div}\;\mathbf{u}=0$. On the other hand,
+the term is not zero when applied to a finite element approximation of the exact velocity.)
+With this, the system becomes:
 
 @f{eqnarray*}
     \left(
@@ -91,7 +95,7 @@ thus the system becomes:
 @f}
 where $\tilde{A} = A + \gamma B^T M_p^{-1} B$.
 
-Detailed explaination of the Grad-Div stablization can be found in [1].
+A detailed explanation of the Grad-Div stablization can be found in [1].
 
 #### Block preconditioner ####
 
@@ -128,7 +132,7 @@ number 100. The geometry setup of the case can be found on
 [this webpage](http://www.featflow.de/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark2_re100.html).
 
 ### Acknowledgements ###
-Thank Wolfgang Bangerth, Timo Heister and Martin Kronbichler for their helpful discussions
+Thanks go to Wolfgang Bangerth, Timo Heister and Martin Kronbichler for their helpful discussions
 on my numerical formulation and implementation.
 
 ------------------------------------------
