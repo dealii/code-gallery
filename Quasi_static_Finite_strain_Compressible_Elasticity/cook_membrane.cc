@@ -16,7 +16,7 @@
 
 /*
  * Authors: Jean-Paul Pelteret, University of Erlangen-Nuremberg,
- *          Andrew McBride, University of Cape Town, 2015
+ *          Andrew McBride, University of Cape Town, 2015, 2017
  */
 
 
@@ -31,6 +31,7 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/work_stream.h>
+#include <deal.II/base/quadrature_point_data.h>
 #include <deal.II/base/std_cxx11/shared_ptr.h>
 
 #include <deal.II/dofs/dof_renumbering.h>
@@ -52,7 +53,7 @@
 
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/block_vector.h>
-#include <deal.II/lac/compressed_sparsity_pattern.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition_selector.h>
 #include <deal.II/lac/solver_cg.h>
@@ -61,6 +62,18 @@
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
+
+#include <deal.II/base/config.h>
+#if DEAL_II_VERSION_MAJOR >= 9 && defined(DEAL_II_WITH_TRILINOS)
+  #include <deal.II/differentiation/ad.h>
+  #define ENABLE_SACADO_FORMULATION
+#endif
+
+// These must be included below the AD headers so that
+// their math functions are available for use in the
+// definition of tensors and kinematic quantities
+#include <deal.II/physics/elasticity/kinematics.h>
+#include <deal.II/physics/elasticity/standard_tensors.h>
 
 #include <iostream>
 #include <fstream>
@@ -79,6 +92,46 @@ namespace Cook_Membrane
 // ParameterHandler object to read in the choices at run-time.
   namespace Parameters
   {
+// @sect4{Assembly method}
+
+// Here we specify whether automatic differentiation is to be used to assemble
+// the linear system, and if so then what order of differentiation is to be
+// employed.
+    struct AssemblyMethod
+    {
+      unsigned int automatic_differentiation_order;
+
+      static void
+      declare_parameters(ParameterHandler &prm);
+
+      void
+      parse_parameters(ParameterHandler &prm);
+    };
+
+
+    void AssemblyMethod::declare_parameters(ParameterHandler &prm)
+    {
+      prm.enter_subsection("Assembly method");
+      {
+        prm.declare_entry("Automatic differentiation order", "0",
+                          Patterns::Integer(0,2),
+                          "The automatic differentiation order to be used in the assembly of the linear system.\n"
+                          "# Order = 0: Both the residual and linearisation are computed manually.\n"
+                          "# Order = 1: The residual is computed manually but the linearisation is performed using AD.\n"
+                          "# Order = 2: Both the residual and linearisation are computed using AD.");
+      }
+      prm.leave_subsection();
+    }
+
+    void AssemblyMethod::parse_parameters(ParameterHandler &prm)
+    {
+      prm.enter_subsection("Assembly method");
+      {
+        automatic_differentiation_order = prm.get_integer("Automatic differentiation order");
+      }
+      prm.leave_subsection();
+    }
+
 // @sect4{Finite Element system}
 
 // Here we specify the polynomial order used to approximate the solution.  
@@ -181,11 +234,11 @@ namespace Cook_Membrane
     {
       prm.enter_subsection("Material properties");
       {
-        prm.declare_entry("Poisson's ratio", "0.4999",
+        prm.declare_entry("Poisson's ratio", "0.3",
                           Patterns::Double(-1.0,0.5),
                           "Poisson's ratio");
 
-        prm.declare_entry("Shear modulus", "80.194e6",
+        prm.declare_entry("Shear modulus", "0.4225e6",
                           Patterns::Double(),
                           "Shear modulus");
       }
@@ -354,7 +407,9 @@ namespace Cook_Membrane
 
 // Finally we consolidate all of the above structures into a single container
 // that holds all of our run-time selections.
-    struct AllParameters : public FESystem,
+    struct AllParameters : 
+      public AssemblyMethod,
+      public FESystem,
       public Geometry,
       public Materials,
       public LinearSolver,
@@ -375,12 +430,13 @@ namespace Cook_Membrane
     {
       ParameterHandler prm;
       declare_parameters(prm);
-      prm.read_input(input_file);
+      prm.parse_input(input_file);
       parse_parameters(prm);
     }
 
     void AllParameters::declare_parameters(ParameterHandler &prm)
     {
+      AssemblyMethod::declare_parameters(prm);
       FESystem::declare_parameters(prm);
       Geometry::declare_parameters(prm);
       Materials::declare_parameters(prm);
@@ -391,6 +447,7 @@ namespace Cook_Membrane
 
     void AllParameters::parse_parameters(ParameterHandler &prm)
     {
+      AssemblyMethod::parse_parameters(prm);
       FESystem::parse_parameters(prm);
       Geometry::parse_parameters(prm);
       Materials::parse_parameters(prm);
@@ -517,7 +574,7 @@ namespace Cook_Membrane
 // store the current state (characterized by the values or measures  of the 
 // displacement field) so that we can compute the elastic coefficients 
 // linearized around the current state.
-  template <int dim>
+  template <int dim,typename NumberType>
   class Material_Compressible_Neo_Hook_One_Field
   {
   public:
@@ -525,9 +582,7 @@ namespace Cook_Membrane
                                              const double nu)
       :
       kappa((2.0 * mu * (1.0 + nu)) / (3.0 * (1.0 - 2.0 * nu))),
-      c_1(mu / 2.0),
-      det_F(1.0),
-      b_bar(StandardTensors<dim>::I)
+      c_1(mu / 2.0)
     {
       Assert(kappa > 0, ExcInternalError());
     }
@@ -535,24 +590,23 @@ namespace Cook_Membrane
     ~Material_Compressible_Neo_Hook_One_Field()
     {}
 
-    // We update the material model with various deformation dependent data
-    // based on the deformation gradient $\mathbf{F}$ and the volumetric Jacobian
-    // $J = \text{det} \mathbf{F}$, and at the end of the function include a 
-    // physical check for internal consistency:
-    void update_material_data(const Tensor<2, dim> &F)
+    // The first function is the total energy
+    // $\Psi = \Psi_{\textrm{iso}} + \Psi_{\textrm{vol}}$.
+    NumberType
+    get_Psi(const NumberType                        &det_F,
+            const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      det_F = determinant(F);
-      b_bar = std::pow(det_F, -2.0 / 3.0) * symmetrize(F * transpose(F));
-
-      Assert(det_F > 0, ExcInternalError());
+      return get_Psi_vol(det_F) + get_Psi_iso(b_bar);
     }
 
     // The second function determines the Kirchhoff stress $\boldsymbol{\tau}
     // = \boldsymbol{\tau}_{\textrm{iso}} + \boldsymbol{\tau}_{\textrm{vol}}$
-    SymmetricTensor<2, dim> get_tau()
+    SymmetricTensor<2,dim,NumberType>
+    get_tau(const NumberType                        &det_F,
+            const SymmetricTensor<2,dim,NumberType> &b_bar)
     {
-        // See Holzapfel p231 eq6.98 onwards
-      return get_tau_iso() + get_tau_vol();
+      // See Holzapfel p231 eq6.98 onwards
+      return get_tau_vol(det_F) + get_tau_iso(b_bar);
     }
 
     // The fourth-order elasticity tensor in the spatial setting
@@ -560,34 +614,11 @@ namespace Cook_Membrane
     // \mathfrak{c}_{ijkl} = F_{iA} F_{jB} \mathfrak{C}_{ABCD} F_{kC} F_{lD}$
     // where $ \mathfrak{C} = 4 \frac{\partial^2 \Psi(\mathbf{C})}{\partial
     // \mathbf{C} \partial \mathbf{C}}$
-    SymmetricTensor<4, dim> get_Jc() const
+    SymmetricTensor<4,dim,NumberType>
+    get_Jc(const NumberType                        &det_F,
+           const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      return get_Jc_vol() + get_Jc_iso();
-    }
-
-    // Derivative of the volumetric free energy with respect to
-    // $J$ return $\frac{\partial
-    // \Psi_{\text{vol}}(J)}{\partial J}$
-    double get_dPsi_vol_dJ() const
-    {
-        return (kappa / 2.0) * (det_F - 1.0 / det_F);
-    }
-
-    // Second derivative of the volumetric free energy wrt $J$. We
-    // need the following computation explicitly in the tangent so we make it
-    // public.  We calculate $\frac{\partial^2
-    // \Psi_{\textrm{vol}}(J)}{\partial J \partial
-    // J}$
-    double get_d2Psi_vol_dJ2() const
-    {
-        return ( (kappa / 2.0) * (1.0 + 1.0 / (det_F * det_F)));
-    }
-
-    // The next few functions return various data that we choose to store with
-    // the material:
-    double get_det_F() const
-    {
-      return det_F;
+      return get_Jc_vol(det_F) + get_Jc_iso(b_bar);
     }
 
   private:
@@ -596,32 +627,65 @@ namespace Cook_Membrane
     const double kappa;
     const double c_1;
 
-    // Model specific data that is convenient to store with the material:
-    double det_F;
-    SymmetricTensor<2, dim> b_bar;
+    // Value of the volumetric free energy
+    NumberType
+    get_Psi_vol(const NumberType &det_F) const
+    {
+      return (kappa / 4.0) * (det_F*det_F - 1.0 - 2.0*std::log(det_F));
+    }
+
+    // Value of the isochoric free energy
+    NumberType
+    get_Psi_iso(const SymmetricTensor<2,dim,NumberType> &b_bar) const
+    {
+      return c_1 * (trace(b_bar) - dim);
+    }
+
+    // Derivative of the volumetric free energy with respect to
+    // $J$ return $\frac{\partial
+    // \Psi_{\text{vol}}(J)}{\partial J}$
+    NumberType
+    get_dPsi_vol_dJ(const NumberType &det_F) const
+    {
+        return (kappa / 2.0) * (det_F - 1.0 / det_F);
+    }
 
     // The following functions are used internally in determining the result
     // of some of the public functions above. The first one determines the
     // volumetric Kirchhoff stress $\boldsymbol{\tau}_{\textrm{vol}}$.
     // Note the difference in its definition when compared to step-44.
-    SymmetricTensor<2, dim> get_tau_vol() const
+    SymmetricTensor<2,dim,NumberType>
+    get_tau_vol(const NumberType &det_F) const
     {
-        return get_dPsi_vol_dJ() * det_F * StandardTensors<dim>::I;
+        return NumberType(get_dPsi_vol_dJ(det_F) * det_F) * StandardTensors<dim>::I;
     }
 
     // Next, determine the isochoric Kirchhoff stress
     // $\boldsymbol{\tau}_{\textrm{iso}} =
     // \mathcal{P}:\overline{\boldsymbol{\tau}}$:
-    SymmetricTensor<2, dim> get_tau_iso() const
+    SymmetricTensor<2,dim,NumberType>
+    get_tau_iso(const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      return StandardTensors<dim>::dev_P * get_tau_bar();
+      return StandardTensors<dim>::dev_P * get_tau_bar(b_bar);
     }
 
     // Then, determine the fictitious Kirchhoff stress
     // $\overline{\boldsymbol{\tau}}$:
-    SymmetricTensor<2, dim> get_tau_bar() const
+    SymmetricTensor<2,dim,NumberType>
+    get_tau_bar(const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
       return 2.0 * c_1 * b_bar;
+    }
+
+    // Second derivative of the volumetric free energy wrt $J$. We
+    // need the following computation explicitly in the tangent so we make it
+    // public.  We calculate $\frac{\partial^2
+    // \Psi_{\textrm{vol}}(J)}{\partial J \partial
+    // J}$
+    NumberType
+    get_d2Psi_vol_dJ2(const NumberType &det_F) const
+    {
+        return ( (kappa / 2.0) * (1.0 + 1.0 / (det_F * det_F)));
     }
 
     // Calculate the volumetric part of the tangent $J
@@ -629,20 +693,22 @@ namespace Cook_Membrane
     // definition when compared to step-44. The extra terms result from two 
     // quantities in $\boldsymbol{\tau}_{\textrm{vol}}$ being dependent on 
     // $\boldsymbol{F}$.
-    SymmetricTensor<4, dim> get_Jc_vol() const
+    SymmetricTensor<4,dim,NumberType>
+    get_Jc_vol(const NumberType &det_F) const
     {
         // See Holzapfel p265
         return det_F
-        * ( (get_dPsi_vol_dJ() + det_F * get_d2Psi_vol_dJ2())*StandardTensors<dim>::IxI
-           - (2.0 * get_dPsi_vol_dJ())*StandardTensors<dim>::II );
+        * ( (get_dPsi_vol_dJ(det_F) + det_F * get_d2Psi_vol_dJ2(det_F))*StandardTensors<dim>::IxI
+           - (2.0 * get_dPsi_vol_dJ(det_F))*StandardTensors<dim>::II );
     }
 
     // Calculate the isochoric part of the tangent $J
     // \mathfrak{c}_\textrm{iso}$:
-    SymmetricTensor<4, dim> get_Jc_iso() const
+    SymmetricTensor<4,dim,NumberType>
+    get_Jc_iso(const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      const SymmetricTensor<2, dim> tau_bar = get_tau_bar();
-      const SymmetricTensor<2, dim> tau_iso = get_tau_iso();
+      const SymmetricTensor<2, dim> tau_bar = get_tau_bar(b_bar);
+      const SymmetricTensor<2, dim> tau_iso = get_tau_iso(b_bar);
       const SymmetricTensor<4, dim> tau_iso_x_I
         = outer_product(tau_iso,
                         StandardTensors<dim>::I);
@@ -651,16 +717,17 @@ namespace Cook_Membrane
                         tau_iso);
       const SymmetricTensor<4, dim> c_bar = get_c_bar();
 
-      return (2.0 / 3.0) * trace(tau_bar)
+      return (2.0 / dim) * trace(tau_bar)
              * StandardTensors<dim>::dev_P
-             - (2.0 / 3.0) * (tau_iso_x_I + I_x_tau_iso)
+             - (2.0 / dim) * (tau_iso_x_I + I_x_tau_iso)
              + StandardTensors<dim>::dev_P * c_bar
              * StandardTensors<dim>::dev_P;
     }
 
     // Calculate the fictitious elasticity tensor $\overline{\mathfrak{c}}$.
     // For the material model chosen this is simply zero:
-    SymmetricTensor<4, dim> get_c_bar() const
+    SymmetricTensor<4,dim,double>
+    get_c_bar() const
     {
       return SymmetricTensor<4, dim>();
     }
@@ -674,15 +741,11 @@ namespace Cook_Membrane
 // can be used in different regions of the domain.  Among other data, we
 // choose to store the Kirchhoff stress $\boldsymbol{\tau}$ and the tangent
 // $J\mathfrak{c}$ for the quadrature points.
-  template <int dim>
+  template <int dim,typename NumberType>
   class PointHistory
   {
   public:
     PointHistory()
-      :
-      F_inv(StandardTensors<dim>::I),
-      tau(SymmetricTensor<2, dim>()),
-      Jc(SymmetricTensor<4, dim>())
     {}
 
     virtual ~PointHistory()
@@ -694,68 +757,35 @@ namespace Cook_Membrane
     // $\textrm{Grad}\mathbf{u}_{\textrm{n}}$.
     void setup_lqp (const Parameters::AllParameters &parameters)
     {
-      material.reset(new Material_Compressible_Neo_Hook_One_Field<dim>(parameters.mu,
+      material.reset(new Material_Compressible_Neo_Hook_One_Field<dim,NumberType>(parameters.mu,
           parameters.nu));
-      update_values(Tensor<2, dim>());
     }
 
-    // To this end, we calculate the deformation gradient $\mathbf{F}$ from
-    // the displacement gradient $\textrm{Grad}\ \mathbf{u}$, i.e.
-    // $\mathbf{F}(\mathbf{u}) = \mathbf{I} + \textrm{Grad}\ \mathbf{u}$ and
-    // then let the material model associated with this quadrature point
-    // update itself. When computing the deformation gradient, we have to take
-    // care with which data types we compare the sum $\mathbf{I} +
-    // \textrm{Grad}\ \mathbf{u}$: Since $I$ has data type SymmetricTensor,
-    // just writing <code>I + Grad_u_n</code> would convert the second
-    // argument to a symmetric tensor, perform the sum, and then cast the
-    // result to a Tensor (i.e., the type of a possibly nonsymmetric
-    // tensor). However, since <code>Grad_u_n</code> is nonsymmetric in
-    // general, the conversion to SymmetricTensor will fail. We can avoid this
-    // back and forth by converting $I$ to Tensor first, and then performing
-    // the addition as between nonsymmetric tensors:
-    void update_values (const Tensor<2, dim> &Grad_u_n)
+    // We offer an interface to retrieve certain data.
+    // This is the strain energy:
+    NumberType
+    get_Psi(const NumberType                        &det_F,
+            const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      const Tensor<2, dim> F
-        = (Tensor<2, dim>(StandardTensors<dim>::I) +
-           Grad_u_n);
-      material->update_material_data(F);
-
-      // The material has been updated so we now calculate the Kirchhoff
-      // stress $\mathbf{\tau}$, the tangent $J\mathfrak{c}$ and the first and
-      // second derivatives of the volumetric free energy.
-      //
-      // We also store the inverse of the deformation gradient since we
-      // frequently use it:
-      F_inv = invert(F);
-      tau = material->get_tau();
-      Jc = material->get_Jc();
+      return material->get_Psi(det_F,b_bar);
     }
 
-    // We offer an interface to retrieve certain data.  Here are the kinematic
-    // variables:
-
-    double get_det_F() const
-    {
-      return material->get_det_F();
-    }
-
-    const Tensor<2, dim> &get_F_inv() const
-    {
-      return F_inv;
-    }
-
-    // ...and the kinetic variables.  These are used in the material and
+    // Here are the kinetic variables. These are used in the material and
     // global tangent matrix and residual assembly operations:
-
-    const SymmetricTensor<2, dim> &get_tau() const
+    // First is the Kirchhoff stress:
+    SymmetricTensor<2,dim,NumberType>
+    get_tau(const NumberType                        &det_F,
+            const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      return tau;
+      return material->get_tau(det_F,b_bar);
     }
 
-    // And finally the tangent:
-    const SymmetricTensor<4, dim> &get_Jc() const
+    // And the tangent:
+    SymmetricTensor<4,dim,NumberType>
+    get_Jc(const NumberType                        &det_F,
+           const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      return Jc;
+      return material->get_Jc(det_F,b_bar);
     }
 
     // In terms of member functions, this class stores for the quadrature
@@ -763,27 +793,28 @@ namespace Cook_Membrane
     // materials are used in different regions of the domain, as well as the
     // inverse of the deformation gradient...
   private:
-    std_cxx11::shared_ptr< Material_Compressible_Neo_Hook_One_Field<dim> > material;
-
-    Tensor<2, dim> F_inv;
-
-    // ... and stress-type variables along with the tangent $J\mathfrak{c}$:
-    SymmetricTensor<2, dim> tau;
-    SymmetricTensor<4, dim> Jc;
+    std_cxx11::shared_ptr< Material_Compressible_Neo_Hook_One_Field<dim,NumberType> > material;
   };
 
 
 // @sect3{Quasi-static compressible finite-strain solid}
 
+  // Forward declarations for classes that will
+  // perform assembly of the linear system.
+  template <int dim,typename NumberType>
+  struct Assembler_Base;
+  template <int dim,typename NumberType>
+  struct Assembler;
+
 // The Solid class is the central class in that it represents the problem at
 // hand. It follows the usual scheme in that all it really has is a
 // constructor, destructor and a <code>run()</code> function that dispatches
 // all the work to private functions of this class:
-  template <int dim>
+  template <int dim,typename NumberType>
   class Solid
   {
   public:
-    Solid(const std::string &input_file);
+    Solid(const Parameters::AllParameters &parameters);
 
     virtual
     ~Solid();
@@ -792,21 +823,6 @@ namespace Cook_Membrane
     run();
 
   private:
-
-    // In the private section of this class, we first forward declare a number
-    // of objects that are used in parallelizing work using the WorkStream
-    // object (see the @ref threads module for more information on this).
-    //
-    // We declare such structures for the computation of tangent (stiffness)
-    // matrix, right hand side, and for updating quadrature points:
-    struct PerTaskData_K;
-    struct ScratchData_K;
-
-    struct PerTaskData_RHS;
-    struct ScratchData_RHS;
-
-    struct PerTaskData_UQPH;
-    struct ScratchData_UQPH;
 
     // We start the collection of member functions with one that builds the
     // grid:
@@ -823,26 +839,13 @@ namespace Cook_Membrane
     // and one that copies the work done on this one cell into the global
     // object that represents it:
     void
-    assemble_system_tangent();
+    assemble_system(const BlockVector<double> &solution_delta);
 
-    void
-    assemble_system_tangent_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                     ScratchData_K &scratch,
-                                     PerTaskData_K &data);
-
-    void
-    copy_local_to_global_K(const PerTaskData_K &data);
-
-    void
-    assemble_system_rhs();
-
-    void
-    assemble_system_rhs_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                 ScratchData_RHS &scratch,
-                                 PerTaskData_RHS &data);
-
-    void
-    copy_local_to_global_rhs(const PerTaskData_RHS &data);
+    // We use a separate data structure to perform the assembly. It needs access
+    // to some low-level data, so we simply befriend the class instead of
+    // creating a complex interface to provide access as necessary.
+    friend struct Assembler_Base<dim,NumberType>;
+    friend struct Assembler<dim,NumberType>;
 
     // Apply Dirichlet boundary conditions on the displacement field
     void
@@ -853,18 +856,6 @@ namespace Cook_Membrane
     // empty:
     void
     setup_qph();
-
-    void
-    update_qph_incremental(const BlockVector<double> &solution_delta);
-
-    void
-    update_qph_incremental_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                    ScratchData_UQPH &scratch,
-                                    PerTaskData_UQPH &data);
-
-    void
-    copy_local_to_global_UQPH(const PerTaskData_UQPH &/*data*/)
-    {}
 
     // Solve for the displacement using a Newton-Raphson method. We break this
     // function into the nonlinear loop and the function that solves the
@@ -884,7 +875,7 @@ namespace Cook_Membrane
 
     // Finally, some member variables that describe the current state: A
     // collection of the parameters used to describe the problem setup...
-    Parameters::AllParameters        parameters;
+    const Parameters::AllParameters &parameters;
 
     // ...the volume of the reference and current configurations...
     double                           vol_reference;
@@ -898,9 +889,10 @@ namespace Cook_Membrane
     Time                             time;
     TimerOutput                      timer;
 
-    // A storage object for quadrature point information.  See step-18 for
-    // more on this:
-    std::vector<PointHistory<dim> >  quadrature_point_history;
+    // A storage object for quadrature point information. As opposed to
+    // step-18, deal.II's native quadrature point data manager is employed here.
+    CellDataStorage<typename Triangulation<dim>::cell_iterator,
+                    PointHistory<dim,NumberType> > quadrature_point_history;
 
     // A description of the finite-element system including the displacement
     // polynomial degree, the degree-of-freedom handler, number of DoFs per
@@ -1000,10 +992,12 @@ namespace Cook_Membrane
 // @sect4{Public interface}
 
 // We initialise the Solid class using data extracted from the parameter file.
-  template <int dim>
-  Solid<dim>::Solid(const std::string &input_file)
+  template <int dim,typename NumberType>
+  Solid<dim,NumberType>::Solid(const Parameters::AllParameters &parameters)
     :
-    parameters(input_file),
+    parameters(parameters),
+    vol_reference (0.0),
+    vol_current (0.0),
     triangulation(Triangulation<dim>::maximum_smoothing),
     time(parameters.end_time, parameters.delta_t),
     timer(std::cout,
@@ -1026,8 +1020,8 @@ namespace Cook_Membrane
   }
 
 // The class destructor simply clears the data held by the DOFHandler
-  template <int dim>
-  Solid<dim>::~Solid()
+  template <int dim,typename NumberType>
+  Solid<dim,NumberType>::~Solid()
   {
     dof_handler_ref.clear();
   }
@@ -1042,8 +1036,8 @@ namespace Cook_Membrane
 // before starting the simulation proper with the first time (and loading)
 // increment.
 //
-  template <int dim>
-  void Solid<dim>::run()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::run()
   {
     make_grid();
     system_setup();
@@ -1080,237 +1074,6 @@ namespace Cook_Membrane
 
 // @sect3{Private interface}
 
-// @sect4{Threading-building-blocks structures}
-
-// The first group of private member functions is related to parallization.
-// We use the Threading Building Blocks library (TBB) to perform as many
-// computationally intensive distributed tasks as possible. In particular, we
-// assemble the tangent matrix and right hand side vector, and update data 
-// stored at the quadrature points using TBB. Our main tool for this is the 
-// WorkStream class (see the @ref threads module for more information).
-
-// Firstly we deal with the tangent matrix assembly structures. The
-// PerTaskData object stores local contributions.
-  template <int dim>
-  struct Solid<dim>::PerTaskData_K
-  {
-    FullMatrix<double>        cell_matrix;
-    std::vector<types::global_dof_index> local_dof_indices;
-
-    PerTaskData_K(const unsigned int dofs_per_cell)
-      :
-      cell_matrix(dofs_per_cell, dofs_per_cell),
-      local_dof_indices(dofs_per_cell)
-    {}
-
-    void reset()
-    {
-      cell_matrix = 0.0;
-    }
-  };
-
-
-// On the other hand, the ScratchData object stores the larger objects such as
-// the shape-function values array (<code>Nx</code>) and a shape function
-// gradient and symmetric gradient vector which we will use during the
-// assembly.
-  template <int dim>
-  struct Solid<dim>::ScratchData_K
-  {
-    FEValues<dim> fe_values_ref;
-
-    std::vector<std::vector<double> >                   Nx;
-    std::vector<std::vector<Tensor<2, dim> > >          grad_Nx;
-    std::vector<std::vector<SymmetricTensor<2, dim> > > symm_grad_Nx;
-
-    ScratchData_K(const FiniteElement<dim> &fe_cell,
-                  const QGauss<dim> &qf_cell,
-                  const UpdateFlags uf_cell)
-      :
-      fe_values_ref(fe_cell, qf_cell, uf_cell),
-      Nx(qf_cell.size(),
-         std::vector<double>(fe_cell.dofs_per_cell)),
-      grad_Nx(qf_cell.size(),
-              std::vector<Tensor<2, dim> >(fe_cell.dofs_per_cell)),
-      symm_grad_Nx(qf_cell.size(),
-                   std::vector<SymmetricTensor<2, dim> >
-                   (fe_cell.dofs_per_cell))
-    {}
-
-    ScratchData_K(const ScratchData_K &rhs)
-      :
-      fe_values_ref(rhs.fe_values_ref.get_fe(),
-                    rhs.fe_values_ref.get_quadrature(),
-                    rhs.fe_values_ref.get_update_flags()),
-      Nx(rhs.Nx),
-      grad_Nx(rhs.grad_Nx),
-      symm_grad_Nx(rhs.symm_grad_Nx)
-    {}
-
-    void reset()
-    {
-      const unsigned int n_q_points = Nx.size();
-      const unsigned int n_dofs_per_cell = Nx[0].size();
-      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-        {
-          Assert( Nx[q_point].size() == n_dofs_per_cell, ExcInternalError());
-          Assert( grad_Nx[q_point].size() == n_dofs_per_cell,
-                  ExcInternalError());
-          Assert( symm_grad_Nx[q_point].size() == n_dofs_per_cell,
-                  ExcInternalError());
-          for (unsigned int k = 0; k < n_dofs_per_cell; ++k)
-            {
-              Nx[q_point][k] = 0.0;
-              grad_Nx[q_point][k] = 0.0;
-              symm_grad_Nx[q_point][k] = 0.0;
-            }
-        }
-    }
-
-  };
-
-// Next, the same approach is used for the right-hand side assembly. The
-// PerTaskData object again stores local contributions and the ScratchData
-// object the shape function object and precomputed values vector:
-  template <int dim>
-  struct Solid<dim>::PerTaskData_RHS
-  {
-    Vector<double>            cell_rhs;
-    std::vector<types::global_dof_index> local_dof_indices;
-
-    PerTaskData_RHS(const unsigned int dofs_per_cell)
-      :
-      cell_rhs(dofs_per_cell),
-      local_dof_indices(dofs_per_cell)
-    {}
-
-    void reset()
-    {
-      cell_rhs = 0.0;
-    }
-  };
-
-
-  template <int dim>
-  struct Solid<dim>::ScratchData_RHS
-  {
-    FEValues<dim>     fe_values_ref;
-    FEFaceValues<dim> fe_face_values_ref;
-
-    std::vector<std::vector<double> >                   Nx;
-    std::vector<std::vector<SymmetricTensor<2, dim> > > symm_grad_Nx;
-
-    ScratchData_RHS(const FiniteElement<dim> &fe_cell,
-                    const QGauss<dim> &qf_cell, const UpdateFlags uf_cell,
-                    const QGauss<dim - 1> & qf_face, const UpdateFlags uf_face)
-      :
-      fe_values_ref(fe_cell, qf_cell, uf_cell),
-      fe_face_values_ref(fe_cell, qf_face, uf_face),
-      Nx(qf_cell.size(),
-         std::vector<double>(fe_cell.dofs_per_cell)),
-      symm_grad_Nx(qf_cell.size(),
-                   std::vector<SymmetricTensor<2, dim> >
-                   (fe_cell.dofs_per_cell))
-    {}
-
-    ScratchData_RHS(const ScratchData_RHS &rhs)
-      :
-      fe_values_ref(rhs.fe_values_ref.get_fe(),
-                    rhs.fe_values_ref.get_quadrature(),
-                    rhs.fe_values_ref.get_update_flags()),
-      fe_face_values_ref(rhs.fe_face_values_ref.get_fe(),
-                         rhs.fe_face_values_ref.get_quadrature(),
-                         rhs.fe_face_values_ref.get_update_flags()),
-      Nx(rhs.Nx),
-      symm_grad_Nx(rhs.symm_grad_Nx)
-    {}
-
-    void reset()
-    {
-      const unsigned int n_q_points      = Nx.size();
-      const unsigned int n_dofs_per_cell = Nx[0].size();
-      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-        {
-          Assert( Nx[q_point].size() == n_dofs_per_cell, ExcInternalError());
-          Assert( symm_grad_Nx[q_point].size() == n_dofs_per_cell,
-                  ExcInternalError());
-          for (unsigned int k = 0; k < n_dofs_per_cell; ++k)
-            {
-              Nx[q_point][k] = 0.0;
-              symm_grad_Nx[q_point][k] = 0.0;
-            }
-        }
-    }
-
-  };
-
-
-// And finally we define the structures to assist with updating the quadrature
-// point information. We do not need the PerTaskData object (since there is 
-// nothing to store here) but must define one nonetheless. 
-// Note that this is because for the operation that we have here -- updating 
-// the data on quadrature points -- the operation is purely local: 
-// the things we do on every cell get consumed on every cell, without
-// any global aggregation operation as is usually the case when using the
-// WorkStream class. The fact that we still have to define a per-task data
-// structure points to the fact that the WorkStream class may be ill-suited to
-// this operation (we could, in principle simply create a new task using
-// Threads::new_task for each cell) but there is not much harm done to doing
-// it this way anyway.
-// Furthermore, should there be different material models associated with a
-// quadrature point, requiring varying levels of computational expense, then
-// the method used here could be advantageous.
-  template <int dim>
-  struct Solid<dim>::PerTaskData_UQPH
-  {
-    void reset()
-    {}
-  };
-
-
-// The ScratchData object will be used to store an alias for the solution
-// vector so that we don't have to copy this large data structure. We then
-// define a number of vectors to extract the solution values and gradients at
-// the quadrature points.
-  template <int dim>
-  struct Solid<dim>::ScratchData_UQPH
-  {
-    const BlockVector<double>   &solution_total;
-
-    std::vector<Tensor<2, dim> > solution_grads_u_total;
-
-    FEValues<dim>                fe_values_ref;
-
-    ScratchData_UQPH(const FiniteElement<dim> &fe_cell,
-                     const QGauss<dim> &qf_cell,
-                     const UpdateFlags uf_cell,
-                     const BlockVector<double> &solution_total)
-      :
-      solution_total(solution_total),
-      solution_grads_u_total(qf_cell.size()),
-      fe_values_ref(fe_cell, qf_cell, uf_cell)
-    {}
-
-    ScratchData_UQPH(const ScratchData_UQPH &rhs)
-      :
-      solution_total(rhs.solution_total),
-      solution_grads_u_total(rhs.solution_grads_u_total),
-      fe_values_ref(rhs.fe_values_ref.get_fe(),
-                    rhs.fe_values_ref.get_quadrature(),
-                    rhs.fe_values_ref.get_update_flags())
-    {}
-
-    void reset()
-    {
-      const unsigned int n_q_points = solution_grads_u_total.size();
-      for (unsigned int q = 0; q < n_q_points; ++q)
-        {
-          solution_grads_u_total[q] = 0.0;
-        }
-    }
-  };
-
-
 // @sect4{Solid::make_grid}
 
 // On to the first of the private member functions. Here we create the
@@ -1339,8 +1102,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
   return pt_out;
 }
 
-  template <int dim>
-  void Solid<dim>::make_grid()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::make_grid()
   {
     // Divide the beam, but only along the x- and y-coordinate directions
     std::vector< unsigned int > repetitions(dim, parameters.elements_per_edge);
@@ -1388,7 +1151,6 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     vol_reference = GridTools::volume(triangulation);
     vol_current = vol_reference;
     std::cout << "Grid:\n\t Reference volume: " << vol_reference << std::endl;
-
   }
 
 
@@ -1397,8 +1159,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // Next we describe how the FE system is setup.  We first determine the number
 // of components per block. Since the displacement is a vector component, the
 // first dim components belong to it.
-  template <int dim>
-  void Solid<dim>::system_setup()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::system_setup()
   {
     timer.enter_subsection("Setup system");
 
@@ -1464,112 +1226,28 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 //
 // Firstly the actual QPH data objects are created. This must be done only
 // once the grid is refined to its finest level.
-  template <int dim>
-  void Solid<dim>::setup_qph()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::setup_qph()
   {
     std::cout << "    Setting up quadrature point data..." << std::endl;
 
-    {
-      triangulation.clear_user_data();
-      {
-        std::vector<PointHistory<dim> > tmp;
-        tmp.swap(quadrature_point_history);
-      }
+    quadrature_point_history.initialize(triangulation.begin_active(),
+                                        triangulation.end(),
+                                        n_q_points);
 
-      quadrature_point_history
-      .resize(triangulation.n_active_cells() * n_q_points);
-
-      unsigned int history_index = 0;
-      for (typename Triangulation<dim>::active_cell_iterator cell =
-             triangulation.begin_active(); cell != triangulation.end();
-           ++cell)
-        {
-          cell->set_user_pointer(&quadrature_point_history[history_index]);
-          history_index += n_q_points;
-        }
-
-      Assert(history_index == quadrature_point_history.size(),
-             ExcInternalError());
-    }
-
-    // Next we setup the initial quadrature
-    // point data:
+    // Next we setup the initial quadrature point data. Note that when
+    // the quadrature point data is retrieved, it is returned as a vector
+    // of smart pointers.
     for (typename Triangulation<dim>::active_cell_iterator cell =
            triangulation.begin_active(); cell != triangulation.end(); ++cell)
       {
-        PointHistory<dim> *lqph =
-          reinterpret_cast<PointHistory<dim>*>(cell->user_pointer());
+      const std::vector<std::shared_ptr<PointHistory<dim,NumberType> > > lqph =
+        quadrature_point_history.get_data(cell);
+      Assert(lqph.size() == n_q_points, ExcInternalError());
 
-        Assert(lqph >= &quadrature_point_history.front(), ExcInternalError());
-        Assert(lqph <= &quadrature_point_history.back(), ExcInternalError());
-
-        for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-          lqph[q_point].setup_lqp(parameters);
+      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+        lqph[q_point]->setup_lqp(parameters);
       }
-  }
-
-// @sect4{Solid::update_qph_incremental}
-// As the update of QP information occurs frequently and involves a number of
-// expensive operations, we define a multithreaded approach to distributing
-// the task across a number of CPU cores.
-//
-// To start this, we first we need to obtain the total solution as it stands
-// at this Newton increment and then create the initial copy of the scratch and
-// copy data objects:
-  template <int dim>
-  void Solid<dim>::update_qph_incremental(const BlockVector<double> &solution_delta)
-  {
-    timer.enter_subsection("Update QPH data");
-    std::cout << " UQPH " << std::flush;
-
-    const BlockVector<double> solution_total(get_total_solution(solution_delta));
-
-    const UpdateFlags uf_UQPH(update_gradients);
-    PerTaskData_UQPH per_task_data_UQPH;
-    ScratchData_UQPH scratch_data_UQPH(fe, qf_cell, uf_UQPH, solution_total);
-
-    // We then pass them and the one-cell update function to the WorkStream to
-    // be processed:
-    WorkStream::run(dof_handler_ref.begin_active(),
-                    dof_handler_ref.end(),
-                    *this,
-                    &Solid::update_qph_incremental_one_cell,
-                    &Solid::copy_local_to_global_UQPH,
-                    scratch_data_UQPH,
-                    per_task_data_UQPH);
-
-    timer.leave_subsection();
-  }
-
-
-// Now we describe how we extract data from the solution vector and pass it
-// along to each QP storage object for processing.
-  template <int dim>
-  void
-  Solid<dim>::update_qph_incremental_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                              ScratchData_UQPH &scratch,
-                                              PerTaskData_UQPH &/*data*/)
-  {
-    PointHistory<dim> *lqph =
-      reinterpret_cast<PointHistory<dim>*>(cell->user_pointer());
-
-    Assert(lqph >= &quadrature_point_history.front(), ExcInternalError());
-    Assert(lqph <= &quadrature_point_history.back(), ExcInternalError());
-
-    Assert(scratch.solution_grads_u_total.size() == n_q_points,
-           ExcInternalError());
-
-    scratch.reset();
-
-    // We first need to find the solution gradients at quadrature points
-    // inside the current cell and then we update each local QP using the
-    // displacement gradient:
-    scratch.fe_values_ref.reinit(cell);
-    scratch.fe_values_ref[u_fe].get_function_gradients(scratch.solution_total,
-                                                       scratch.solution_grads_u_total);
-
-    for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-      lqph[q_point].update_values(scratch.solution_grads_u_total[q_point]);
   }
 
 
@@ -1578,9 +1256,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // The next function is the driver method for the Newton-Raphson scheme. At
 // its top we create a new vector to store the current Newton update step,
 // reset the error storage objects and print solver header.
-  template <int dim>
+  template <int dim,typename NumberType>
   void
-  Solid<dim>::solve_nonlinear_timestep(BlockVector<double> &solution_delta)
+  Solid<dim,NumberType>::solve_nonlinear_timestep(BlockVector<double> &solution_delta)
   {
     std::cout << std::endl << "Timestep " << time.get_timestep() << " @ "
               << time.current() << "s" << std::endl;
@@ -1613,10 +1291,12 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       {
         std::cout << " " << std::setw(2) << newton_iteration << " " << std::flush;
 
-        tangent_matrix = 0.0;
-        system_rhs = 0.0;
+        // If we have decided that we want to continue with the iteration, we
+        // assemble the tangent, make and impose the Dirichlet constraints,
+        // and do the solve of the linearized system:
+        make_constraints(newton_iteration);
+        assemble_system(solution_delta);
 
-        assemble_system_rhs();
         get_error_residual(error_residual);
 
         if (newton_iteration == 0)
@@ -1636,13 +1316,6 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
             break;
           }
 
-        // If we have decided that we want to continue with the iteration, we
-        // assemble the tangent, make and impose the Dirichlet constraints,
-        // and do the solve of the linearized system:
-        assemble_system_tangent();
-        make_constraints(newton_iteration);
-        constraints.condense(tangent_matrix, system_rhs);
-
         const std::pair<unsigned int, double>
         lin_solver_output = solve_linear_system(newton_update);
 
@@ -1658,7 +1331,6 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
         error_update_norm.normalise(error_update_0);
 
         solution_delta += newton_update;
-        update_qph_incremental(solution_delta);
 
         std::cout << " | " << std::fixed << std::setprecision(3) << std::setw(7)
                   << std::scientific << lin_solver_output.first << "  "
@@ -1686,16 +1358,16 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // This program prints out data in a nice table that is updated
 // on a per-iteration basis. The next two functions set up the table
 // header and footer:
-  template <int dim>
-  void Solid<dim>::print_conv_header()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::print_conv_header()
   {
-    static const unsigned int l_width = 102;
+    static const unsigned int l_width = 87;
 
     for (unsigned int i = 0; i < l_width; ++i)
       std::cout << "_";
     std::cout << std::endl;
 
-    std::cout << "           SOLVER STEP            "
+    std::cout << "    SOLVER STEP    "
               << " |  LIN_IT   LIN_RES    RES_NORM    "
               << " RES_U     NU_NORM     "
               << " NU_U " << std::endl;
@@ -1707,10 +1379,10 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 
 
 
-  template <int dim>
-  void Solid<dim>::print_conv_footer()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::print_conv_footer()
   {
-    static const unsigned int l_width = 102;
+    static const unsigned int l_width = 87;
 
     for (unsigned int i = 0; i < l_width; ++i)
       std::cout << "_";
@@ -1726,16 +1398,18 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // At the end we also output the result that can be compared to that found in
 // the literature, namely the displacement at the upper right corner of the 
 // beam.
-  template <int dim>
-  void Solid<dim>::print_vertical_tip_displacement()
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::print_vertical_tip_displacement()
   {
-    static const unsigned int l_width = 102;
+    static const unsigned int l_width = 87;
 
     for (unsigned int i = 0; i < l_width; ++i)
       std::cout << "_";
     std::cout << std::endl;
     
-    const Point<dim> soln_pt (48.0*parameters.scale,60.0*parameters.scale,0.5*parameters.scale);
+    Point<dim> soln_pt (48.0*parameters.scale,60.0*parameters.scale);
+    if (dim == 3)
+      soln_pt[2] = 0.5*parameters.scale;
     double vertical_tip_displacement = 0.0;
     double vertical_tip_displacement_check = 0.0;
     
@@ -1786,8 +1460,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // error in the residual for the unconstrained degrees of freedom.  Note that to
 // do so, we need to ignore constrained DOFs by setting the residual in these
 // vector components to zero.
-  template <int dim>
-  void Solid<dim>::get_error_residual(Errors &error_residual)
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::get_error_residual(Errors &error_residual)
   {
     BlockVector<double> error_res(dofs_per_block);
 
@@ -1803,8 +1477,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // @sect4{Solid::get_error_udpate}
 
 // Determine the true Newton update error for the problem
-  template <int dim>
-  void Solid<dim>::get_error_update(const BlockVector<double> &newton_update,
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::get_error_update(const BlockVector<double> &newton_update,
                                     Errors &error_update)
   {
     BlockVector<double> error_ud(dofs_per_block);
@@ -1823,9 +1497,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // This function provides the total solution, which is valid at any Newton step.
 // This is required as, to reduce computational error, the total solution is
 // only updated at the end of the timestep.
-  template <int dim>
+  template <int dim,typename NumberType>
   BlockVector<double>
-  Solid<dim>::get_total_solution(const BlockVector<double> &solution_delta) const
+  Solid<dim,NumberType>::get_total_solution(const BlockVector<double> &solution_delta) const
   {
     BlockVector<double> solution_total(solution_n);
     solution_total += solution_delta;
@@ -1833,112 +1507,421 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
   }
 
 
-// @sect4{Solid::assemble_system_tangent}
+// @sect4{Solid::assemble_system}
 
-// Since we use TBB for assembly, we simply setup a copy of the
-// data structures required for the process and pass them, along
-// with the memory addresses of the assembly functions to the
-// WorkStream object for processing. Note that we must ensure that
-// the matrix is reset before any assembly operations can occur.
-  template <int dim>
-  void Solid<dim>::assemble_system_tangent()
+  template <int dim,typename NumberType>
+  struct Assembler_Base
   {
-    timer.enter_subsection("Assemble tangent matrix");
-    std::cout << " ASM_K " << std::flush;
+    virtual ~Assembler_Base() {}
 
-    tangent_matrix = 0.0;
+    // Here we deal with the tangent matrix assembly structures. The
+    // PerTaskData object stores local contributions.
+    struct PerTaskData_ASM
+    {
+      Solid<dim,NumberType>                &solid;
+      FullMatrix<double>                    cell_matrix;
+      Vector<double>                        cell_rhs;
+      std::vector<types::global_dof_index>  local_dof_indices;
 
-    const UpdateFlags uf_cell(update_gradients |
-                              update_JxW_values);
+      PerTaskData_ASM(Solid<dim,NumberType> &solid)
+        :
+        solid (solid),
+        cell_matrix(solid.dofs_per_cell, solid.dofs_per_cell),
+        cell_rhs(solid.dofs_per_cell),
+        local_dof_indices(solid.dofs_per_cell)
+      {}
 
-    PerTaskData_K per_task_data(dofs_per_cell);
-    ScratchData_K scratch_data(fe, qf_cell, uf_cell);
-
-    WorkStream::run(dof_handler_ref.begin_active(),
-                    dof_handler_ref.end(),
-                    *this,
-                    &Solid::assemble_system_tangent_one_cell,
-                    &Solid::copy_local_to_global_K,
-                    scratch_data,
-                    per_task_data);
-
-    timer.leave_subsection();
-  }
-
-// This function adds the local contribution to the system matrix.
-// Note that we choose not to use the constraint matrix to do the
-// job for us because the tangent matrix and residual processes have
-// been split up into two separate functions.
-  template <int dim>
-  void Solid<dim>::copy_local_to_global_K(const PerTaskData_K &data)
-  {
-    for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      for (unsigned int j = 0; j < dofs_per_cell; ++j)
-        tangent_matrix.add(data.local_dof_indices[i],
-                           data.local_dof_indices[j],
-                           data.cell_matrix(i, j));
-  }
-
-// Of course, we still have to define how we assemble the tangent matrix
-// contribution for a single cell.  We first need to reset and initialise some
-// of the scratch data structures and retrieve some basic information
-// regarding the DOF numbering on this cell.  We can precalculate the cell
-// shape function gradients. Note that the shape function gradients
-// are defined with regard to the current configuration.  That is
-// $\textrm{grad}\ \boldsymbol{\varphi} = \textrm{Grad}\ \boldsymbol{\varphi}
-// \ \mathbf{F}^{-1}$.
-  template <int dim>
-  void
-  Solid<dim>::assemble_system_tangent_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                               ScratchData_K &scratch,
-                                               PerTaskData_K &data)
-  {
-    data.reset();
-    scratch.reset();
-    scratch.fe_values_ref.reinit(cell);
-    cell->get_dof_indices(data.local_dof_indices);
-    PointHistory<dim> *lqph =
-      reinterpret_cast<PointHistory<dim>*>(cell->user_pointer());
-
-    for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+      void reset()
       {
-        const Tensor<2, dim> F_inv = lqph[q_point].get_F_inv();
+        cell_matrix = 0.0;
+        cell_rhs = 0.0;
+      }
+    };
+
+    // On the other hand, the ScratchData object stores the larger objects such as
+    // the shape-function values array (<code>Nx</code>) and a shape function
+    // gradient and symmetric gradient vector which we will use during the
+    // assembly.
+    struct ScratchData_ASM
+    {
+      const BlockVector<double>               &solution_total;
+      std::vector<Tensor<2, dim,NumberType> >  solution_grads_u_total;
+
+      FEValues<dim>                fe_values_ref;
+      FEFaceValues<dim>            fe_face_values_ref;
+
+      std::vector<std::vector<Tensor<2, dim,NumberType> > >         grad_Nx;
+      std::vector<std::vector<SymmetricTensor<2,dim,NumberType> > > symm_grad_Nx;
+
+      ScratchData_ASM(const FiniteElement<dim> &fe_cell,
+                      const QGauss<dim> &qf_cell,
+                      const UpdateFlags uf_cell,
+                      const QGauss<dim-1> & qf_face, 
+                      const UpdateFlags uf_face,
+                      const BlockVector<double> &solution_total)
+        :
+        solution_total(solution_total),
+        solution_grads_u_total(qf_cell.size()),
+        fe_values_ref(fe_cell, qf_cell, uf_cell),
+        fe_face_values_ref(fe_cell, qf_face, uf_face),
+        grad_Nx(qf_cell.size(),
+                std::vector<Tensor<2,dim,NumberType> >(fe_cell.dofs_per_cell)),
+        symm_grad_Nx(qf_cell.size(),
+                     std::vector<SymmetricTensor<2,dim,NumberType> >
+                     (fe_cell.dofs_per_cell))
+      {}
+
+      ScratchData_ASM(const ScratchData_ASM &rhs)
+        :
+        solution_total (rhs.solution_total),
+        solution_grads_u_total(rhs.solution_grads_u_total),
+        fe_values_ref(rhs.fe_values_ref.get_fe(),
+                      rhs.fe_values_ref.get_quadrature(),
+                      rhs.fe_values_ref.get_update_flags()),
+        fe_face_values_ref(rhs.fe_face_values_ref.get_fe(),
+                           rhs.fe_face_values_ref.get_quadrature(),
+                           rhs.fe_face_values_ref.get_update_flags()),
+        grad_Nx(rhs.grad_Nx),
+        symm_grad_Nx(rhs.symm_grad_Nx)
+      {}
+
+      void reset()
+      {
+        const unsigned int n_q_points = fe_values_ref.get_quadrature().size();
+        const unsigned int n_dofs_per_cell = fe_values_ref.dofs_per_cell;
+        for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+          {
+            Assert( grad_Nx[q_point].size() == n_dofs_per_cell,
+                    ExcInternalError());
+            Assert( symm_grad_Nx[q_point].size() == n_dofs_per_cell,
+                    ExcInternalError());
+
+            solution_grads_u_total[q_point] = Tensor<2,dim,NumberType>();
+            for (unsigned int k = 0; k < n_dofs_per_cell; ++k)
+              {
+                grad_Nx[q_point][k] = Tensor<2,dim,NumberType>();
+                symm_grad_Nx[q_point][k] = SymmetricTensor<2,dim,NumberType>();
+              }
+          }
+      }
+
+    };
+
+    // Of course, we still have to define how we assemble the tangent matrix
+    // contribution for a single cell. 
+    void
+    assemble_system_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
+                             ScratchData_ASM &scratch,
+                             PerTaskData_ASM &data)
+    {
+      // Due to the C++ specialization rules, we need one more
+      // level of indirection in order to define the assembly
+      // routine for all different number. The next function call
+      // is specialized for each NumberType, but to prevent having
+      // to specialize the whole class along with it we have inlined
+      // the definition of the other functions that are common to
+      // all implementations.
+      assemble_system_tangent_residual_one_cell(cell, scratch, data);
+      assemble_neumann_contribution_one_cell(cell, scratch, data);
+    }
+
+    // This function adds the local contribution to the system matrix.
+    void
+    copy_local_to_global_ASM(const PerTaskData_ASM &data)
+    {
+      const ConstraintMatrix &constraints = data.solid.constraints;
+      BlockSparseMatrix<double> &tangent_matrix = data.solid.tangent_matrix;
+      BlockVector<double> &system_rhs = data.solid.system_rhs;
+
+      constraints.distribute_local_to_global(
+          data.cell_matrix, data.cell_rhs,
+          data.local_dof_indices,
+          tangent_matrix, system_rhs);
+    }
+
+  protected:
+
+    // This function needs to exist in the base class for
+    // Workstream to work with a reference to the base class.
+    virtual void
+    assemble_system_tangent_residual_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
+                                              ScratchData_ASM &scratch,
+                                              PerTaskData_ASM &data)
+    {
+      AssertThrow(false, ExcPureFunctionCalled());
+    }
+
+    void
+    assemble_neumann_contribution_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
+                                           ScratchData_ASM &scratch,
+                                           PerTaskData_ASM &data)
+    {
+      // Aliases for data referenced from the Solid class
+      const unsigned int &n_q_points_f = data.solid.n_q_points_f;
+      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
+      const Parameters::AllParameters &parameters = data.solid.parameters;
+      const Time &time = data.solid.time;
+      const FESystem<dim> &fe = data.solid.fe;
+      const unsigned int &u_dof = data.solid.u_dof;
+
+      // Next we assemble the Neumann contribution. We first check to see it the
+      // cell face exists on a boundary on which a traction is applied and add
+      // the contribution if this is the case.
+      for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
+           ++face)
+        if (cell->face(face)->at_boundary() == true
+            && cell->face(face)->boundary_id() == 11)
+          {
+            scratch.fe_face_values_ref.reinit(cell, face);
+
+            for (unsigned int f_q_point = 0; f_q_point < n_q_points_f;
+                 ++f_q_point)
+              {
+                // We specify the traction in reference configuration. 
+                // For this problem, a defined total vertical force is applied 
+                // in the reference configuration.
+                // The direction of the applied traction is assumed not to
+                // evolve with the deformation of the domain. 
+                
+                // Note that the contributions to the right hand side vector we
+                // compute here only exist in the displacement components of the
+                // vector.
+                const double time_ramp = (time.current() / time.end());
+                const double magnitude  = (1.0/(16.0*parameters.scale*1.0*parameters.scale))*time_ramp; // (Total force) / (RHS surface area)
+                Tensor<1,dim> dir;
+                dir[1] = 1.0;
+                const Tensor<1, dim> traction  = magnitude*dir;
+
+                for (unsigned int i = 0; i < dofs_per_cell; ++i)
+                  {
+                    const unsigned int i_group =
+                      fe.system_to_base_index(i).first.first;
+
+                    if (i_group == u_dof)
+                      {
+                        const unsigned int component_i =
+                          fe.system_to_component_index(i).first;
+                        const double Ni =
+                          scratch.fe_face_values_ref.shape_value(i,
+                                                                 f_q_point);
+                        const double JxW = scratch.fe_face_values_ref.JxW(
+                                             f_q_point);
+
+                        data.cell_rhs(i) += (Ni * traction[component_i])
+                                            * JxW;
+                      }
+                  }
+              }
+          }
+    }
+
+  };
+
+  template <int dim>
+  struct Assembler<dim,double> : Assembler_Base<dim,double>
+  {
+    typedef double NumberType;
+    using typename Assembler_Base<dim,NumberType>::ScratchData_ASM;
+    using typename Assembler_Base<dim,NumberType>::PerTaskData_ASM;
+
+    virtual ~Assembler() {}
+
+    virtual void
+    assemble_system_tangent_residual_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
+                                              ScratchData_ASM &scratch,
+                                              PerTaskData_ASM &data)
+    {
+      // Aliases for data referenced from the Solid class
+      const unsigned int &n_q_points = data.solid.n_q_points;
+      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
+      const Parameters::AllParameters &parameters = data.solid.parameters;
+      const FESystem<dim> &fe = data.solid.fe;
+      const unsigned int &u_dof = data.solid.u_dof;
+      const FEValuesExtractors::Vector &u_fe = data.solid.u_fe;
+
+      data.reset();
+      scratch.reset();
+      scratch.fe_values_ref.reinit(cell);
+      cell->get_dof_indices(data.local_dof_indices);
+
+      const std::vector<std::shared_ptr<const PointHistory<dim,NumberType> > > lqph =
+          const_cast<const Solid<dim,NumberType> &>(data.solid).quadrature_point_history.get_data(cell);
+      Assert(lqph.size() == n_q_points, ExcInternalError());
+
+      // We first need to find the solution gradients at quadrature points
+      // inside the current cell and then we update each local QP using the
+      // displacement gradient:
+      scratch.fe_values_ref[u_fe].get_function_gradients(scratch.solution_total,
+                                                         scratch.solution_grads_u_total);
+
+      // Now we build the local cell stiffness matrix. Since the global and
+      // local system matrices are symmetric, we can exploit this property by
+      // building only the lower half of the local matrix and copying the values
+      // to the upper half.
+      //
+      // In doing so, we first extract some configuration dependent variables
+      // from our QPH history objects for the current quadrature point.
+      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+        {
+          const Tensor<2,dim,NumberType> &grad_u = scratch.solution_grads_u_total[q_point];
+          const Tensor<2,dim,NumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+          const NumberType               det_F = determinant(F);
+          const Tensor<2,dim,NumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
+          const SymmetricTensor<2,dim,NumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
+          const Tensor<2,dim,NumberType> F_inv = invert(F);
+          Assert(det_F > NumberType(0.0), ExcInternalError());
+
+          for (unsigned int k = 0; k < dofs_per_cell; ++k)
+            {
+              const unsigned int k_group = fe.system_to_base_index(k).first.first;
+
+              if (k_group == u_dof)
+                {
+                  scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point) * F_inv;
+                  scratch.symm_grad_Nx[q_point][k] = symmetrize(scratch.grad_Nx[q_point][k]);
+                }
+              else
+                Assert(k_group <= u_dof, ExcInternalError());
+            }
+
+          const SymmetricTensor<2,dim,NumberType> tau = lqph[q_point]->get_tau(det_F,b_bar);
+          const SymmetricTensor<4,dim,NumberType> Jc  = lqph[q_point]->get_Jc(det_F,b_bar);
+          const Tensor<2,dim,NumberType> tau_ns (tau);
+
+          // Next we define some aliases to make the assembly process easier to
+          // follow
+          const std::vector<SymmetricTensor<2, dim> > &symm_grad_Nx = scratch.symm_grad_Nx[q_point];
+          const std::vector<Tensor<2, dim> > &grad_Nx = scratch.grad_Nx[q_point];
+          const double JxW = scratch.fe_values_ref.JxW(q_point);
+
+          for (unsigned int i = 0; i < dofs_per_cell; ++i)
+            {
+              const unsigned int component_i = fe.system_to_component_index(i).first;
+              const unsigned int i_group     = fe.system_to_base_index(i).first.first;
+
+              if (i_group == u_dof)
+                data.cell_rhs(i) -= (symm_grad_Nx[i] * tau) * JxW;
+              else
+                Assert(i_group <= u_dof, ExcInternalError());
+
+              for (unsigned int j = 0; j <= i; ++j)
+                {
+                  const unsigned int component_j = fe.system_to_component_index(j).first;
+                  const unsigned int j_group     = fe.system_to_base_index(j).first.first;
+
+                  // This is the $\mathsf{\mathbf{k}}_{\mathbf{u} \mathbf{u}}$
+                  // contribution. It comprises a material contribution, and a
+                  // geometrical stress contribution which is only added along
+                  // the local matrix diagonals:
+                  if ((i_group == j_group) && (i_group == u_dof))
+                    {
+                      data.cell_matrix(i, j) += symm_grad_Nx[i] * Jc // The material contribution:
+                                                * symm_grad_Nx[j] * JxW;
+                      if (component_i == component_j) // geometrical stress contribution
+                        data.cell_matrix(i, j) += grad_Nx[i][component_i] * tau_ns
+                                                  * grad_Nx[j][component_j] * JxW;
+                    }
+                  else
+                    Assert((i_group <= u_dof) && (j_group <= u_dof),
+                           ExcInternalError());
+                }
+            }
+        }
+
+
+      // Finally, we need to copy the lower half of the local matrix into the
+      // upper half:
+      for (unsigned int i = 0; i < dofs_per_cell; ++i)
+        for (unsigned int j = i + 1; j < dofs_per_cell; ++j)
+          data.cell_matrix(i, j) = data.cell_matrix(j, i);
+    }
+
+  };
+
+#ifdef ENABLE_SACADO_FORMULATION
+
+
+  template <int dim>
+  struct Assembler<dim,Sacado::Fad::DFad<double> > : Assembler_Base<dim,Sacado::Fad::DFad<double> >
+  {
+    typedef Sacado::Fad::DFad<double> ADNumberType;
+    using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
+    using typename Assembler_Base<dim,ADNumberType>::PerTaskData_ASM;
+
+    virtual ~Assembler() {}
+
+    virtual void
+    assemble_system_tangent_residual_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
+                                              ScratchData_ASM &scratch,
+                                              PerTaskData_ASM &data)
+    {
+      // Aliases for data referenced from the Solid class
+      const unsigned int &n_q_points = data.solid.n_q_points;
+      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
+      const Parameters::AllParameters &parameters = data.solid.parameters;
+      const FESystem<dim> &fe = data.solid.fe;
+      const unsigned int &u_dof = data.solid.u_dof;
+      const FEValuesExtractors::Vector &u_fe = data.solid.u_fe;
+
+      data.reset();
+      scratch.reset();
+      scratch.fe_values_ref.reinit(cell);
+      cell->get_dof_indices(data.local_dof_indices);
+
+      const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
+          const_cast<const Solid<dim,ADNumberType> &>(data.solid).quadrature_point_history.get_data(cell);
+      Assert(lqph.size() == n_q_points, ExcInternalError());
+
+      const unsigned int n_independent_variables = data.local_dof_indices.size();
+      std::vector<double> local_dof_values(n_independent_variables);
+      cell->get_dof_values(scratch.solution_total,
+          local_dof_values.begin(),
+          local_dof_values.end());
+
+      // We now retrieve a set of degree-of-freedom values that
+      // have the operations that are performed with them tracked.
+      std::vector<ADNumberType> local_dof_values_ad (n_independent_variables);
+      for (unsigned int i=0; i<n_independent_variables; ++i)
+        local_dof_values_ad[i] = ADNumberType(n_independent_variables, i, local_dof_values[i]);
+
+      // Compute all values, gradients etc. based on sensitive
+      // AD degree-of-freedom values.
+      scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
+          local_dof_values_ad,
+          scratch.solution_grads_u_total);
+
+      // Accumulate the residual value for each degree of freedom.
+      // Note: Its important that the vectors is initialised (zero'd) correctly.
+      std::vector<ADNumberType> residual_ad (dofs_per_cell, ADNumberType(0.0));
+      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+      {
+        const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
+        const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+        const ADNumberType               det_F = determinant(F);
+//        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
+        const Tensor<2,dim,ADNumberType> F_bar = ADNumberType(std::pow(determinant(F),-1.0/dim))*F;
+        const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
+        const Tensor<2,dim,ADNumberType> F_inv = invert(F);
+        Assert(det_F > ADNumberType(0.0), ExcInternalError());
+
         for (unsigned int k = 0; k < dofs_per_cell; ++k)
           {
             const unsigned int k_group = fe.system_to_base_index(k).first.first;
 
             if (k_group == u_dof)
               {
-                scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point)
-                                              * F_inv;
+                scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point) * F_inv;
                 scratch.symm_grad_Nx[q_point][k] = symmetrize(scratch.grad_Nx[q_point][k]);
               }
             else
               Assert(k_group <= u_dof, ExcInternalError());
           }
-      }
 
-    // Now we build the local cell stiffness matrix. Since the global and
-    // local system matrices are symmetric, we can exploit this property by
-    // building only the lower half of the local matrix and copying the values
-    // to the upper half.
-    //
-    // In doing so, we first extract some configuration dependent variables
-    // from our QPH history objects for the current quadrature point.
-    for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-      {
-        const Tensor<2, dim> tau         = lqph[q_point].get_tau();
-        const SymmetricTensor<4, dim> Jc = lqph[q_point].get_Jc();
-        const double det_F               = lqph[q_point].get_det_F();
+        const SymmetricTensor<2,dim,ADNumberType> tau = lqph[q_point]->get_tau(det_F,b_bar);
 
-        // Next we define some aliases to make the assembly process easier to
-        // follow
-        const std::vector<double>
-        &N = scratch.Nx[q_point];
-        const std::vector<SymmetricTensor<2, dim> >
-        &symm_grad_Nx = scratch.symm_grad_Nx[q_point];
-        const std::vector<Tensor<2, dim> >
-        &grad_Nx = scratch.grad_Nx[q_point];
+        // Next we define some position-dependent aliases, again to
+        // make the assembly process easier to follow.
+        const std::vector<SymmetricTensor<2, dim,ADNumberType> > &symm_grad_Nx = scratch.symm_grad_Nx[q_point];
         const double JxW = scratch.fe_values_ref.JxW(q_point);
 
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1946,187 +1929,162 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
             const unsigned int component_i = fe.system_to_component_index(i).first;
             const unsigned int i_group     = fe.system_to_base_index(i).first.first;
 
-            for (unsigned int j = 0; j <= i; ++j)
-              {
-                const unsigned int component_j = fe.system_to_component_index(j).first;
-                const unsigned int j_group     = fe.system_to_base_index(j).first.first;
-
-                // This is the $\mathsf{\mathbf{k}}_{\mathbf{u} \mathbf{u}}$
-                // contribution. It comprises a material contribution, and a
-                // geometrical stress contribution which is only added along
-                // the local matrix diagonals:
-                if ((i_group == j_group) && (i_group == u_dof))
-                  {
-                    data.cell_matrix(i, j) += symm_grad_Nx[i] * Jc // The material contribution:
-                                              * symm_grad_Nx[j] * JxW;
-                    if (component_i == component_j) // geometrical stress contribution
-                      data.cell_matrix(i, j) += grad_Nx[i][component_i] * tau
-                                                * grad_Nx[j][component_j] * JxW;
-                  }
-                else
-                  Assert((i_group <= u_dof) && (j_group <= u_dof),
-                         ExcInternalError());
-              }
+            if (i_group == u_dof)
+              residual_ad[i] += (symm_grad_Nx[i] * tau) * JxW;
+            else
+              Assert(i_group <= u_dof, ExcInternalError());
           }
       }
 
-    // Finally, we need to copy the lower half of the local matrix into the
-    // upper half:
-    for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      for (unsigned int j = i + 1; j < dofs_per_cell; ++j)
-        data.cell_matrix(i, j) = data.cell_matrix(j, i);
-  }
+      for (unsigned int I=0; I<n_independent_variables; ++I)
+      {
+        const ADNumberType &residual_I = residual_ad[I];
+        data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
+        for (unsigned int J=0; J<n_independent_variables; ++J)
+        {
+          // Compute the gradients of the residual entry [forward-mode]
+          data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
+        }
+      }
+    }
 
-// @sect4{Solid::assemble_system_rhs}
-// The assembly of the right-hand side process is similar to the
-// tangent matrix, so we will not describe it in too much detail.
-// Note that since we are describing a problem with Neumann BCs,
-// we will need the face normals and so must specify this in the
-// update flags.
+  };
+
+  
   template <int dim>
-  void Solid<dim>::assemble_system_rhs()
+  struct Assembler<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > > : Assembler_Base<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > >
   {
-    timer.enter_subsection("Assemble system right-hand side");
-    std::cout << " ASM_R " << std::flush;
+    typedef Sacado::Fad::DFad<double>       ADDerivType;
+    typedef Sacado::Rad::ADvar<ADDerivType> ADNumberType;
+    using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
+    using typename Assembler_Base<dim,ADNumberType>::PerTaskData_ASM;
 
+    virtual ~Assembler() {}
+
+    virtual void
+    assemble_system_tangent_residual_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
+                                              ScratchData_ASM &scratch,
+                                              PerTaskData_ASM &data)
+    {
+      // Aliases for data referenced from the Solid class
+      const unsigned int &n_q_points = data.solid.n_q_points;
+      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
+      const Parameters::AllParameters &parameters = data.solid.parameters;
+      const FESystem<dim> &fe = data.solid.fe;
+      const unsigned int &u_dof = data.solid.u_dof;
+      const FEValuesExtractors::Vector &u_fe = data.solid.u_fe;
+
+      data.reset();
+      scratch.reset();
+      scratch.fe_values_ref.reinit(cell);
+      cell->get_dof_indices(data.local_dof_indices);
+
+      const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
+          const_cast<const Solid<dim,ADNumberType> &>(data.solid).quadrature_point_history.get_data(cell);
+      Assert(lqph.size() == n_q_points, ExcInternalError());
+
+      const unsigned int n_independent_variables = data.local_dof_indices.size();
+      std::vector<double> local_dof_values(n_independent_variables);
+      cell->get_dof_values(scratch.solution_total,
+          local_dof_values.begin(),
+          local_dof_values.end());
+
+      // We now retrieve a set of degree-of-freedom values that
+      // have the operations that are performed with them tracked.
+      std::vector<ADNumberType> local_dof_values_ad (n_independent_variables);
+      for (unsigned int i=0; i<n_independent_variables; ++i)
+        local_dof_values_ad[i] = ADDerivType(n_independent_variables, i, local_dof_values[i]);
+
+      // Compute all values, gradients etc. based on sensitive
+      // AD degree-of-freedom values.
+      scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
+          local_dof_values_ad,
+          scratch.solution_grads_u_total);
+
+      // Next we compute the total potential energy of the element.
+      // This is defined as follows:
+      // Total energy = (internal - external) energies
+      // Note: Its important that this value is initialised (zero'd) correctly.
+      ADNumberType cell_energy_ad = ADNumberType(0.0);
+      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+      {
+        const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
+        const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+        const ADNumberType               det_F = determinant(F);
+        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
+        const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
+        Assert(det_F > ADNumberType(0.0), ExcInternalError());
+
+        // Next we define some position-dependent aliases, again to
+        // make the assembly process easier to follow.
+        const double JxW = scratch.fe_values_ref.JxW(q_point);
+
+        const ADNumberType Psi = lqph[q_point]->get_Psi(det_F,b_bar);
+
+        // We extract the configuration-dependent material energy
+        // from our QPH history objects for the current quadrature point
+        // and integrate its contribution to increment the total
+        // cell energy.
+        cell_energy_ad += Psi * JxW;
+      }
+
+      // Compute derivatives of reverse-mode AD variables
+      ADNumberType::Gradcomp();
+
+      for (unsigned int I=0; I<n_independent_variables; ++I)
+      {
+        // This computes the adjoint df/dX_{i} [reverse-mode]
+        const ADDerivType residual_I = local_dof_values_ad[I].adj();
+        data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
+        for (unsigned int J=0; J<n_independent_variables; ++J)
+        {
+          // Compute the gradients of the residual entry [forward-mode]
+          data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
+        }
+      }
+    }
+
+  };
+
+
+#endif
+
+
+// Since we use TBB for assembly, we simply setup a copy of the
+// data structures required for the process and pass them, along
+// with the memory addresses of the assembly functions to the
+// WorkStream object for processing. Note that we must ensure that
+// the matrix is reset before any assembly operations can occur.
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::assemble_system(const BlockVector<double> &solution_delta)
+  {
+    timer.enter_subsection("Assemble linear system");
+    std::cout << " ASM " << std::flush;
+
+    tangent_matrix = 0.0;
     system_rhs = 0.0;
 
-    const UpdateFlags uf_cell(update_values |
-                              update_gradients |
+    const UpdateFlags uf_cell(update_gradients |
                               update_JxW_values);
     const UpdateFlags uf_face(update_values |
                               update_JxW_values);
 
-    PerTaskData_RHS per_task_data(dofs_per_cell);
-    ScratchData_RHS scratch_data(fe, qf_cell, uf_cell, qf_face, uf_face);
+    const BlockVector<double> solution_total(get_total_solution(solution_delta));
+    typename Assembler_Base<dim,NumberType>::PerTaskData_ASM per_task_data(*this);
+    typename Assembler_Base<dim,NumberType>::ScratchData_ASM scratch_data(fe, qf_cell, uf_cell, qf_face, uf_face, solution_total);
+    Assembler<dim,NumberType> assembler;
 
     WorkStream::run(dof_handler_ref.begin_active(),
                     dof_handler_ref.end(),
-                    *this,
-                    &Solid::assemble_system_rhs_one_cell,
-                    &Solid::copy_local_to_global_rhs,
+                    static_cast<Assembler_Base<dim,NumberType>&>(assembler),
+                    &Assembler_Base<dim,NumberType>::assemble_system_one_cell,
+                    &Assembler_Base<dim,NumberType>::copy_local_to_global_ASM,
                     scratch_data,
                     per_task_data);
 
     timer.leave_subsection();
   }
 
-
-
-  template <int dim>
-  void Solid<dim>::copy_local_to_global_rhs(const PerTaskData_RHS &data)
-  {
-    for (unsigned int i = 0; i < dofs_per_cell; ++i)
-      system_rhs(data.local_dof_indices[i]) += data.cell_rhs(i);
-  }
-
-
-
-  template <int dim>
-  void
-  Solid<dim>::assemble_system_rhs_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                           ScratchData_RHS &scratch,
-                                           PerTaskData_RHS &data)
-  {
-    data.reset();
-    scratch.reset();
-    scratch.fe_values_ref.reinit(cell);
-    cell->get_dof_indices(data.local_dof_indices);
-    PointHistory<dim> *lqph =
-      reinterpret_cast<PointHistory<dim>*>(cell->user_pointer());
-
-    for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-      {
-        const Tensor<2, dim> F_inv = lqph[q_point].get_F_inv();
-
-        for (unsigned int k = 0; k < dofs_per_cell; ++k)
-          {
-            const unsigned int k_group = fe.system_to_base_index(k).first.first;
-
-            if (k_group == u_dof)
-              scratch.symm_grad_Nx[q_point][k]
-                = symmetrize(scratch.fe_values_ref[u_fe].gradient(k, q_point)
-                             * F_inv);
-            else
-              Assert(k_group <= u_dof, ExcInternalError());
-          }
-      }
-
-    for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-      {
-        const SymmetricTensor<2, dim> tau = lqph[q_point].get_tau();
-
-        const std::vector<double>
-        &N = scratch.Nx[q_point];
-        const std::vector<SymmetricTensor<2, dim> >
-        &symm_grad_Nx = scratch.symm_grad_Nx[q_point];
-        const double JxW = scratch.fe_values_ref.JxW(q_point);
-
-        // We first compute the contributions
-        // from the internal forces.  Note, by
-        // definition of the rhs as the negative
-        // of the residual, these contributions
-        // are subtracted.
-        for (unsigned int i = 0; i < dofs_per_cell; ++i)
-          {
-            const unsigned int i_group = fe.system_to_base_index(i).first.first;
-
-            if (i_group == u_dof)
-              data.cell_rhs(i) -= (symm_grad_Nx[i] * tau) * JxW;
-            else
-              Assert(i_group <= u_dof, ExcInternalError());
-          }
-      }
-
-    // Next we assemble the Neumann contribution. We first check to see it the
-    // cell face exists on a boundary on which a traction is applied and add
-    // the contribution if this is the case.
-    for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;
-         ++face)
-      if (cell->face(face)->at_boundary() == true
-          && cell->face(face)->boundary_id() == 11)
-        {
-          scratch.fe_face_values_ref.reinit(cell, face);
-
-          for (unsigned int f_q_point = 0; f_q_point < n_q_points_f;
-               ++f_q_point)
-            {
-              // We specify the traction in reference configuration. 
-              // For this problem, a defined total vertical force is applied 
-              // in the reference configuration.
-              // The direction of the applied traction is assumed not to
-              // evolve with the deformation of the domain. 
-              
-              // Note that the contributions to the right hand side vector we
-              // compute here only exist in the displacement components of the
-              // vector.
-              const double time_ramp = (time.current() / time.end());
-              const double magnitude  = (1.0/(16.0*parameters.scale*1.0*parameters.scale))*time_ramp; // (Total force) / (RHS surface area)
-              static const Tensor<1, dim> dir ({0.0,1.0,0.0});
-              const Tensor<1, dim> traction  = magnitude*dir;
-
-              for (unsigned int i = 0; i < dofs_per_cell; ++i)
-                {
-                  const unsigned int i_group =
-                    fe.system_to_base_index(i).first.first;
-
-                  if (i_group == u_dof)
-                    {
-                      const unsigned int component_i =
-                        fe.system_to_component_index(i).first;
-                      const double Ni =
-                        scratch.fe_face_values_ref.shape_value(i,
-                                                               f_q_point);
-                      const double JxW = scratch.fe_face_values_ref.JxW(
-                                           f_q_point);
-
-                      data.cell_rhs(i) += (Ni * traction[component_i])
-                                          * JxW;
-                    }
-                }
-            }
-        }
-  }
 
 // @sect4{Solid::make_constraints}
 // The constraints for this problem are simple to describe.
@@ -2135,8 +2093,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // be specified at the zeroth iteration and subsequently no
 // additional contributions are to be made since the constraints
 // are already exactly satisfied.
-  template <int dim>
-  void Solid<dim>::make_constraints(const int &it_nr)
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::make_constraints(const int &it_nr)
   {
     std::cout << " CST " << std::flush;
 
@@ -2165,9 +2123,6 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // provide it with an extractor object for the component we wish to
     // select. To this end we first set up such extractor objects and later
     // use it when generating the relevant component masks:
-    const FEValuesExtractors::Scalar x_displacement(0);
-    const FEValuesExtractors::Scalar y_displacement(1);
-    const FEValuesExtractors::Scalar z_displacement(2);
 
     // Fixed left hand side of the beam
     {
@@ -2178,23 +2133,21 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                                  boundary_id,
                                                  ZeroFunction<dim>(n_components),
                                                  constraints,
-                                                 fe.component_mask(x_displacement) | 
-                                                 fe.component_mask(y_displacement) | 
-                                                 fe.component_mask(z_displacement));
+                                                 fe.component_mask(u_fe));
       else
         VectorTools::interpolate_boundary_values(dof_handler_ref,
                                                  boundary_id,
                                                  ZeroFunction<dim>(n_components),
                                                  constraints,
-                                                 fe.component_mask(x_displacement) | 
-                                                 fe.component_mask(y_displacement) | 
-                                                 fe.component_mask(z_displacement));
+                                                 fe.component_mask(u_fe));
     }
     
     // Zero Z-displacement through thickness direction
     // This corresponds to a plane strain condition being imposed on the beam
+    if (dim == 3)
     {
       const int boundary_id = 2;
+      const FEValuesExtractors::Scalar z_displacement(2);
 
       if (apply_dirichlet_bc == true)
         VectorTools::interpolate_boundary_values(dof_handler_ref,
@@ -2216,9 +2169,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // @sect4{Solid::solve_linear_system}
 // As the system is composed of a single block, defining a solution scheme
 // for the linear problem is straight-forward.
-  template <int dim>
+  template <int dim,typename NumberType>
   std::pair<unsigned int, double>
-  Solid<dim>::solve_linear_system(BlockVector<double> &newton_update)
+  Solid<dim,NumberType>::solve_linear_system(BlockVector<double> &newton_update)
   {
     BlockVector<double> A(dofs_per_block);
     BlockVector<double> B(dofs_per_block);
@@ -2289,8 +2242,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // Here we present how the results are written to file to be viewed
 // using ParaView or Visit. The method is similar to that shown in the
 // tutorials so will not be discussed in detail.
-  template <int dim>
-  void Solid<dim>::output_results() const
+  template <int dim,typename NumberType>
+  void Solid<dim,NumberType>::output_results() const
   {
     DataOut<dim> data_out;
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
@@ -2337,14 +2290,57 @@ int main (int argc, char *argv[])
   using namespace dealii;
   using namespace Cook_Membrane;
 
-  Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, dealii::numbers::invalid_unsigned_int);
-
+  const unsigned int dim = 2;
   try
     {
       deallog.depth_console(0);
+      Parameters::AllParameters parameters("parameters.prm");
+      if (parameters.automatic_differentiation_order == 0)
+      {
+        std::cout << "Assembly method: Residual and linearisation are computed manually." << std::endl;
 
-      Solid<3> solid_3d("parameters.prm");
-      solid_3d.run();
+        // Allow multi-threading
+        Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                            dealii::numbers::invalid_unsigned_int);
+
+        typedef double NumberType;
+        Solid<dim,NumberType> solid_3d(parameters);
+        solid_3d.run();
+      }
+ #ifdef ENABLE_SACADO_FORMULATION
+       else if (parameters.automatic_differentiation_order == 1)
+       {
+         std::cout << "Assembly method: Residual computed manually; linearisation performed using AD." << std::endl;
+
+         // Allow multi-threading
+         Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                             dealii::numbers::invalid_unsigned_int);
+
+         typedef Sacado::Fad::DFad<double> NumberType;
+         Solid<dim,NumberType> solid_3d(parameters);
+         solid_3d.run();
+       }
+       else if (parameters.automatic_differentiation_order == 2)
+       {
+         std::cout << "Assembly method: Residual and linearisation computed using AD." << std::endl;
+
+         // Sacado Rad-Fad is not thread-safe, so disable threading.
+         // Parallisation using MPI would be possible though.
+         Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                             1);
+
+         typedef Sacado::Rad::ADvar< Sacado::Fad::DFad<double> > NumberType;
+         Solid<dim,NumberType> solid_3d(parameters);
+         solid_3d.run();
+       }
+ #endif
+      else
+      {
+        AssertThrow(false,
+            ExcMessage("The selected assembly method is not supported. "
+                       "You need deal.II 9.0 and Trilinos with the Sacado package "
+                       "to enable assembly using automatic differentiation."));
+      }
     }
   catch (std::exception &exc)
     {
