@@ -4,7 +4,6 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/constraint_matrix.h>
-#include <deal.II/lac/compressed_simple_sparsity_pattern.h>
 #include <deal.II/lac/petsc_parallel_sparse_matrix.h>
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/petsc_parallel_vector.h>
@@ -1335,7 +1334,7 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
       for (int iter=0; iter<NUM_ITER; iter++)
 	{
 	  MPP_uLkp1_solution_ghosted = MPP_uH_solution;
-	  Akp1_matrix.add(LxAkp1_matrix,-1.0); //new matrix to limit: A-LxA
+	  Akp1_matrix.add(-1.0, LxAkp1_matrix); //new matrix to limit: A-LxA
 	  
 	  // loop on locally owned i-DOFs (rows)
 	  IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
