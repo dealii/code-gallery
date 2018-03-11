@@ -136,31 +136,30 @@ public:
     this->rho_air=rho_air;
     this->rho_fluid=rho_fluid;
   }
-  virtual void compute_derived_quantities_scalar (const std::vector< double > &uh,
-						  const std::vector< Tensor< 1, dim > > &duh,
-						  const std::vector< Tensor< 2, dim > > &dduh,
-						  const std::vector< Point< dim > > &normals,
-						  const std::vector< Point< dim > > &evaluation_points,
-						  std::vector< Vector< double > > &computed_quantities 
-						  ) const;
+
+  virtual
+  void
+  evaluate_scalar_field (const DataPostprocessorInputs::Scalar<dim> &input_data,
+                         std::vector<Vector<double> >               &computed_quantities) const;
+
   double eps;
   double rho_air;
   double rho_fluid;
 };
+
+
 template <int dim>
-void Postprocessor<dim>::compute_derived_quantities_scalar(const std::vector< double > &uh,
-							   const std::vector< Tensor< 1, dim > > & /*duh*/,
-							   const std::vector< Tensor< 2, dim > > & /*dduh*/,
-							   const std::vector< Point< dim > > & /*normals*/,
-							   const std::vector< Point< dim > > & /*evaluation_points*/,
-							   std::vector< Vector< double > > &computed_quantities) const
+void
+Postprocessor<dim>::
+evaluate_scalar_field (const DataPostprocessorInputs::Scalar<dim> &input_data,
+                       std::vector<Vector<double> >               &computed_quantities) const
 {
-  const unsigned int n_quadrature_points = uh.size();
+  const unsigned int n_quadrature_points = input_data.solution_values.size();
   for (unsigned int q=0; q<n_quadrature_points; ++q)
     {
       double H;
       double rho_value;
-      double phi_value=uh[q];
+      double phi_value=input_data.solution_values[q];
       if(phi_value > eps) 
 	H=1;
       else if (phi_value < -eps) 
