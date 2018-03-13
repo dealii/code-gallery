@@ -793,7 +793,7 @@ namespace Cook_Membrane
     // materials are used in different regions of the domain, as well as the
     // inverse of the deformation gradient...
   private:
-    std_cxx11::shared_ptr< Material_Compressible_Neo_Hook_One_Field<dim,NumberType> > material;
+    std::shared_ptr< Material_Compressible_Neo_Hook_One_Field<dim,NumberType> > material;
   };
 
 
@@ -1518,17 +1518,17 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // PerTaskData object stores local contributions.
     struct PerTaskData_ASM
     {
-      Solid<dim,NumberType>                &solid;
-      FullMatrix<double>                    cell_matrix;
-      Vector<double>                        cell_rhs;
-      std::vector<types::global_dof_index>  local_dof_indices;
+      const Solid<dim,NumberType>          *solid;
+      FullMatrix<double>                   cell_matrix;
+      Vector<double>                       cell_rhs;
+      std::vector<types::global_dof_index> local_dof_indices;
 
-      PerTaskData_ASM(Solid<dim,NumberType> &solid)
+      PerTaskData_ASM(const Solid<dim,NumberType> *solid)
         :
         solid (solid),
-        cell_matrix(solid.dofs_per_cell, solid.dofs_per_cell),
-        cell_rhs(solid.dofs_per_cell),
-        local_dof_indices(solid.dofs_per_cell)
+        cell_matrix(solid->dofs_per_cell, solid->dofs_per_cell),
+        cell_rhs(solid->dofs_per_cell),
+        local_dof_indices(solid->dofs_per_cell)
       {}
 
       void reset()
@@ -1629,9 +1629,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     void
     copy_local_to_global_ASM(const PerTaskData_ASM &data)
     {
-      const ConstraintMatrix &constraints = data.solid.constraints;
-      BlockSparseMatrix<double> &tangent_matrix = data.solid.tangent_matrix;
-      BlockVector<double> &system_rhs = data.solid.system_rhs;
+      const ConstraintMatrix &constraints = data.solid->constraints;
+      BlockSparseMatrix<double> &tangent_matrix = const_cast<Solid<dim,NumberType> *>(data.solid)->tangent_matrix;
+      BlockVector<double> &system_rhs =  const_cast<Solid<dim,NumberType> *>(data.solid)->system_rhs;
 
       constraints.distribute_local_to_global(
           data.cell_matrix, data.cell_rhs,
@@ -1644,9 +1644,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // This function needs to exist in the base class for
     // Workstream to work with a reference to the base class.
     virtual void
-    assemble_system_tangent_residual_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
-                                              ScratchData_ASM &scratch,
-                                              PerTaskData_ASM &data)
+    assemble_system_tangent_residual_one_cell(const typename DoFHandler<dim>::active_cell_iterator &/*cell*/,
+                                              ScratchData_ASM &/*scratch*/,
+                                              PerTaskData_ASM &/*data*/)
     {
       AssertThrow(false, ExcPureFunctionCalled());
     }
@@ -1657,12 +1657,12 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                            PerTaskData_ASM &data)
     {
       // Aliases for data referenced from the Solid class
-      const unsigned int &n_q_points_f = data.solid.n_q_points_f;
-      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
-      const Parameters::AllParameters &parameters = data.solid.parameters;
-      const Time &time = data.solid.time;
-      const FESystem<dim> &fe = data.solid.fe;
-      const unsigned int &u_dof = data.solid.u_dof;
+      const unsigned int &n_q_points_f = data.solid->n_q_points_f;
+      const unsigned int &dofs_per_cell = data.solid->dofs_per_cell;
+      const Parameters::AllParameters &parameters = data.solid->parameters;
+      const Time &time = data.solid->time;
+      const FESystem<dim> &fe = data.solid->fe;
+      const unsigned int &u_dof = data.solid->u_dof;
 
       // Next we assemble the Neumann contribution. We first check to see it the
       // cell face exists on a boundary on which a traction is applied and add
@@ -1732,12 +1732,11 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                               PerTaskData_ASM &data)
     {
       // Aliases for data referenced from the Solid class
-      const unsigned int &n_q_points = data.solid.n_q_points;
-      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
-      const Parameters::AllParameters &parameters = data.solid.parameters;
-      const FESystem<dim> &fe = data.solid.fe;
-      const unsigned int &u_dof = data.solid.u_dof;
-      const FEValuesExtractors::Vector &u_fe = data.solid.u_fe;
+      const unsigned int &n_q_points = data.solid->n_q_points;
+      const unsigned int &dofs_per_cell = data.solid->dofs_per_cell;
+      const FESystem<dim> &fe = data.solid->fe;
+      const unsigned int &u_dof = data.solid->u_dof;
+      const FEValuesExtractors::Vector &u_fe = data.solid->u_fe;
 
       data.reset();
       scratch.reset();
@@ -1745,7 +1744,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       cell->get_dof_indices(data.local_dof_indices);
 
       const std::vector<std::shared_ptr<const PointHistory<dim,NumberType> > > lqph =
-          const_cast<const Solid<dim,NumberType> &>(data.solid).quadrature_point_history.get_data(cell);
+          const_cast<const Solid<dim,NumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
       // We first need to find the solution gradients at quadrature points
@@ -1856,12 +1855,11 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                               PerTaskData_ASM &data)
     {
       // Aliases for data referenced from the Solid class
-      const unsigned int &n_q_points = data.solid.n_q_points;
-      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
-      const Parameters::AllParameters &parameters = data.solid.parameters;
-      const FESystem<dim> &fe = data.solid.fe;
-      const unsigned int &u_dof = data.solid.u_dof;
-      const FEValuesExtractors::Vector &u_fe = data.solid.u_fe;
+      const unsigned int &n_q_points = data.solid->n_q_points;
+      const unsigned int &dofs_per_cell = data.solid->dofs_per_cell;
+      const FESystem<dim> &fe = data.solid->fe;
+      const unsigned int &u_dof = data.solid->u_dof;
+      const FEValuesExtractors::Vector &u_fe = data.solid->u_fe;
 
       data.reset();
       scratch.reset();
@@ -1869,7 +1867,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       cell->get_dof_indices(data.local_dof_indices);
 
       const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
-          const_cast<const Solid<dim,ADNumberType> &>(data.solid).quadrature_point_history.get_data(cell);
+          const_cast<const Solid<dim,ADNumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
       const unsigned int n_independent_variables = data.local_dof_indices.size();
@@ -1926,7 +1924,6 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
           {
-            const unsigned int component_i = fe.system_to_component_index(i).first;
             const unsigned int i_group     = fe.system_to_base_index(i).first.first;
 
             if (i_group == u_dof)
@@ -1967,12 +1964,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                               PerTaskData_ASM &data)
     {
       // Aliases for data referenced from the Solid class
-      const unsigned int &n_q_points = data.solid.n_q_points;
-      const unsigned int &dofs_per_cell = data.solid.dofs_per_cell;
-      const Parameters::AllParameters &parameters = data.solid.parameters;
-      const FESystem<dim> &fe = data.solid.fe;
-      const unsigned int &u_dof = data.solid.u_dof;
-      const FEValuesExtractors::Vector &u_fe = data.solid.u_fe;
+      const unsigned int &n_q_points = data.solid->n_q_points;
+      const FEValuesExtractors::Vector &u_fe = data.solid->u_fe;
 
       data.reset();
       scratch.reset();
@@ -1980,7 +1973,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       cell->get_dof_indices(data.local_dof_indices);
 
       const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
-          const_cast<const Solid<dim,ADNumberType> &>(data.solid).quadrature_point_history.get_data(cell);
+          data.solid->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
       const unsigned int n_independent_variables = data.local_dof_indices.size();
@@ -2070,7 +2063,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                               update_JxW_values);
 
     const BlockVector<double> solution_total(get_total_solution(solution_delta));
-    typename Assembler_Base<dim,NumberType>::PerTaskData_ASM per_task_data(*this);
+    typename Assembler_Base<dim,NumberType>::PerTaskData_ASM per_task_data(this);
     typename Assembler_Base<dim,NumberType>::ScratchData_ASM scratch_data(fe, qf_cell, uf_cell, qf_face, uf_face, solution_total);
     Assembler<dim,NumberType> assembler;
 
