@@ -49,7 +49,6 @@
 #include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/solver_selector.h>
 #include <deal.II/lac/trilinos_block_sparse_matrix.h>
-#include <deal.II/lac/trilinos_block_vector.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_sparsity_pattern.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
@@ -295,7 +294,7 @@ namespace ViscoElasStripHole
       prm.enter_subsection("Linear solver");
       {
         prm.declare_entry("Solver type", "cg",
-                          Patterns::Selection(SolverSelector<LA::Vector>::get_solver_names()),
+                          Patterns::Selection(SolverSelector<LA::MPI::Vector>::get_solver_names()),
                           "Type of solver used to solve the linear system");
         prm.declare_entry("Residual", "1e-6",
                           Patterns::Double(0.0),
@@ -512,8 +511,8 @@ namespace ViscoElasStripHole
     }
     void
     update_internal_equilibrium(const Tensor<2, dim> &F,
-                                const double         &p_tilde,
-                                const double         &J_tilde)
+                                const double         &/*p_tilde*/,
+                                const double         &/*J_tilde*/)
     {
       const double det_F = determinant(F);
       const SymmetricTensor<2,dim> C_bar = std::pow(det_F, -2.0 / dim) * Physics::Elasticity::Kinematics::C(F);
@@ -584,7 +583,7 @@ namespace ViscoElasStripHole
              + Physics::Elasticity::StandardTensors<dim>::dev_P * c_bar
              * Physics::Elasticity::StandardTensors<dim>::dev_P;
     }
-    SymmetricTensor<4, dim> get_c_bar(const Tensor<2,dim> &F) const
+    SymmetricTensor<4, dim> get_c_bar(const Tensor<2,dim> &/*F*/) const
     {
       // Elastic Neo-Hookean + Linder2011 eq 56
       return -2.0*mu_v*((time.get_delta_t()/tau_v)/(1.0 + time.get_delta_t()/tau_v))*Physics::Elasticity::StandardTensors<dim>::S;
@@ -643,7 +642,7 @@ namespace ViscoElasStripHole
       material->update_end_timestep();
     }
   private:
-    std_cxx11::shared_ptr< Material_Compressible_Three_Field_Linear_Viscoelastic<dim> > material;
+    std::shared_ptr< Material_Compressible_Three_Field_Linear_Viscoelastic<dim> > material;
   };
   template <int dim>
   class Solid
@@ -896,7 +895,7 @@ namespace ViscoElasStripHole
                 for (unsigned int d=0; d<dim; ++d)
                   {
                     pcout << "Point " << p << " [" << d << "]";
-                    if (!(p == tracked_vertices.size()-1 & d == dim-1))
+                    if (!(p == tracked_vertices.size()-1 && d == dim-1))
                       pcout << ",";
                   }
               }
@@ -912,7 +911,7 @@ namespace ViscoElasStripHole
             for (unsigned int d=0; d<dim; ++d)
               {
                 pcout << tracked_vertices[p][t][d];
-                if (!(p == tracked_vertices.size()-1 & d == dim-1))
+                if (!(p == tracked_vertices.size()-1 && d == dim-1))
                   pcout << ",";
               }
           }
