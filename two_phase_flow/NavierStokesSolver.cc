@@ -84,12 +84,12 @@ public:
 			 PETScWrappers::MPI::Vector locally_relevant_solution_w,
 			 PETScWrappers::MPI::Vector locally_relevant_solution_p);
   //boundary conditions
-  void set_boundary_conditions(std::vector<unsigned int> boundary_values_id_u,
-			       std::vector<unsigned int> boundary_values_id_v, std::vector<double> boundary_values_u,
+  void set_boundary_conditions(std::vector<types::global_dof_index> boundary_values_id_u,
+			       std::vector<types::global_dof_index> boundary_values_id_v, std::vector<double> boundary_values_u,
 			       std::vector<double> boundary_values_v);
-  void set_boundary_conditions(std::vector<unsigned int> boundary_values_id_u,
-			       std::vector<unsigned int> boundary_values_id_v,
-			       std::vector<unsigned int> boundary_values_id_w, std::vector<double> boundary_values_u,
+  void set_boundary_conditions(std::vector<types::global_dof_index> boundary_values_id_u,
+			       std::vector<types::global_dof_index> boundary_values_id_v,
+			       std::vector<types::global_dof_index> boundary_values_id_w, std::vector<double> boundary_values_u,
 			       std::vector<double> boundary_values_v, std::vector<double> boundary_values_w);
   void set_velocity(PETScWrappers::MPI::Vector locally_relevant_solution_u,
 		    PETScWrappers::MPI::Vector locally_relevant_solution_v);
@@ -184,9 +184,9 @@ private:
   ConstraintMatrix constraints;
   ConstraintMatrix constraints_psi;
 
-  std::vector<unsigned int> boundary_values_id_u;
-  std::vector<unsigned int> boundary_values_id_v;
-  std::vector<unsigned int> boundary_values_id_w;
+  std::vector<types::global_dof_index> boundary_values_id_u;
+  std::vector<types::global_dof_index> boundary_values_id_v;
+  std::vector<types::global_dof_index> boundary_values_id_w;
   std::vector<double> boundary_values_u;
   std::vector<double> boundary_values_v;
   std::vector<double> boundary_values_w;
@@ -357,8 +357,8 @@ void NavierStokesSolver<dim>::initial_condition(PETScWrappers::MPI::Vector local
 }
 
 template<int dim>
-void NavierStokesSolver<dim>::set_boundary_conditions(std::vector<unsigned int> boundary_values_id_u,
-						      std::vector<unsigned int> boundary_values_id_v, 
+void NavierStokesSolver<dim>::set_boundary_conditions(std::vector<types::global_dof_index> boundary_values_id_u,
+						      std::vector<types::global_dof_index> boundary_values_id_v, 
 						      std::vector<double> boundary_values_u,
 						      std::vector<double> boundary_values_v) 
 {
@@ -369,9 +369,9 @@ void NavierStokesSolver<dim>::set_boundary_conditions(std::vector<unsigned int> 
 }
 
 template<int dim>
-void NavierStokesSolver<dim>::set_boundary_conditions(std::vector<unsigned int> boundary_values_id_u,
-						      std::vector<unsigned int> boundary_values_id_v,
-						      std::vector<unsigned int> boundary_values_id_w, 
+void NavierStokesSolver<dim>::set_boundary_conditions(std::vector<types::global_dof_index> boundary_values_id_u,
+						      std::vector<types::global_dof_index> boundary_values_id_v,
+						      std::vector<types::global_dof_index> boundary_values_id_w, 
 						      std::vector<double> boundary_values_u,
 						      std::vector<double> boundary_values_v, 
 						      std::vector<double> boundary_values_w) 
@@ -641,7 +641,7 @@ void NavierStokesSolver<dim>::assemble_system_U()
   std::vector<Tensor<1, dim> > grad_psiqn(n_q_points);
   std::vector<Tensor<1, dim> > grad_psiqnm1(n_q_points);
   
-  std::vector<unsigned int> local_dof_indices(dofs_per_cell);
+  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
   std::vector<Tensor<1, dim> > shape_grad(dofs_per_cell);
   std::vector<double> shape_value(dofs_per_cell);
   
@@ -868,7 +868,7 @@ void NavierStokesSolver<dim>::assemble_system_dpsi_q() {
   std::vector<Tensor<1, dim> > gvnp1(n_q_points);
   std::vector<Tensor<1, dim> > gwnp1(n_q_points);
 
-  std::vector<unsigned int> local_dof_indices(dofs_per_cell);
+  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
   std::vector<double> shape_value(dofs_per_cell);
   std::vector<Tensor<1, dim> > shape_grad(dofs_per_cell);
 
@@ -913,7 +913,7 @@ void NavierStokesSolver<dim>::assemble_system_dpsi_q() {
 	for (unsigned int i=0; i<dofs_per_cell; ++i) {
 	  cell_rhs_psi(i)+=-3./2./time_step*rho_min*divU*shape_value[i]*JxW;
 	  cell_rhs_q(i)-=nu_value*divU*shape_value[i]*JxW;
-	  if (rebuild_S_M==true)
+	  if (rebuild_S_M==true) {
 	    for (unsigned int j=0; j<dofs_per_cell; ++j) 
 	      if (i==j)
 		{
@@ -925,6 +925,7 @@ void NavierStokesSolver<dim>::assemble_system_dpsi_q() {
 		  cell_S(i,j)+=shape_grad[i]*shape_grad[j]*JxW;
 		  cell_M(i,j)+=shape_value[i]*shape_value[j]*JxW;
 		}
+      }
 	}
       }
       cell_P->get_dof_indices(local_dof_indices);
