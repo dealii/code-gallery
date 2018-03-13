@@ -185,7 +185,7 @@ private:
 	BlockVector<double> solution;
 	BlockVector<double> system_rhs;
 
-	std_cxx1x::shared_ptr<typename InnerPreconditioner<dim>::type> A_preconditioner;
+	std::shared_ptr<typename InnerPreconditioner<dim>::type> A_preconditioner;
 
 	ellipsoid_fit<dim>   ellipsoid;
 };
@@ -227,6 +227,10 @@ template<int dim>
 class RightHandSide: public Function<dim> {
 public:
 	RightHandSide () : Function<dim>(dim+1) {}
+
+    using Function<dim>::value;
+    using Function<dim>::vector_value;
+    using Function<dim>::vector_value_list;
 
 	virtual double value(const Point<dim> &p, const unsigned int component,
 			A_Grav_namespace::AnalyticGravity<dim> *aGrav) const;
@@ -352,8 +356,8 @@ void SchurComplement<Preconditioner>::vmult(Vector<double> &dst,
 template<int dim>
 StokesProblem<dim>::StokesProblem(const unsigned int degree) :
 		degree(degree),
-		mapping(),
 		triangulation(Triangulation<dim>::maximum_smoothing),
+        mapping(),
 		fe(FE_Q<dim>(degree + 1), dim, FE_Q<dim>(degree), 1),
 		dof_handler(triangulation),
 		quadrature_formula(degree + 2),
@@ -384,7 +388,7 @@ void StokesProblem<dim>::setup_dofs() {
 				BoundaryValuesP<dim>(), constraints, component_maskP);
 	}
 	{
-		std::set<unsigned char> no_normal_flux_boundaries;
+		std::set<types::boundary_id> no_normal_flux_boundaries;
 		no_normal_flux_boundaries.insert(99);
 		VectorTools::compute_no_normal_flux_constraints(dof_handler, 0,
 				no_normal_flux_boundaries, constraints);
@@ -392,7 +396,7 @@ void StokesProblem<dim>::setup_dofs() {
 
 	constraints.close();
 
-	std::vector<unsigned int> dofs_per_block(2);
+	std::vector<types::global_dof_index> dofs_per_block(2);
 	DoFTools::count_dofs_per_block(dof_handler, dofs_per_block,
 			block_component);
 	n_u = dofs_per_block[0];
@@ -404,7 +408,7 @@ void StokesProblem<dim>::setup_dofs() {
 			<< std::endl;
 
 	{
-		BlockCompressedSimpleSparsityPattern csp(2, 2);
+		BlockDynamicSparsityPattern csp(2, 2);
 
 		csp.block(0, 0).reinit(n_u, n_u);
 		csp.block(1, 0).reinit(n_p, n_u);
@@ -464,7 +468,6 @@ double Rheology<dim>::get_eta(double &r, double &z)
 	double ecc = system_parameters::q_axes[0] / system_parameters::p_axes[0];
 	double Rminusr = system_parameters::q_axes[0] - system_parameters::p_axes[0];
 	double approx_a = std::sqrt(r * r + z * z * ecc * ecc);
-	double approx_b = approx_a / ecc;
 	double group1 = r * r + z * z - Rminusr * Rminusr;
 
 		double a0 = approx_a;
@@ -600,7 +603,6 @@ void StokesProblem<dim>::initialize_eta_and_G() {
 
 			//defines local viscosity
 			double local_viscosity = 0;
-			unsigned int m_id = cell->material_id();
 
 			local_viscosity = rheology.get_eta(r_value, z_value);
 
@@ -639,7 +641,7 @@ void StokesProblem<dim>::assemble_system() {
 	FullMatrix<double> local_matrix(dofs_per_cell, dofs_per_cell);
 	Vector<double> local_rhs(dofs_per_cell);
 
-	std::vector<unsigned int> local_dof_indices(dofs_per_cell);
+	std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
 	// runs the gravity script function
 	const RightHandSide<dim> right_hand_side;
@@ -741,7 +743,6 @@ void StokesProblem<dim>::assemble_system() {
 				double &local_old_phiphi_stress =
 						local_quadrature_points_history[q].old_phiphi_stress;
 				double r_value = fe_values.quadrature_point(q)[0];
-				double z_value = fe_values.quadrature_point(q)[1];
 
 				// get local density based on mat id
 				double local_density = system_parameters::rho[m_id];
@@ -836,7 +837,6 @@ void StokesProblem<dim>::assemble_system() {
 				double &local_old_phiphi_stress =
 						local_quadrature_points_history[q].old_phiphi_stress;
 				double r_value = fe_values.quadrature_point(q)[0];
-				double z_value = fe_values.quadrature_point(q)[1];
 
                 double local_density = system_parameters::rho[m_id];
 
@@ -930,7 +930,7 @@ void StokesProblem<dim>::assemble_system() {
 
 	std::cout << "   Computing preconditioner..." << std::endl << std::flush;
 
-	A_preconditioner = std_cxx1x::shared_ptr<
+	A_preconditioner = std::shared_ptr<
 			typename InnerPreconditioner<dim>::type>(
 			new typename InnerPreconditioner<dim>::type());
 	A_preconditioner->initialize(system_matrix.block(0, 0),
@@ -1239,7 +1239,6 @@ void StokesProblem<dim>::solution_stesses() {
 		}
 
 		// Finds adjusted effective viscosity
-		double cell_effective_viscosity = 0;
 		if (system_parameters::plasticity_on)
 		{
 			if(system_parameters::failure_criterion == 0) //Apply Byerlee's rule
@@ -1433,7 +1432,7 @@ void StokesProblem<dim>::smooth_eta_field(std::vector<bool> failing_cells)
 			std::vector<bool> cell_touched(triangulation.n_active_cells(), false);
 			std::vector< TriaIterator< CellAccessor<dim> > > neighbor_cells;
 			std::vector<int> neighbor_indices;
-			int start_cell = 0; // Which cell in the neighbor_cells vector to start from
+			unsigned int start_cell = 0; // Which cell in the neighbor_cells vector to start from
 			int new_cells_found = 0;
 			neighbor_cells.push_back(cell);
 			neighbor_indices.push_back(cell_no);
@@ -1441,7 +1440,7 @@ void StokesProblem<dim>::smooth_eta_field(std::vector<bool> failing_cells)
 			while(find_more_cells)
 			{
 				new_cells_found = 0;
-				for(int i = start_cell; i<neighbor_cells.size(); i++)
+				for(unsigned int i = start_cell; i<neighbor_cells.size(); i++)
 				{
 					for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
 					{
@@ -1741,7 +1740,7 @@ void StokesProblem<dim>::write_vertices(unsigned char boundary_that_we_need) {
 			triangulation.begin_active(); cell != triangulation.end(); ++cell)
 		for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
 		{
-			unsigned char boundary_ids = cell->face(f)->boundary_indicator();
+			unsigned char boundary_ids = cell->face(f)->boundary_id();
 			if(boundary_ids == boundary_that_we_need)
 				{
 				for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_face; ++v)
@@ -1834,9 +1833,9 @@ void StokesProblem<dim>::setup_initial_mesh() {
 						if (fabs(cell->face(f)->center()[i]) > zero_tolerance)
 					    how_many++;
 				if (how_many==dim)
-					cell->face(f)->set_all_boundary_indicators(0); // if face center coordinates > zero_tol, set bnry indicators to 0
+					cell->face(f)->set_all_boundary_ids(0); // if face center coordinates > zero_tol, set bnry indicators to 0
 				else
-				    cell->face(f)->set_all_boundary_indicators(99);
+				    cell->face(f)->set_all_boundary_ids(99);
 			}
 		}
 	}
