@@ -166,12 +166,12 @@ namespace LMM
       parse_parameters(ParameterHandler &prm);
     };
 
-    void IsotonicContraction::declare_parameters(ParameterHandler &prm)
+    void IsotonicContraction::declare_parameters(ParameterHandler &/*prm*/)
     {
 
     }
 
-    void IsotonicContraction::parse_parameters(ParameterHandler &prm)
+    void IsotonicContraction::parse_parameters(ParameterHandler &/*prm*/)
     {
 
     }
@@ -448,7 +448,7 @@ namespace LMM
 
   template <int dim>
   inline
-  void BodyForce<dim>::vector_value (const Point<dim> &p,
+  void BodyForce<dim>::vector_value (const Point<dim> &/*p*/,
                                      Vector<double>   &values) const
   {
     Assert (values.size() == dim,
@@ -504,7 +504,7 @@ namespace LMM
 
   template <int dim>
   inline
-  void Traction<dim>::vector_value (const Point<dim> &p,
+  void Traction<dim>::vector_value (const Point<dim> &/*p*/,
                                     Vector<double>   &values) const
   {
     Assert (values.size() == dim,
@@ -893,7 +893,7 @@ namespace LMM
     // the muscle
     Point<dim> profile (const Point<dim> &pt_0) const
     {
-      Assert(pt[0] > -1e-6,
+      Assert(pt_0[0] > -1e-6,
              ExcMessage("All points must have x-coordinate > 0"));
 
       const double r_scale = get_radial_scaling_factor(pt_0[0]);
@@ -1148,7 +1148,6 @@ namespace LMM
   {
     const double u = get_neural_signal(time);
 
-    const unsigned int n_cells    = triangulation.n_active_cells();
     const unsigned int n_q_points_cell = qf_cell.size();
     for (unsigned int cell=0; cell<triangulation.n_active_cells(); ++cell)
       {
@@ -1163,7 +1162,6 @@ namespace LMM
   template <int dim>
   void LinearMuscleModelProblem<dim>::update_fibre_state ()
   {
-    const unsigned int n_cells    = triangulation.n_active_cells();
     const unsigned int n_q_points_cell = qf_cell.size();
 
     FEValues<dim> fe_values (fe, qf_cell, update_gradients);
@@ -1245,7 +1243,6 @@ namespace LMM
     const double m_p = fibre.get_m_p();
     const double m_s = fibre.get_m_s();
     const double beta = fibre.get_beta(dt);
-    const double gamma = fibre.get_gamma(dt);
     AssertThrow(beta != 0.0, ExcInternalError());
     const double Cf = T0*(m_p + m_s*(1.0 - m_s/beta));
     const Tensor<1,dim> &M = fibre.get_M();
@@ -1462,7 +1459,6 @@ namespace LMM
           const Point<dim> fixed_point (-parameters.half_length_x,0.0,0.0);
           std::vector<types::global_dof_index> fixed_dof_indices;
           bool found_point_of_interest = false;
-          types::global_dof_index dof_of_interest = numbers::invalid_dof_index;
 
           for (typename DoFHandler<dim>::active_cell_iterator
                cell = dof_handler.begin_active(),
@@ -1519,7 +1515,6 @@ namespace LMM
               const Point<dim> fixed_point (0.0,0.0,0.0);
               std::vector<types::global_dof_index> fixed_dof_indices;
               bool found_point_of_interest = false;
-              types::global_dof_index dof_of_interest = numbers::invalid_dof_index;
 
               for (typename DoFHandler<dim>::active_cell_iterator
                    cell = dof_handler.begin_active(),
@@ -1590,7 +1585,6 @@ namespace LMM
           const Point<dim> roller_point (parameters.axial_length*parameters.scale,0.0,0.0);
           std::vector<types::global_dof_index> fixed_dof_indices;
           bool found_point_of_interest = false;
-          types::global_dof_index dof_of_interest = numbers::invalid_dof_index;
 
           for (typename DoFHandler<dim>::active_cell_iterator
                cell = dof_handler.begin_active(),

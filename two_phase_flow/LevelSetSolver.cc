@@ -76,7 +76,7 @@ class LevelSetSolver
     /////////////////////////
     // BOUNDARY CONDITIONS //
     /////////////////////////
-    void set_boundary_conditions(std::vector<unsigned int> boundary_values_id_u,
+    void set_boundary_conditions(std::vector<types::global_dof_index> &boundary_values_id_u,
 				 std::vector<double> boundary_values_u);
     //////////////////
     // SET VELOCITY //
@@ -169,10 +169,10 @@ class LevelSetSolver
     // MY PETSC WRAPPERS //
     ///////////////////////
     void get_vector_values(PETScWrappers::VectorBase &vector, 
-			   const std::vector<unsigned int> &indices,
+			   const std::vector<types::global_dof_index> &indices,
 			   std::vector<PetscScalar> &values);
     void get_vector_values(PETScWrappers::VectorBase &vector, 
-			   const std::vector<unsigned int> &indices,
+			   const std::vector<types::global_dof_index> &indices,
 			   std::map<types::global_dof_index, types::global_dof_index> &map_from_Q1_to_Q2,
 			   std::vector<PetscScalar> &values);
       
@@ -202,7 +202,7 @@ class LevelSetSolver
     std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> MC_preconditioner;
 
     // BOUNDARIES 
-    std::vector<unsigned int> boundary_values_id_u;
+    std::vector<types::global_dof_index> boundary_values_id_u;
     std::vector<double> boundary_values_u;
 
     //////////////
@@ -343,7 +343,7 @@ void LevelSetSolver<dim>::initial_condition (PETScWrappers::MPI::Vector un,
 ////////// BOUNDARY CONDITIONS //////////
 /////////////////////////////////////////
 template <int dim>
-void LevelSetSolver<dim>::set_boundary_conditions(std::vector<unsigned int> boundary_values_id_u,
+void LevelSetSolver<dim>::set_boundary_conditions(std::vector<types::global_dof_index> &boundary_values_id_u,
 						   std::vector<double> boundary_values_u)
 {
   this->boundary_values_id_u = boundary_values_id_u;
@@ -597,7 +597,7 @@ void LevelSetSolver<dim>::assemble_ML()
   const unsigned int   n_q_points    = quadrature_formula.size();
   
   Vector<double>       cell_ML (dofs_per_cell);
-  std::vector<unsigned int> local_dof_indices (dofs_per_cell);
+  std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
   typename DoFHandler<dim>::active_cell_iterator
     cell_LS = dof_handler_LS.begin_active(),
@@ -650,7 +650,7 @@ void LevelSetSolver<dim>::assemble_MC()
   const unsigned int   n_q_points    = quadrature_formula.size();
   
   FullMatrix<double>   cell_MC (dofs_per_cell, dofs_per_cell);
-  std::vector<unsigned int> local_dof_indices (dofs_per_cell);
+  std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
   std::vector<double> shape_values(dofs_per_cell);
 
   typename DoFHandler<dim>::active_cell_iterator
@@ -810,7 +810,7 @@ void LevelSetSolver<dim>::assemble_K_times_vector(PETScWrappers::MPI::Vector &so
 
   Vector<double> un_dofs(dofs_per_cell);
   
-  std::vector<unsigned int> indices_LS (dofs_per_cell);
+  std::vector<types::global_dof_index> indices_LS (dofs_per_cell);
 
   // loop on cells
   typename DoFHandler<dim>::active_cell_iterator
@@ -860,10 +860,10 @@ void LevelSetSolver<dim>::assemble_K_DL_DH_times_vector
   dLij_matrix = 0;
   dCij_matrix = 0;
 
-  int ncolumns;
-  const int *gj; 
-  const double *Cxi, *Cyi, *Czi, *CTxi, *CTyi, *CTzi;
-  const double *EntResi, *SuppSizei, *MCi;
+  PetscInt ncolumns;
+  const PetscInt *gj;
+  const PetscScalar *Cxi, *Cyi, *Czi, *CTxi, *CTyi, *CTzi;
+  const PetscScalar *EntResi, *SuppSizei, *MCi;
   double solni;
   
   Tensor<1,dim> vi,vj;
@@ -873,7 +873,7 @@ void LevelSetSolver<dim>::assemble_K_DL_DH_times_vector
 
   for (;idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
     {
-      int gi = *idofs_iter;
+      PetscInt gi = *idofs_iter;
       //double ith_K_times_solution = 0;
       
       // read velocity of i-th DOF
@@ -897,7 +897,7 @@ void LevelSetSolver<dim>::assemble_K_DL_DH_times_vector
       MatGetRow(MC_matrix,gi,&ncolumns,&gj,&MCi);
 
       // get vector values for column indices
-      const std::vector<unsigned int> gj_indices (gj,gj+ncolumns);
+      const std::vector<types::global_dof_index> gj_indices (gj,gj+ncolumns);
       std::vector<double> soln(ncolumns);
       std::vector<double> vx(ncolumns);
       std::vector<double> vy(ncolumns);
@@ -1115,7 +1115,7 @@ void LevelSetSolver<dim>::compute_bounds(PETScWrappers::MPI::Vector &un_solution
       int gi = *idofs_iter;
 
       // get solution at DOFs on the sparsity pattern of i-th DOF
-      std::vector<unsigned int> gj_indices = sparsity_pattern[gi];
+      std::vector<types::global_dof_index> gj_indices = sparsity_pattern[gi];
       std::vector<double> soln(gj_indices.size());
       get_vector_values(un_solution,gj_indices,soln);
       // compute bounds, ith row of flux matrix, P vectors
@@ -1138,7 +1138,7 @@ void LevelSetSolver<dim>::check_max_principle(PETScWrappers::MPI::Vector &unp1_s
 {
   // compute min and max vectors
   const unsigned int   dofs_per_cell = fe_LS.dofs_per_cell;
-  std::vector<unsigned int> local_dof_indices (dofs_per_cell);
+  std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
   
   double tol=1e-10;
   typename DoFHandler<dim>::active_cell_iterator
@@ -1204,9 +1204,9 @@ void LevelSetSolver<dim>::compute_MPP_uH
   // loop on locally owned i-DOFs (rows)
   IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
 
-  int ncolumns;
-  const int *gj; 
-  const double *MCi, *dLi, *dCi;
+  PetscInt ncolumns;
+  const PetscInt *gj;
+  const PetscScalar *MCi, *dLi, *dCi;
   double solni, mi, solLi, solHi;
   
   for (;idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
@@ -1224,7 +1224,7 @@ void LevelSetSolver<dim>::compute_MPP_uH
       MatGetRow(dCij_matrix,gi,&ncolumns,&gj,&dCi);
 
       // get vector values for support of i-th DOF
-      const std::vector<unsigned int> gj_indices (gj,gj+ncolumns);
+      const std::vector<types::global_dof_index> gj_indices (gj,gj+ncolumns);
       std::vector<double> soln(ncolumns);
       std::vector<double> solH(ncolumns);
       get_vector_values(solution,gj_indices,soln);
@@ -1288,7 +1288,7 @@ void LevelSetSolver<dim>::compute_MPP_uH
       MatGetRow(A_matrix,gi,&ncolumns,&gj,&Ai);
 
       // get vector values for column indices
-      const std::vector<unsigned int> gj_indices (gj,gj+ncolumns);
+      const std::vector<types::global_dof_index> gj_indices (gj,gj+ncolumns);
       std::vector<double> Rpos(ncolumns);
       std::vector<double> Rneg(ncolumns);
       get_vector_values(R_pos_vector,gj_indices,Rpos);
@@ -1327,9 +1327,9 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
       LxAkp1_matrix.copy_from(LxA_matrix);
       
       // loop in num of FCT iterations
-      int ncolumns;
-      const int *gj; 
-      const double *Akp1i;
+      PetscInt ncolumns;
+      const PetscInt *gj;
+      const PetscScalar *Akp1i;
       double mi;
       for (int iter=0; iter<NUM_ITER; iter++)
 	{
@@ -1349,7 +1349,7 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
 	      // get i-th row of matrices
 	      MatGetRow(Akp1_matrix,gi,&ncolumns,&gj,&Akp1i);
 	      // get vector values for support of i-th DOF
-	      const std::vector<unsigned int> gj_indices (gj,gj+ncolumns);
+	      const std::vector<types::global_dof_index> gj_indices (gj,gj+ncolumns);
 	      std::vector<double> soln(ncolumns);
 	      get_vector_values(un_solution,gj_indices,soln);
 	      
@@ -1397,7 +1397,7 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
 	      MatGetRow(Akp1_matrix,gi,&ncolumns,&gj,&Akp1i);
 	      
 	      // get vector values for column indices
-	      const std::vector<unsigned int> gj_indices(gj,gj+ncolumns);
+	      const std::vector<types::global_dof_index> gj_indices(gj,gj+ncolumns);
 	      std::vector<double> Rpos(ncolumns);
 	      std::vector<double> Rneg(ncolumns);
 	      get_vector_values(R_pos_vector,gj_indices,Rpos);
@@ -1489,13 +1489,13 @@ void LevelSetSolver<dim>::get_sparsity_pattern()
 {
   // loop on DOFs
   IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
-  int ncolumns;
-  const int *gj; 
-  const double *MCi;
+  PetscInt ncolumns;
+  const PetscInt *gj;
+  const PetscScalar *MCi;
 
   for (;idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
     {
-      int gi = *idofs_iter;      
+      PetscInt gi = *idofs_iter;
       // get i-th row of mass matrix (dummy, I just need the indices gj)
       MatGetRow(MC_matrix,gi,&ncolumns,&gj,&MCi);
       sparsity_pattern[gi] = std::vector<types::global_dof_index>(gj,gj+ncolumns);
@@ -1508,9 +1508,9 @@ void LevelSetSolver<dim>::get_map_from_Q1_to_Q2()
 {
   map_from_Q1_to_Q2.clear();
   const unsigned int   dofs_per_cell_LS = fe_LS.dofs_per_cell;
-  std::vector<unsigned int> local_dof_indices_LS (dofs_per_cell_LS);
+  std::vector<types::global_dof_index> local_dof_indices_LS (dofs_per_cell_LS);
   const unsigned int   dofs_per_cell_U = fe_U.dofs_per_cell;
-  std::vector<unsigned int> local_dof_indices_U (dofs_per_cell_U);
+  std::vector<types::global_dof_index> local_dof_indices_U (dofs_per_cell_U);
 
   typename DoFHandler<dim>::active_cell_iterator
     cell_LS = dof_handler_LS.begin_active(),
@@ -1565,7 +1565,7 @@ void LevelSetSolver<dim>::save_old_vel_solution()
 // ------------------------------------------------------------------------------- //
 template<int dim>
 void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector, 
-					     const std::vector<unsigned int> &indices,
+					     const std::vector<types::global_dof_index> &indices,
 					     std::vector<PetscScalar> &values)
 {
   // PETSc wrapper to get sets of values from a petsc vector. 
@@ -1581,7 +1581,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
   IndexSet ghost_indices = locally_relevant_dofs_LS;
   ghost_indices.subtract_set(locally_owned_dofs_LS);
 
-  int n_idx, begin, end, i;
+  PetscInt n_idx, begin, end, i;
   n_idx = indices.size();
     
   VecGetOwnershipRange (vector, &begin, &end); 
@@ -1609,7 +1609,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
 
 template<int dim>
 void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector, 
-					     const std::vector<unsigned int> &indices,
+					     const std::vector<types::global_dof_index> &indices,
 					     std::map<types::global_dof_index, types::global_dof_index> &map_from_Q1_to_Q2,
 					     std::vector<PetscScalar> &values)
 {
@@ -1627,7 +1627,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
   IndexSet ghost_indices = locally_relevant_dofs_U;
   ghost_indices.subtract_set(locally_owned_dofs_U);
 
-  int n_idx, begin, end, i;
+  PetscInt n_idx, begin, end, i;
   n_idx = indices.size();
     
   VecGetOwnershipRange (vector, &begin, &end); 

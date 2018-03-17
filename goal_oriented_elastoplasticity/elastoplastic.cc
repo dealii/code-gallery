@@ -38,7 +38,7 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/compressed_sparsity_pattern.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/block_sparsity_pattern.h>
 #include <deal.II/lac/solver_bicgstab.h>
 #include <deal.II/lac/precondition.h>
@@ -46,7 +46,6 @@
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/lac/trilinos_block_sparse_matrix.h>
 #include <deal.II/lac/trilinos_vector.h>
-#include <deal.II/lac/trilinos_block_vector.h>
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_solver.h>
 #include <deal.II/lac/sparse_direct.h>
@@ -59,6 +58,7 @@
 #include <deal.II/grid/tria_iterator.h>
 #include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/manifold_lib.h>
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/grid_refinement.h>
@@ -163,7 +163,7 @@ namespace ElastoPlastic
         for (unsigned int f=0; f<4; ++f)
           if (cell->at_boundary(f))
             {
-              quad.boundary_id = cell->face(f)->boundary_indicator();
+              quad.boundary_id = cell->face(f)->boundary_id();
               bid = std::max(bid, quad.boundary_id);
               for (unsigned int slice=0; slice<n_slices-1; ++slice)
                 {
@@ -497,8 +497,6 @@ namespace ElastoPlastic
     stress_tensor = (stress_strain_tensor_kappa + stress_strain_tensor_mu)
                     * strain_tensor;
 
-    const SymmetricTensor<2, dim> deviator_stress_tensor = deviator(stress_tensor);
-    const double deviator_stress_tensor_norm = deviator_stress_tensor.norm();
     const double von_Mises_stress = Evaluation::get_von_Mises_stress(stress_tensor);
 
     if (von_Mises_stress > sigma_0)
@@ -1540,7 +1538,7 @@ namespace ElastoPlastic
     template <int dim>
     void
     IncrementalBoundaryValues<dim>::
-    vector_value (const Point<dim> &p,
+    vector_value (const Point<dim> &/*p*/,
                   Vector<double>   &values) const
     {
       AssertThrow (values.size() == dim,
@@ -1622,9 +1620,9 @@ namespace ElastoPlastic
     template <int dim>
     void
     PointValuesEvaluation<dim>::
-    assemble_rhs (const DoFHandler<dim>      &dof_handler,
-                  const Vector<double>       &solution,
-                  const ConstitutiveLaw<dim> &constitutive_law,
+    assemble_rhs (const DoFHandler<dim>      &/*dof_handler*/,
+                  const Vector<double>       &/*solution*/,
+                  const ConstitutiveLaw<dim> &/*constitutive_law*/,
                   const DoFHandler<dim>      &dof_handler_dual,
                   Vector<double>             &rhs_dual) const
     {
@@ -1687,14 +1685,13 @@ namespace ElastoPlastic
     template <int dim>
     void
     PointXDerivativesEvaluation<dim>::
-    assemble_rhs (const DoFHandler<dim>      &dof_handler,
-                  const Vector<double>       &solution,
-                  const ConstitutiveLaw<dim> &constitutive_law,
+    assemble_rhs (const DoFHandler<dim>      &/*dof_handler*/,
+                  const Vector<double>       &/*solution*/,
+                  const ConstitutiveLaw<dim> &/*constitutive_law*/,
                   const DoFHandler<dim>      &dof_handler_dual,
                   Vector<double>             &rhs_dual) const
     {
       rhs_dual.reinit (dof_handler_dual.n_dofs());
-      const unsigned int dofs_per_vertex = dof_handler_dual.get_fe().dofs_per_vertex;
 
       QGauss<dim> quadrature(4);
       FEValues<dim>  fe_values (dof_handler_dual.get_fe(), quadrature,
@@ -1724,9 +1721,6 @@ namespace ElastoPlastic
               {
                 for (unsigned int i=0; i<dofs_per_cell; ++i)
                   {
-                    const unsigned int
-                    component_i = dof_handler_dual.get_fe().system_to_component_index(i).first;
-
                     cell_rhs(i) += fe_values.shape_grad(i,q)[0] *
                                    fe_values.JxW (q);
                   }
@@ -1744,7 +1738,7 @@ namespace ElastoPlastic
       AssertThrow (total_volume > 0,
                    ExcEvaluationPointNotFound(evaluation_point));
 
-      rhs_dual.scale (1./total_volume);
+      rhs_dual *= 1./total_volume;
     }
 
 
@@ -1786,9 +1780,9 @@ namespace ElastoPlastic
     template <int dim>
     void
     MeanDisplacementFace<dim>::
-    assemble_rhs (const DoFHandler<dim>      &dof_handler,
-                  const Vector<double>       &solution,
-                  const ConstitutiveLaw<dim> &constitutive_law,
+    assemble_rhs (const DoFHandler<dim>      &/*dof_handler*/,
+                  const Vector<double>       &/*solution*/,
+                  const ConstitutiveLaw<dim> &/*constitutive_law*/,
                   const DoFHandler<dim>      &dof_handler_dual,
                   Vector<double>             &rhs_dual) const
     {
@@ -1835,7 +1829,7 @@ namespace ElastoPlastic
             {
               if (cell->face(face)->at_boundary()
                   &&
-                  cell->face(face)->boundary_indicator() == face_id)
+                  cell->face(face)->boundary_id() == face_id)
                 {
                   if (!evaluation_face_found)
                     {
@@ -1961,7 +1955,7 @@ namespace ElastoPlastic
             {
               if (cell_dual->face(face)->at_boundary()
                   &&
-                  cell_dual->face(face)->boundary_indicator() == face_id)
+                  cell_dual->face(face)->boundary_id() == face_id)
                 {
                   if (!evaluation_face_found)
                     {
@@ -2291,7 +2285,7 @@ namespace ElastoPlastic
             {
               if (cell->face(face)->at_boundary()
                   &&
-                  cell->face(face)->boundary_indicator() == face_id)
+                  cell->face(face)->boundary_id() == face_id)
                 {
                   if (!evaluation_face_found)
                     {
@@ -2299,7 +2293,7 @@ namespace ElastoPlastic
                     }
                   primal_fe_face_values.reinit (primal_cell, face);
 
-                  primal_fe_face_values.get_function_grads (primal_solution,
+                  primal_fe_face_values.get_function_gradients (primal_solution,
                                                             primal_solution_gradients);
 
                   primal_fe_face_values.get_function_hessians (primal_solution,
@@ -2364,7 +2358,7 @@ namespace ElastoPlastic
 
       AssertThrow(evaluation_face_found, ExcInternalError());
 
-      rhs.scale (1./(2*bound_size));
+      rhs *= 1./(2*bound_size);
 
     }
 
@@ -2400,7 +2394,7 @@ namespace ElastoPlastic
     void solve ();
     void output_results ();
 
-    const FESystem<dim>     fe;
+    const FESystem<dim>     &fe;
     DoFHandler<dim>         dof_handler;
     const Vector<double>    solution;
 
@@ -2935,7 +2929,7 @@ namespace ElastoPlastic
                 {
                   // ------------- integrate_over_regular_face -----------
                   fe_face_values_cell.reinit(cell, face_no);
-                  fe_face_values_cell.get_function_grads (primal_solution,
+                  fe_face_values_cell.get_function_gradients (primal_solution,
                                                           cell_grads);
 
                   Assert (cell->neighbor(face_no).state() == IteratorState::valid,
@@ -2946,7 +2940,7 @@ namespace ElastoPlastic
                   neighbor = cell->neighbor(face_no);
 
                   fe_face_values_neighbor.reinit(neighbor, neighbor_neighbor);
-                  fe_face_values_neighbor.get_function_grads (primal_solution,
+                  fe_face_values_neighbor.get_function_gradients (primal_solution,
                                                               neighbor_grads);
 
                   for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
@@ -3044,11 +3038,11 @@ namespace ElastoPlastic
                               ExcInternalError());
 
                       fe_subface_values_cell.reinit (cell, face_no, subface_no);
-                      fe_subface_values_cell.get_function_grads (primal_solution,
+                      fe_subface_values_cell.get_function_gradients (primal_solution,
                                                                  cell_grads);
                       fe_face_values_neighbor.reinit (neighbor_child,
                                                       neighbor_neighbor);
-                      fe_face_values_neighbor.get_function_grads (primal_solution,
+                      fe_face_values_neighbor.get_function_gradients (primal_solution,
                                                                   neighbor_grads);
 
                       for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
@@ -3600,13 +3594,13 @@ namespace ElastoPlastic
               {
                 if ( std::fabs(cell->face(face)->center()(0)-length) < 1e-12 )
                   {
-                    cell->face(face)->set_boundary_indicator(5);
+                    cell->face(face)->set_manifold_id(5);
                   }
                 else if ( ( std::fabs(cell->face(face)->center()(1)-(depth/2)) < 1e-12 )
                           ||
                           ( std::fabs(cell->face(face)->center()(1)-(-depth/2)) < 1e-12 ) )
                   {
-                    cell->face(face)->set_boundary_indicator(100);
+                    cell->face(face)->set_manifold_id(100);
                   }
 
               }
@@ -3646,16 +3640,16 @@ namespace ElastoPlastic
         // 2 - left boundary   - essential boundary condition - constrained to move along the x direction
         // 3 - bottom boundary - essential boundary condition - constrained to move along the y direction
 
-        const HyperBallBoundary<dim> inner_boundary_description(center, inner_radius);
-        triangulation.set_boundary (0, inner_boundary_description);
+        const SphericalManifold<dim> inner_boundary_description(center);
+        triangulation.set_manifold (0, inner_boundary_description);
 
-        const HyperBallBoundary<dim> outer_boundary_description(center, outer_radius);
-        triangulation.set_boundary (1, outer_boundary_description);
+        const SphericalManifold<dim> outer_boundary_description(center);
+        triangulation.set_manifold (1, outer_boundary_description);
 
         triangulation.refine_global(n_initial_global_refinements);
 
-        triangulation.set_boundary (0);
-        triangulation.set_boundary (1);
+        triangulation.set_manifold (0);
+        triangulation.set_manifold (1);
 
       }
     else if (base_mesh == "Perforated_strip_tension")
@@ -3763,23 +3757,23 @@ namespace ElastoPlastic
                       {
                         if ( std::fabs(cell->face(f)->center()(1)) < eps )
                           {
-                            cell->face(f)->set_boundary_indicator(1);
+                            cell->face(f)->set_manifold_id(1);
                           }
                         else if ( std::fabs(cell->face(f)->center()(0)-outer_radius) < eps )
                           {
-                            cell->face(f)->set_boundary_indicator(2);
+                            cell->face(f)->set_manifold_id(2);
                           }
                         else if ( std::fabs(cell->face(f)->center()(1)-height) < eps )
                           {
-                            cell->face(f)->set_boundary_indicator(3);
+                            cell->face(f)->set_manifold_id(3);
                           }
                         else if ( std::fabs(cell->face(f)->center()(0)) < eps )
                           {
-                            cell->face(f)->set_boundary_indicator(4);
+                            cell->face(f)->set_manifold_id(4);
                           }
                         else
                           {
-                            cell->face(f)->set_all_boundary_indicators(10);
+                            cell->face(f)->set_all_boundary_ids(10);
                           }
 
                       }
@@ -3788,12 +3782,12 @@ namespace ElastoPlastic
 
           }
 
-          const HyperBallBoundary<dim_2d> inner_boundary_description(center_2d, inner_radius);
-          triangulation_2d.set_boundary (10, inner_boundary_description);
+          const SphericalManifold<dim_2d> inner_boundary_description(center_2d);
+          triangulation_2d.set_manifold (10, inner_boundary_description);
 
           triangulation_2d.refine_global(3);
 
-          triangulation_2d.set_boundary (10);
+          triangulation_2d.set_manifold (10);
         }
 
         // Extrude the triangulation_2d and make it 3d
@@ -3820,7 +3814,7 @@ namespace ElastoPlastic
          *            1                   /
          */
         {
-          Point<dim> dist_vector;
+          Tensor<1,dim> dist_vector;
           Point<dim> center(center_2d(0), center_2d(1), 0);
 
           typename Triangulation<dim>::active_cell_iterator
@@ -3834,33 +3828,33 @@ namespace ElastoPlastic
                     {
                       dist_vector = cell->face(f)->center() - center;
 
-                      if ( std::fabs(dist_vector(1)) < eps )
+                      if ( std::fabs(dist_vector[1]) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(1);
+                          cell->face(f)->set_manifold_id(1);
                         }
-                      else if ( std::fabs(dist_vector(0)-outer_radius) < eps )
+                      else if ( std::fabs(dist_vector[0]-outer_radius) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(2);
+                          cell->face(f)->set_manifold_id(2);
                         }
-                      else if ( std::fabs(dist_vector(1)-height) < eps )
+                      else if ( std::fabs(dist_vector[1]-height) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(3);
+                          cell->face(f)->set_manifold_id(3);
                         }
-                      else if ( std::fabs(dist_vector(0)) < eps )
+                      else if ( std::fabs(dist_vector[0]) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(4);
+                          cell->face(f)->set_manifold_id(4);
                         }
-                      else if ( std::fabs(dist_vector(2)) < eps )
+                      else if ( std::fabs(dist_vector[2]) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(5);
+                          cell->face(f)->set_manifold_id(5);
                         }
-                      else if ( std::fabs(dist_vector(2)-thickness) < eps )
+                      else if ( std::fabs(dist_vector[2]-thickness) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(6);
+                          cell->face(f)->set_manifold_id(6);
                         }
                       else
                         {
-                          cell->face(f)->set_all_boundary_indicators(10);
+                          cell->face(f)->set_all_boundary_ids(10);
                         }
 
                     }
@@ -3869,12 +3863,12 @@ namespace ElastoPlastic
 
         }
 
-        const CylinderBoundary<dim> inner_boundary_description(inner_radius, 2);
-        triangulation.set_boundary (10, inner_boundary_description);
+        const CylindricalManifold<dim> inner_boundary_description(inner_radius, 2);
+        triangulation.set_manifold (10, inner_boundary_description);
 
         triangulation.refine_global(n_initial_global_refinements);
 
-        triangulation.set_boundary (10);
+        triangulation.set_manifold (10);
 
       }
     else if (base_mesh == "Cantiliver_beam_3d")
@@ -4001,7 +3995,7 @@ namespace ElastoPlastic
          *   displacement at Point A (x=0, y=height/2, z=length)
          */
         {
-          Point<dim> dist_vector;
+          Tensor<1,dim> dist_vector;
           Point<dim> center(0, 0, 0);
 
           typename Triangulation<dim>::active_cell_iterator
@@ -4015,17 +4009,17 @@ namespace ElastoPlastic
                     {
                       dist_vector = cell->face(f)->center() - center;
 
-                      if ( std::fabs(dist_vector(2)) < eps )
+                      if ( std::fabs(dist_vector[2]) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(1);
+                          cell->face(f)->set_manifold_id(1);
                         }
-                      else if ( std::fabs(dist_vector(1)-(height/2)) < eps )
+                      else if ( std::fabs(dist_vector[1]-(height/2)) < eps )
                         {
-                          cell->face(f)->set_boundary_indicator(2);
+                          cell->face(f)->set_manifold_id(2);
                         }
                       else
                         {
-                          cell->face(f)->set_all_boundary_indicators(0);
+                          cell->face(f)->set_all_boundary_ids(0);
                         }
 
                     }
@@ -4243,7 +4237,7 @@ namespace ElastoPlastic
   template <int dim>
   void
   ElastoPlasticProblem<dim>::
-  assemble_newton_system (const TrilinosWrappers::MPI::Vector &linearization_point,
+  assemble_newton_system (const TrilinosWrappers::MPI::Vector &/*linearization_point*/,
                           const TrilinosWrappers::MPI::Vector &delta_linearization_point)
   {
     TimerOutput::Scope t(computing_timer, "Assembling");
@@ -4392,7 +4386,7 @@ namespace ElastoPlastic
           for (unsigned int face=0; face<GeometryInfo<dim>::faces_per_cell; ++face)
             if (cell->face(face)->at_boundary()
                 &&
-                cell->face(face)->boundary_indicator() == traction_surface_id)
+                cell->face(face)->boundary_id() == traction_surface_id)
               {
                 fe_values_face.reinit(cell, face);
 
@@ -4555,7 +4549,7 @@ namespace ElastoPlastic
 
           for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
             if (cell->face(face)->at_boundary()
-                && cell->face(face)->boundary_indicator() == traction_surface_id)
+                && cell->face(face)->boundary_id() == traction_surface_id)
               {
                 fe_values_face.reinit(cell, face);
 
@@ -5208,7 +5202,7 @@ namespace ElastoPlastic
                 {
                   // ------------- integrate_over_regular_face -----------
                   fe_face_values_cell.reinit(cell, face_no);
-                  fe_face_values_cell.get_function_grads (tmp_solution,
+                  fe_face_values_cell.get_function_gradients (tmp_solution,
                                                           cell_grads);
 
                   Assert (cell->neighbor(face_no).state() == IteratorState::valid,
@@ -5219,7 +5213,7 @@ namespace ElastoPlastic
                   neighbor = cell->neighbor(face_no);
 
                   fe_face_values_neighbor.reinit(neighbor, neighbor_neighbor);
-                  fe_face_values_neighbor.get_function_grads (tmp_solution,
+                  fe_face_values_neighbor.get_function_gradients (tmp_solution,
                                                               neighbor_grads);
 
                   for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
@@ -5313,11 +5307,11 @@ namespace ElastoPlastic
                               ExcInternalError());
 
                       fe_subface_values_cell.reinit (cell, face_no, subface_no);
-                      fe_subface_values_cell.get_function_grads (tmp_solution,
+                      fe_subface_values_cell.get_function_gradients (tmp_solution,
                                                                  cell_grads);
                       fe_face_values_neighbor.reinit (neighbor_child,
                                                       neighbor_neighbor);
-                      fe_face_values_neighbor.get_function_grads (tmp_solution,
+                      fe_face_values_neighbor.get_function_gradients (tmp_solution,
                                                                   neighbor_grads);
 
                       for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
@@ -6049,7 +6043,7 @@ namespace ElastoPlastic
         data_out.write_pvtu_record(pvtu_master_output, filenames);
 
         std::ofstream visit_master_output((output_dir + filename_base + ".visit").c_str());
-        data_out.write_visit_record(visit_master_output, filenames);
+        data_out.write_pvtu_record(visit_master_output, filenames);
 
         // produce eps files for mesh illustration
         std::ofstream output_eps((filename + ".eps").c_str());
@@ -6259,7 +6253,7 @@ namespace ElastoPlastic
               data_out.write_pvtu_record(pvtu_master_output, filenames);
 
               std::ofstream visit_master_output((output_dir + filename_base_stress + ".visit").c_str());
-              data_out.write_visit_record(visit_master_output, filenames);
+              data_out.write_pvtu_record(visit_master_output, filenames);
             }
 
 
@@ -6306,7 +6300,7 @@ namespace ElastoPlastic
               data_out.write_pvtu_record(pvtu_master_output, filenames);
 
               std::ofstream visit_master_output((output_dir + filename_base_stress + ".visit").c_str());
-              data_out.write_visit_record(visit_master_output, filenames);
+              data_out.write_pvtu_record(visit_master_output, filenames);
             }
 
 
@@ -6384,8 +6378,7 @@ namespace ElastoPlastic
         // make a non-parallel copy of solution
         Vector<double> copy_solution(solution);
 
-        typename Evaluation::PointValuesEvaluation<dim>::
-        PointValuesEvaluation point_values_evaluation(point_A);
+        Evaluation::PointValuesEvaluation<dim> point_values_evaluation(point_A);
 
         point_values_evaluation.compute (dof_handler, copy_solution, disp_A);
 
@@ -6460,7 +6453,6 @@ namespace ElastoPlastic
 
                   // transform the stress from the Cartesian coordinate to the polar coordinate
                   const Point<dim> point = local_quadrature_points_history[q].point;
-                  const double radius = point.norm ();
                   const double theta = std::atan2(point(1),point(0));
 
                   // rotation matrix
@@ -6525,7 +6517,7 @@ namespace ElastoPlastic
               data_out.write_pvtu_record(pvtu_master_output, filenames);
 
               std::ofstream visit_master_output((output_dir + filename_base_stress + ".visit").c_str());
-              data_out.write_visit_record(visit_master_output, filenames);
+              data_out.write_pvtu_record(visit_master_output, filenames);
             }
 
 
@@ -6634,7 +6626,7 @@ namespace ElastoPlastic
               data_out.write_pvtu_record(pvtu_master_output, filenames);
 
               std::ofstream visit_master_output((output_dir + filename_base_stress + ".visit").c_str());
-              data_out.write_visit_record(visit_master_output, filenames);
+              data_out.write_pvtu_record(visit_master_output, filenames);
             }
 
 
@@ -6663,7 +6655,7 @@ namespace ElastoPlastic
                     {
                       if (cell->face(face)->at_boundary()
                           &&
-                          cell->face(face)->boundary_indicator() == face_id)
+                          cell->face(face)->boundary_id() == face_id)
                         {
                           if (!evaluation_face_found)
                             {
@@ -6718,7 +6710,7 @@ namespace ElastoPlastic
                     {
                       if (cell->face(face)->at_boundary()
                           &&
-                          cell->face(face)->boundary_indicator() == face_id_2)
+                          cell->face(face)->boundary_id() == face_id_2)
                         {
                           if (!evaluation_face_found)
                             {
@@ -6768,13 +6760,11 @@ namespace ElastoPlastic
     else if (base_mesh == "Perforated_strip_tension")
       {
         const double imposed_displacement (0.00055),
-              inner_radius (0.05),
-              height (0.18);
+              inner_radius (0.05);
 
         // Plane stress
 //      const double mu (((e_modulus*(1+2*nu)) / (std::pow((1+nu),2))) / (2 * (1 + (nu / (1+nu)))));
         // 3d and plane strain
-        const double mu (e_modulus / (2 * (1 + nu)));
 
         // table_results: Demonstrates the result of displacement at the top left corner versus imposed tension
         /*
@@ -6819,7 +6809,7 @@ namespace ElastoPlastic
                   {
                     if (cell->face(face)->at_boundary()
                         &&
-                        cell->face(face)->boundary_indicator() == face_id)
+                        cell->face(face)->boundary_id() == face_id)
                       {
                         if (!evaluation_face_found)
                           {
@@ -6874,7 +6864,7 @@ namespace ElastoPlastic
                     {
                       if (cell->face(face)->at_boundary()
                           &&
-                          cell->face(face)->boundary_indicator() == face_id)
+                          cell->face(face)->boundary_id() == face_id)
                         {
                           if (!evaluation_face_found)
                             {
@@ -7006,8 +6996,7 @@ namespace ElastoPlastic
           // make a non-parallel copy of solution
           Vector<double> copy_solution(solution);
 
-          typename Evaluation::PointValuesEvaluation<dim>::
-          PointValuesEvaluation point_values_evaluation(point_A);
+          Evaluation::PointValuesEvaluation<dim> point_values_evaluation(point_A);
 
           point_values_evaluation.compute (dof_handler, copy_solution, disp_A);
 
@@ -7107,11 +7096,11 @@ namespace ElastoPlastic
     const double inner_radius = .1,
         outer_radius = .2;
 
-    const HyperBallBoundary<dim> inner_boundary_description(center, inner_radius);
-    triangulation.set_boundary (0, inner_boundary_description);
+    const SphericalManifold<dim> inner_boundary_description(center, inner_radius);
+    triangulation.set_manifold (0, inner_boundary_description);
 
-    const HyperBallBoundary<dim> outer_boundary_description(center, outer_radius);
-    triangulation.set_boundary (1, outer_boundary_description);
+    const SphericalManifold<dim> outer_boundary_description(center, outer_radius);
+    triangulation.set_manifold (1, outer_boundary_description);
     */
     // ----------------------------------------------------------------
     //    base_mesh == "Perforated_strip_tension"
@@ -7119,7 +7108,7 @@ namespace ElastoPlastic
     const double inner_radius = 0.05;
 
     const CylinderBoundary<dim> inner_boundary_description(inner_radius, 2);
-    triangulation.set_boundary (10, inner_boundary_description);
+    triangulation.set_manifold (10, inner_boundary_description);
     */
     // ----------------------------------------------------------------
 
@@ -7227,12 +7216,12 @@ namespace ElastoPlastic
 
     if (base_mesh == "Thick_tube_internal_pressure")
       {
-        triangulation.set_boundary (0);
-        triangulation.set_boundary (1);
+        triangulation.set_manifold (0);
+        triangulation.set_manifold (1);
       }
     else if (base_mesh == "Perforated_strip_tension")
       {
-        triangulation.set_boundary (10);
+        triangulation.set_manifold (10);
       }
 
   }
@@ -7259,7 +7248,7 @@ int main (int argc, char *argv[])
           return 1;
         }
 
-      prm.read_input(argv[1]);
+      prm.parse_input(argv[1]);
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv);
       {
         ElastoPlasticProblem<dim> problem(prm);

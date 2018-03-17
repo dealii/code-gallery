@@ -11,7 +11,6 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/compressed_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/grid/tria.h>
@@ -80,14 +79,13 @@ void ellipsoid_fit<dim>::compute_fit(std::vector<double> &ell, unsigned char bou
     std::vector<unsigned int> ind_bnry_col;
 
 	// assemble the sensitivity matrix and r.h.s.
-    double zero_tolerance = 1e-3;
 	for (; cell != endc; ++cell) {
 		if (boundary_that_we_need != 0)
 			cell->set_manifold_id(cell->material_id());
 		for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f) {
 			if (boundary_that_we_need == 0) //if this is the outer surface, then look for boundary ID 0; otherwise look for material ID change.
 					{
-				boundary_ids = cell->face(f)->boundary_indicator();
+				boundary_ids = cell->face(f)->boundary_id();
 				if (boundary_ids == boundary_that_we_need) {
 					for (unsigned int v = 0;
 							v < GeometryInfo<dim>::vertices_per_face; ++v)

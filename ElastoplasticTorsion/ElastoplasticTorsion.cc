@@ -60,16 +60,16 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/compressed_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/tria_boundary_lib.h>
+#include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/grid/grid_in.h>
 
@@ -175,7 +175,7 @@ namespace nsp
   void ParameterReader::read_parameters (const std::string parameter_file)
   {
     declare_parameters();
-    prm.read_input (parameter_file);
+    prm.parse_input (parameter_file);
   }
 
 // ******************************************************************************************//
@@ -390,7 +390,7 @@ namespace nsp
 
 
   template <int dim>
-  double BoundaryValues<dim>::value (const Point<dim> &pto,
+  double BoundaryValues<dim>::value (const Point<dim> &/*pto*/,
                                      const unsigned int /*component*/) const
   {
     // could be anything else (theory works provided |Dg|_infty < 1/2)
@@ -430,7 +430,7 @@ namespace nsp
   };
 
   template <int dim>
-  double RightHandSide<dim>::value (const Point<dim> &p,
+  double RightHandSide<dim>::value (const Point<dim> &/*p*/,
                                     const unsigned int /*component*/) const
   {
     // set to constant = 4, for which explicit solution to compare exists
@@ -623,7 +623,7 @@ namespace nsp
 
     newton_update.reinit (dof_handler.n_dofs());
     system_rhs.reinit (dof_handler.n_dofs());
-    CompressedSparsityPattern c_sparsity(dof_handler.n_dofs());
+    DynamicSparsityPattern c_sparsity(dof_handler.n_dofs());
     DoFTools::make_sparsity_pattern (dof_handler, c_sparsity);
     hanging_node_constraints.condense (c_sparsity);
     sparsity_pattern.copy_from(c_sparsity);
@@ -645,13 +645,13 @@ namespace nsp
   }
 
   template <int dim>
-  double ElastoplasticTorsion<dim>::Wp (double Du2) const
+  double ElastoplasticTorsion<dim>::Wp (double /*Du2*/) const
   {
     return 1.0;
   }
 
   template <int dim>
-  double ElastoplasticTorsion<dim>::G (double Du2) const
+  double ElastoplasticTorsion<dim>::G (double /*Du2*/) const
   {
     return 1.0;
   }
@@ -1088,8 +1088,8 @@ namespace nsp
       {
         // For the unit disk around the origin
         GridGenerator::hyper_ball (triangulation);
-        static const HyperBallBoundary<dim> boundary;
-        triangulation.set_boundary (0, boundary);
+        static const SphericalManifold<dim> boundary;
+        triangulation.set_manifold (0, boundary);
       }
     else if (domain_id==1)
       {
@@ -1246,7 +1246,7 @@ namespace nsp
             )
               break;
           }
-        ptime=timer();
+        ptime=timer.cpu_time();
         if (well_solved)
           output_results (cycle);
 
@@ -1289,7 +1289,7 @@ namespace nsp
               break;
           }
         //inner iterations finished
-        ptime=timer();
+        ptime=timer.cpu_time();
         if (well_solved)
           output_results (cycle);
 

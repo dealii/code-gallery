@@ -67,7 +67,7 @@ public:
 private:
   void set_boundary_inlet();
   void get_boundary_values_U();
-  void get_boundary_values_phi(std::vector<unsigned int> &boundary_values_id_phi,
+  void get_boundary_values_phi(std::vector<types::global_dof_index> &boundary_values_id_phi,
 			       std::vector<double> &boundary_values_phi);
   void output_results();
   void output_vectors();
@@ -109,9 +109,9 @@ private:
   PETScWrappers::MPI::Vector completely_distributed_solution_v;
   PETScWrappers::MPI::Vector completely_distributed_solution_p;
   // BOUNDARY VECTORS
-  std::vector<unsigned int> boundary_values_id_u;
-  std::vector<unsigned int> boundary_values_id_v;
-  std::vector<unsigned int> boundary_values_id_phi;
+  std::vector<types::global_dof_index> boundary_values_id_u;
+  std::vector<types::global_dof_index> boundary_values_id_v;
+  std::vector<types::global_dof_index> boundary_values_id_phi;
   std::vector<double> boundary_values_u;
   std::vector<double> boundary_values_v;
   std::vector<double> boundary_values_phi;
@@ -268,9 +268,9 @@ void MultiPhase<dim>::init_constraints()
 template <int dim>
 void MultiPhase<dim>::get_boundary_values_U()
 {
-  std::map<unsigned int, double> map_boundary_values_u;
-  std::map<unsigned int, double> map_boundary_values_v;
-  std::map<unsigned int, double> map_boundary_values_w;
+  std::map<types::global_dof_index, double> map_boundary_values_u;
+  std::map<types::global_dof_index, double> map_boundary_values_v;
+  std::map<types::global_dof_index, double> map_boundary_values_w;
 
   // NO-SLIP CONDITION 
   if (PROBLEM==BREAKING_DAM || PROBLEM==FALLING_DROP)
@@ -325,8 +325,8 @@ void MultiPhase<dim>::get_boundary_values_U()
   boundary_values_id_v.resize(map_boundary_values_v.size());
   boundary_values_u.resize(map_boundary_values_u.size());
   boundary_values_v.resize(map_boundary_values_v.size());
-  std::map<unsigned int,double>::const_iterator boundary_value_u =map_boundary_values_u.begin();
-  std::map<unsigned int,double>::const_iterator boundary_value_v =map_boundary_values_v.begin();
+  std::map<types::global_dof_index,double>::const_iterator boundary_value_u =map_boundary_values_u.begin();
+  std::map<types::global_dof_index,double>::const_iterator boundary_value_v =map_boundary_values_v.begin();
   
   for (int i=0; boundary_value_u !=map_boundary_values_u.end(); ++boundary_value_u, ++i)
     {
@@ -372,10 +372,10 @@ void MultiPhase<dim>::set_boundary_inlet()
 }
 
 template <int dim>
-void MultiPhase<dim>::get_boundary_values_phi(std::vector<unsigned int> &boundary_values_id_phi,
+void MultiPhase<dim>::get_boundary_values_phi(std::vector<types::global_dof_index> &boundary_values_id_phi,
 					      std::vector<double> &boundary_values_phi)
 {
-  std::map<unsigned int, double> map_boundary_values_phi;
+  std::map<types::global_dof_index, double> map_boundary_values_phi;
   unsigned int boundary_id=0;
   
   set_boundary_inlet();
@@ -383,7 +383,7 @@ void MultiPhase<dim>::get_boundary_values_phi(std::vector<unsigned int> &boundar
   VectorTools::interpolate_boundary_values (dof_handler_LS,boundary_id,BoundaryPhi<dim>(1.0),map_boundary_values_phi);
   boundary_values_id_phi.resize(map_boundary_values_phi.size());
   boundary_values_phi.resize(map_boundary_values_phi.size());  
-  std::map<unsigned int,double>::const_iterator boundary_value_phi = map_boundary_values_phi.begin();
+  std::map<types::global_dof_index,double>::const_iterator boundary_value_phi = map_boundary_values_phi.begin();
   for (int i=0; boundary_value_phi !=map_boundary_values_phi.end(); ++boundary_value_phi, ++i)
     {
       boundary_values_id_phi[i]=boundary_value_phi->first;
