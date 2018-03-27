@@ -18,7 +18,7 @@ to build
 <a href="https://en.wikipedia.org/wiki/Discontinuous_Galerkin_method">
 discontinuous Galerkin (DG) methods</a>. While this is very convenient, 
 I could not use this framework for solving my research problem and I 
-needed write the LDG method from scratch. I thought it 
+needed to write the LDG method from scratch. I thought it 
 would be helpful for others to have access to 
 this example that goes through writing a discontinuous Galerkin method from 
 scatch and also shows how to do it in a distributed setting using the 
@@ -32,7 +32,7 @@ is very useful when one is working with a differential equation and desires
 both approximations to the scalar unknown function as well as its flux. 
 The application of a mixed method offers a mechanism whereby one 
 can obtain both the scalar unknown function as well as its flux, however, 
-the LDG method has less degrees of freedom compared to the 
+the LDG method has fewer degrees of freedom compared to the 
 <a href="https://link.springer.com/chapter/10.1007/BFb0064470">mixed method with 
 the Raviart-Thomas element</a>. It also approximates the scalar unknown function 
 and its flux using discontinuous polynomial basis functions and are much more 
@@ -95,17 +95,22 @@ w^{+} (\textbf{x} ) \, \vert_{\partial \Omega_{e} } \; = \;
 
 We define the average and jump of a function across an element face as,
 @f{align}
-\{f\} \; = \; \frac{1}{2}(f^-+f^+), 
+\{f\} \; = \; \frac{1}{2}(f^-+f^+) , 
 \qquad \mbox{and} \qquad 
-\left[ f \right] \; = \; f^+ \textbf{n}^+ + f^- \textbf{n}^-,
+\left[ f \right] 
+\; = \; f^+ \textbf{n}^+ + f^- \textbf{n}^-
+\; = \; (f^+  - f^-) \textbf{n}^+,
 @f}
 
 and,
 @f{align}
 \{\textbf{f} \} \; = \; \frac{1}{2}(\textbf{f}^- + \textbf{f}^+), 
 \qquad \mbox{and}\qquad  
-\left[ \textbf{f} \right] \; = \;\textbf{f}^+ \cdot \textbf{n}^+ + 
-\textbf{f}^- \cdot \textbf{n}^- , 
+\left[ \textbf{f} \right] 
+\; = \;
+\textbf{f}^+ \cdot \textbf{n}^+ + \textbf{f}^- \cdot \textbf{n}^- 
+\; = \;
+(\textbf{f}^+ - \textbf{f}^-) \cdot \textbf{n}^+ , 
 @f}
 
 where $f$ is a scalar function and $\textbf{f}$ is vector-valued function. 
@@ -117,7 +122,7 @@ We note that for faces that are on the boundary of the domain we have,
 @f}
 
 
-We denote the volume integrals and surface integrals using the $L^{2}(\Omega)$
+We denote the volume integrals and surface integrals using the $L^{2}$
 inner products by $( \, \cdot \, , \, \cdot \, )_{\Omega}$ and $\langle  \, 
 \cdot \, , \, \cdot \,  \rangle_{\partial \Omega}$ respectively. 
 
