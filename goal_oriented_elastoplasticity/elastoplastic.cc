@@ -2294,7 +2294,7 @@ namespace ElastoPlastic
                   primal_fe_face_values.reinit (primal_cell, face);
 
                   primal_fe_face_values.get_function_gradients (primal_solution,
-                                                            primal_solution_gradients);
+                                                                primal_solution_gradients);
 
                   primal_fe_face_values.get_function_hessians (primal_solution,
                                                                primal_solution_hessians);
@@ -2930,7 +2930,7 @@ namespace ElastoPlastic
                   // ------------- integrate_over_regular_face -----------
                   fe_face_values_cell.reinit(cell, face_no);
                   fe_face_values_cell.get_function_gradients (primal_solution,
-                                                          cell_grads);
+                                                              cell_grads);
 
                   Assert (cell->neighbor(face_no).state() == IteratorState::valid,
                           ExcInternalError());
@@ -2941,7 +2941,7 @@ namespace ElastoPlastic
 
                   fe_face_values_neighbor.reinit(neighbor, neighbor_neighbor);
                   fe_face_values_neighbor.get_function_gradients (primal_solution,
-                                                              neighbor_grads);
+                                                                  neighbor_grads);
 
                   for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
                     {
@@ -3039,11 +3039,11 @@ namespace ElastoPlastic
 
                       fe_subface_values_cell.reinit (cell, face_no, subface_no);
                       fe_subface_values_cell.get_function_gradients (primal_solution,
-                                                                 cell_grads);
+                                                                     cell_grads);
                       fe_face_values_neighbor.reinit (neighbor_child,
                                                       neighbor_neighbor);
                       fe_face_values_neighbor.get_function_gradients (primal_solution,
-                                                                  neighbor_grads);
+                                                                      neighbor_grads);
 
                       for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
                         {
@@ -5203,7 +5203,7 @@ namespace ElastoPlastic
                   // ------------- integrate_over_regular_face -----------
                   fe_face_values_cell.reinit(cell, face_no);
                   fe_face_values_cell.get_function_gradients (tmp_solution,
-                                                          cell_grads);
+                                                              cell_grads);
 
                   Assert (cell->neighbor(face_no).state() == IteratorState::valid,
                           ExcInternalError());
@@ -5214,7 +5214,7 @@ namespace ElastoPlastic
 
                   fe_face_values_neighbor.reinit(neighbor, neighbor_neighbor);
                   fe_face_values_neighbor.get_function_gradients (tmp_solution,
-                                                              neighbor_grads);
+                                                                  neighbor_grads);
 
                   for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
                     {
@@ -5308,11 +5308,11 @@ namespace ElastoPlastic
 
                       fe_subface_values_cell.reinit (cell, face_no, subface_no);
                       fe_subface_values_cell.get_function_gradients (tmp_solution,
-                                                                 cell_grads);
+                                                                     cell_grads);
                       fe_face_values_neighbor.reinit (neighbor_child,
                                                       neighbor_neighbor);
                       fe_face_values_neighbor.get_function_gradients (tmp_solution,
-                                                                  neighbor_grads);
+                                                                      neighbor_grads);
 
                       for (unsigned int q_point=0; q_point<n_face_q_points; ++q_point)
                         {

@@ -42,15 +42,15 @@ namespace MFMFE
     const double y = p[1];
 
     switch (dim)
-    {
+      {
       case 2:
         return -(x*(y*y*y*y)*6.0-(y*y)*sin(x*y*2.0)*2.0+2.0)*(x*2.0+x*x+y*y+1.0)-sin(x*y)*(cos(x*y*2.0)+(x*x)*(y*y*y)*1.2E1
-                  -x*y*sin(x*y*2.0)*2.0)*2.0-(x*2.0+2.0)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*cos(x*y*2.0))+(x*x)*(sin(x*y*2.0)
-                  -x*(y*y)*6.0)*pow(x+1.0,2.0)*2.0-x*cos(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*(pow(cos(x*y),2.0)*2.0-1.0))
-                  -x*y*cos(x*y)*((x*x)*(y*y*y)*4.0+pow(cos(x*y),2.0)*2.0-1.0);
+               -x*y*sin(x*y*2.0)*2.0)*2.0-(x*2.0+2.0)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*cos(x*y*2.0))+(x*x)*(sin(x*y*2.0)
+                   -x*(y*y)*6.0)*pow(x+1.0,2.0)*2.0-x*cos(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*(pow(cos(x*y),2.0)*2.0-1.0))
+               -x*y*cos(x*y)*((x*x)*(y*y*y)*4.0+pow(cos(x*y),2.0)*2.0-1.0);
       default:
         Assert(false, ExcMessage("The RHS data for dim != 2 is not provided"));
-    }
+      }
   }
 
 
@@ -73,12 +73,12 @@ namespace MFMFE
     const double y = p[1];
 
     switch (dim)
-    {
+      {
       case 2:
         return (x*x*x)*(y*y*y*y)+cos(x*y)*sin(x*y)+x*x;
       default:
         Assert(false, ExcMessage("The BC data for dim != 2 is not provided"));
-    }
+      }
   }
 
 
@@ -108,7 +108,7 @@ namespace MFMFE
     const double y = p[1];
 
     switch (dim)
-    {
+      {
       case 2:
         values(0) = -(x*2.0+(x*x)*(y*y*y*y)*3.0+y*cos(x*y*2.0))*(x*2.0+x*x+y*y+1.0)-x*sin(x*y)*(cos(x*y*2.0)+(x*x)*(y*y*y)*4.0);
         values(1) = -sin(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*cos(x*y*2.0))-x*(cos(x*y*2.0)+(x*x)*(y*y*y)*4.0)*pow(x+1.0,2.0);
@@ -116,7 +116,7 @@ namespace MFMFE
         break;
       default:
         Assert(false, ExcMessage("The exact solution for dim != 2 is not provided"));
-    }
+      }
   }
 
   template <int dim>
@@ -128,25 +128,25 @@ namespace MFMFE
     const double y = p[1];
 
     switch (dim)
-    {
+      {
       case 2:
         grads[0][0] = -(x*(y*y*y*y)*6.0-(y*y)*sin(x*y*2.0)*2.0+2.0)*(x*2.0+x*x+y*y+1.0)-sin(x*y)*(cos(x*y*2.0)
-                        +(x*x)*(y*y*y)*1.2E1-x*y*sin(x*y*2.0)*2.0)-(x*2.0+2.0)*(x*2.0+(x*x)*(y*y*y*y)*3.0
-                        +y*cos(x*y*2.0))-x*y*cos(x*y)*((x*x)*(y*y*y)*4.0+pow(cos(x*y),2.0)*2.0-1.0);
+                      +(x*x)*(y*y*y)*1.2E1-x*y*sin(x*y*2.0)*2.0)-(x*2.0+2.0)*(x*2.0+(x*x)*(y*y*y*y)*3.0
+                          +y*cos(x*y*2.0))-x*y*cos(x*y)*((x*x)*(y*y*y)*4.0+pow(cos(x*y),2.0)*2.0-1.0);
         grads[0][1] = -(cos(x*y*2.0)+(x*x)*(y*y*y)*1.2E1-x*y*sin(x*y*2.0)*2.0)*(x*2.0+x*x+y*y+1.0)
-                        -y*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*cos(x*y*2.0))*2.0-(x*x)*cos(x*y)*((x*x)*(y*y*y)*4.0
-                        +pow(cos(x*y),2.0)*2.0-1.0)+(x*x)*sin(x*y)*(sin(x*y*2.0)-x*(y*y)*6.0)*2.0;
+                      -y*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*cos(x*y*2.0))*2.0-(x*x)*cos(x*y)*((x*x)*(y*y*y)*4.0
+                          +pow(cos(x*y),2.0)*2.0-1.0)+(x*x)*sin(x*y)*(sin(x*y*2.0)-x*(y*y)*6.0)*2.0;
         grads[1][0] = -sin(x*y)*(x*(y*y*y*y)*6.0-(y*y)*sin(x*y*2.0)*2.0+2.0)-pow(x+1.0,2.0)*(cos(x*y*2.0)
-                        +(x*x)*(y*y*y)*1.2E1-x*y*sin(x*y*2.0)*2.0)-x*(cos(x*y*2.0)+(x*x)*(y*y*y)*4.0)*(x*2.0+2.0)
-                        -y*cos(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*(pow(cos(x*y),2.0)*2.0-1.0));
+                      +(x*x)*(y*y*y)*1.2E1-x*y*sin(x*y*2.0)*2.0)-x*(cos(x*y*2.0)+(x*x)*(y*y*y)*4.0)*(x*2.0+2.0)
+                      -y*cos(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0+y*(pow(cos(x*y),2.0)*2.0-1.0));
         grads[1][1] = -sin(x*y)*(cos(x*y*2.0)+(x*x)*(y*y*y)*1.2E1-x*y*sin(x*y*2.0)*2.0)+(x*x)*(sin(x*y*2.0)
-                        -x*(y*y)*6.0)*pow(x+1.0,2.0)*2.0-x*cos(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0
-                        +y*(pow(cos(x*y),2.0)*2.0-1.0));
+                      -x*(y*y)*6.0)*pow(x+1.0,2.0)*2.0-x*cos(x*y)*(x*2.0+(x*x)*(y*y*y*y)*3.0
+                                                                   +y*(pow(cos(x*y),2.0)*2.0-1.0));
         grads[2] = 0;
         break;
       default:
         Assert(false, ExcMessage("The exact solution's gradient for dim != 2 is not provided"));
-    }
+      }
   }
 
 
@@ -170,24 +170,24 @@ namespace MFMFE
             ExcDimensionMismatch (points.size(), values.size()));
 
     for (unsigned int p=0; p<points.size(); ++p)
-    {
-      values[p].clear ();
-
-      const double x = points[p][0];
-      const double y = points[p][1];
-
-      switch (dim)
       {
-        case 2:
-          values[p][0][0] = pow(x+1.0,2.0)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
-          values[p][0][1] = -sin(x*y)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
-          values[p][1][0] = -sin(x*y)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
-          values[p][1][1] = (x*2.0+x*x+y*y+1.0)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
-          break;
-        default:
-          Assert(false, ExcMessage("The inverse of permeability tensor for dim != 2 is not provided"));
+        values[p].clear ();
+
+        const double x = points[p][0];
+        const double y = points[p][1];
+
+        switch (dim)
+          {
+          case 2:
+            values[p][0][0] = pow(x+1.0,2.0)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
+            values[p][0][1] = -sin(x*y)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
+            values[p][1][0] = -sin(x*y)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
+            values[p][1][1] = (x*2.0+x*x+y*y+1.0)/(x*4.0+(x*x)*(y*y)-pow(sin(x*y),2.0)+x*(y*y)*2.0+(x*x)*6.0+(x*x*x)*4.0+x*x*x*x+y*y+1.0);
+            break;
+          default:
+            Assert(false, ExcMessage("The inverse of permeability tensor for dim != 2 is not provided"));
+          }
       }
-    }
   }
 }
 

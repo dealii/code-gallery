@@ -65,8 +65,8 @@
 
 #include <deal.II/base/config.h>
 #if DEAL_II_VERSION_MAJOR >= 9 && defined(DEAL_II_WITH_TRILINOS)
-  #include <deal.II/differentiation/ad.h>
-  #define ENABLE_SACADO_FORMULATION
+#include <deal.II/differentiation/ad.h>
+#define ENABLE_SACADO_FORMULATION
 #endif
 
 // These must be included below the AD headers so that
@@ -134,7 +134,7 @@ namespace Cook_Membrane
 
 // @sect4{Finite Element system}
 
-// Here we specify the polynomial order used to approximate the solution.  
+// Here we specify the polynomial order used to approximate the solution.
 // The quadrature order should be adjusted accordingly.
     struct FESystem
     {
@@ -407,7 +407,7 @@ namespace Cook_Membrane
 
 // Finally we consolidate all of the above structures into a single container
 // that holds all of our run-time selections.
-    struct AllParameters : 
+    struct AllParameters :
       public AssemblyMethod,
       public FESystem,
       public Geometry,
@@ -509,7 +509,7 @@ namespace Cook_Membrane
 
 // @sect3{Compressible neo-Hookean material within a one-field formulation}
 
-// As discussed in the literature and step-44, Neo-Hookean materials are a type 
+// As discussed in the literature and step-44, Neo-Hookean materials are a type
 // of hyperelastic materials.  The entire domain is assumed to be composed of a
 // compressible neo-Hookean material.  This class defines the behaviour of
 // this material within a one-field formulation.  Compressible neo-Hookean
@@ -534,8 +534,8 @@ namespace Cook_Membrane
 // and provides a central point that one would need to modify if one were to
 // implement a different material model. For it to work, we will store one
 // object of this type per quadrature point, and in each of these objects
-// store the current state (characterized by the values or measures  of the 
-// displacement field) so that we can compute the elastic coefficients 
+// store the current state (characterized by the values or measures  of the
+// displacement field) so that we can compute the elastic coefficients
 // linearized around the current state.
   template <int dim,typename NumberType>
   class Material_Compressible_Neo_Hook_One_Field
@@ -610,7 +610,7 @@ namespace Cook_Membrane
     NumberType
     get_dPsi_vol_dJ(const NumberType &det_F) const
     {
-        return (kappa / 2.0) * (det_F - 1.0 / det_F);
+      return (kappa / 2.0) * (det_F - 1.0 / det_F);
     }
 
     // The following functions are used internally in determining the result
@@ -620,7 +620,7 @@ namespace Cook_Membrane
     SymmetricTensor<2,dim,NumberType>
     get_tau_vol(const NumberType &det_F) const
     {
-        return NumberType(get_dPsi_vol_dJ(det_F) * det_F) * Physics::Elasticity::StandardTensors<dim>::I;
+      return NumberType(get_dPsi_vol_dJ(det_F) * det_F) * Physics::Elasticity::StandardTensors<dim>::I;
     }
 
     // Next, determine the isochoric Kirchhoff stress
@@ -648,21 +648,21 @@ namespace Cook_Membrane
     NumberType
     get_d2Psi_vol_dJ2(const NumberType &det_F) const
     {
-        return ( (kappa / 2.0) * (1.0 + 1.0 / (det_F * det_F)));
+      return ( (kappa / 2.0) * (1.0 + 1.0 / (det_F * det_F)));
     }
 
     // Calculate the volumetric part of the tangent $J
-    // \mathfrak{c}_\textrm{vol}$. Again, note the difference in its 
-    // definition when compared to step-44. The extra terms result from two 
-    // quantities in $\boldsymbol{\tau}_{\textrm{vol}}$ being dependent on 
+    // \mathfrak{c}_\textrm{vol}$. Again, note the difference in its
+    // definition when compared to step-44. The extra terms result from two
+    // quantities in $\boldsymbol{\tau}_{\textrm{vol}}$ being dependent on
     // $\boldsymbol{F}$.
     SymmetricTensor<4,dim,NumberType>
     get_Jc_vol(const NumberType &det_F) const
     {
-        // See Holzapfel p265
-        return det_F
-        * ( (get_dPsi_vol_dJ(det_F) + det_F * get_d2Psi_vol_dJ2(det_F))*Physics::Elasticity::StandardTensors<dim>::IxI
-           - (2.0 * get_dPsi_vol_dJ(det_F))*Physics::Elasticity::StandardTensors<dim>::S );
+      // See Holzapfel p265
+      return det_F
+             * ( (get_dPsi_vol_dJ(det_F) + det_F * get_d2Psi_vol_dJ2(det_F))*Physics::Elasticity::StandardTensors<dim>::IxI
+                 - (2.0 * get_dPsi_vol_dJ(det_F))*Physics::Elasticity::StandardTensors<dim>::S );
     }
 
     // Calculate the isochoric part of the tangent $J
@@ -721,7 +721,7 @@ namespace Cook_Membrane
     void setup_lqp (const Parameters::AllParameters &parameters)
     {
       material.reset(new Material_Compressible_Neo_Hook_One_Field<dim,NumberType>(parameters.mu,
-          parameters.nu));
+                     parameters.nu));
     }
 
     // We offer an interface to retrieve certain data.
@@ -872,7 +872,7 @@ namespace Cook_Membrane
     // There are two reasons that we retain the block system in this problem.
     // The first is pure laziness to perform further modifications to the
     // code from which this work originated. The second is that a block system
-    // would typically necessary when extending this code to multiphysics 
+    // would typically necessary when extending this code to multiphysics
     // problems.
     static const unsigned int        n_blocks = 1;
     static const unsigned int        n_components = dim;
@@ -945,7 +945,7 @@ namespace Cook_Membrane
 
     void
     print_conv_footer();
-    
+
     void
     print_vertical_tip_displacement();
   };
@@ -979,7 +979,7 @@ namespace Cook_Membrane
     n_q_points (qf_cell.size()),
     n_q_points_f (qf_face.size())
   {
-    
+
   }
 
 // The class destructor simply clears the data held by the DOFHandler
@@ -995,7 +995,7 @@ namespace Cook_Membrane
 // interchangeable. We choose to increment time linearly using a constant time
 // step size.
 //
-// We start the function with preprocessing, and then output the initial grid 
+// We start the function with preprocessing, and then output the initial grid
 // before starting the simulation proper with the first time (and loading)
 // increment.
 //
@@ -1008,7 +1008,7 @@ namespace Cook_Membrane
     time.increment();
 
     // We then declare the incremental solution update $\varDelta
-    // \mathbf{\Xi}:= \{\varDelta \mathbf{u}\}$ and start the loop over the 
+    // \mathbf{\Xi}:= \{\varDelta \mathbf{u}\}$ and start the loop over the
     // time domain.
     //
     // At the beginning, we reset the solution update for this time step...
@@ -1028,9 +1028,9 @@ namespace Cook_Membrane
         output_results();
         time.increment();
       }
-      
-    // Lastly, we print the vertical tip displacement of the Cook cantilever 
-    // after the full load is applied 
+
+    // Lastly, we print the vertical tip displacement of the Cook cantilever
+    // after the full load is applied
     print_vertical_tip_displacement();
   }
 
@@ -1042,28 +1042,28 @@ namespace Cook_Membrane
 // On to the first of the private member functions. Here we create the
 // triangulation of the domain, for which we choose a scaled an anisotripically
 // discretised rectangle which is subsequently transformed into the correct
-// of the Cook cantilever. Each relevant boundary face is then given a boundary 
+// of the Cook cantilever. Each relevant boundary face is then given a boundary
 // ID number.
 //
 // We then determine the volume of the reference configuration and print it
 // for comparison.
 
-template <int dim>
-Point<dim> grid_y_transform (const Point<dim> &pt_in)
-{
-  const double &x = pt_in[0];
-  const double &y = pt_in[1];
-  
-  const double y_upper = 44.0 + (16.0/48.0)*x; // Line defining upper edge of beam
-  const double y_lower =  0.0 + (44.0/48.0)*x; // Line defining lower edge of beam
-  const double theta = y/44.0; // Fraction of height along left side of beam
-  const double y_transform = (1-theta)*y_lower + theta*y_upper; // Final transformation
-  
-  Point<dim> pt_out = pt_in;
-  pt_out[1] = y_transform;
-  
-  return pt_out;
-}
+  template <int dim>
+  Point<dim> grid_y_transform (const Point<dim> &pt_in)
+  {
+    const double &x = pt_in[0];
+    const double &y = pt_in[1];
+
+    const double y_upper = 44.0 + (16.0/48.0)*x; // Line defining upper edge of beam
+    const double y_lower =  0.0 + (44.0/48.0)*x; // Line defining lower edge of beam
+    const double theta = y/44.0; // Fraction of height along left side of beam
+    const double y_transform = (1-theta)*y_lower + theta*y_upper; // Final transformation
+
+    Point<dim> pt_out = pt_in;
+    pt_out[1] = y_transform;
+
+    return pt_out;
+  }
 
   template <int dim,typename NumberType>
   void Solid<dim,NumberType>::make_grid()
@@ -1074,43 +1074,43 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     // (modelling a plane strain condition)
     if (dim == 3)
       repetitions[dim-1] = 1;
-      
+
     const Point<dim> bottom_left = (dim == 3 ? Point<dim>(0.0, 0.0, -0.5) : Point<dim>(0.0, 0.0));
     const Point<dim> top_right = (dim == 3 ? Point<dim>(48.0, 44.0, 0.5) : Point<dim>(48.0, 44.0));
 
-    GridGenerator::subdivided_hyper_rectangle(triangulation, 
+    GridGenerator::subdivided_hyper_rectangle(triangulation,
                                               repetitions,
                                               bottom_left,
                                               top_right);
 
-   // Since we wish to apply a Neumann BC to the right-hand surface, we
-   // must find the cell faces in this part of the domain and mark them with
-   // a distinct boundary ID number.  The faces we are looking for are on the
-   // +x surface and will get boundary ID 11.
-   // Dirichlet boundaries exist on the left-hand face of the beam (this fixed
-   // boundary will get ID 1) and on the +Z and -Z faces (which correspond to
-   // ID 2 and we will use to impose the plane strain condition)
-   const double tol_boundary = 1e-6;
-   typename Triangulation<dim>::active_cell_iterator cell =
-     triangulation.begin_active(), endc = triangulation.end();
-   for (; cell != endc; ++cell)
-     for (unsigned int face = 0;
-          face < GeometryInfo<dim>::faces_per_cell; ++face)
-       if (cell->face(face)->at_boundary() == true)
-       {
-         if (std::abs(cell->face(face)->center()[0] - 0.0) < tol_boundary)
-           cell->face(face)->set_boundary_id(1); // -X faces
-         else if (std::abs(cell->face(face)->center()[0] - 48.0) < tol_boundary)
-           cell->face(face)->set_boundary_id(11); // +X faces
-         else if (std::abs(std::abs(cell->face(face)->center()[0]) - 0.5) < tol_boundary)
-           cell->face(face)->set_boundary_id(2); // +Z and -Z faces
-       }
-   
+    // Since we wish to apply a Neumann BC to the right-hand surface, we
+    // must find the cell faces in this part of the domain and mark them with
+    // a distinct boundary ID number.  The faces we are looking for are on the
+    // +x surface and will get boundary ID 11.
+    // Dirichlet boundaries exist on the left-hand face of the beam (this fixed
+    // boundary will get ID 1) and on the +Z and -Z faces (which correspond to
+    // ID 2 and we will use to impose the plane strain condition)
+    const double tol_boundary = 1e-6;
+    typename Triangulation<dim>::active_cell_iterator cell =
+      triangulation.begin_active(), endc = triangulation.end();
+    for (; cell != endc; ++cell)
+      for (unsigned int face = 0;
+           face < GeometryInfo<dim>::faces_per_cell; ++face)
+        if (cell->face(face)->at_boundary() == true)
+          {
+            if (std::abs(cell->face(face)->center()[0] - 0.0) < tol_boundary)
+              cell->face(face)->set_boundary_id(1); // -X faces
+            else if (std::abs(cell->face(face)->center()[0] - 48.0) < tol_boundary)
+              cell->face(face)->set_boundary_id(11); // +X faces
+            else if (std::abs(std::abs(cell->face(face)->center()[0]) - 0.5) < tol_boundary)
+              cell->face(face)->set_boundary_id(2); // +Z and -Z faces
+          }
+
     // Transform the hyper-rectangle into the beam shape
     GridTools::transform(&grid_y_transform<dim>, triangulation);
 
     GridTools::scale(parameters.scale, triangulation);
-    
+
     vol_reference = GridTools::volume(triangulation);
     vol_current = vol_reference;
     std::cout << "Grid:\n\t Reference volume: " << vol_reference << std::endl;
@@ -1152,12 +1152,12 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       csp.block(u_dof, u_dof).reinit(n_dofs_u, n_dofs_u);
       csp.collect_sizes();
 
-      // Naturally, for a one-field vector-valued problem, all of the 
+      // Naturally, for a one-field vector-valued problem, all of the
       // components of the system are coupled.
       Table<2, DoFTools::Coupling> coupling(n_components, n_components);
       for (unsigned int ii = 0; ii < n_components; ++ii)
         for (unsigned int jj = 0; jj < n_components; ++jj)
-            coupling[ii][jj] = DoFTools::always;
+          coupling[ii][jj] = DoFTools::always;
       DoFTools::make_sparsity_pattern(dof_handler_ref,
                                       coupling,
                                       csp,
@@ -1204,12 +1204,12 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     for (typename Triangulation<dim>::active_cell_iterator cell =
            triangulation.begin_active(); cell != triangulation.end(); ++cell)
       {
-      const std::vector<std::shared_ptr<PointHistory<dim,NumberType> > > lqph =
-        quadrature_point_history.get_data(cell);
-      Assert(lqph.size() == n_q_points, ExcInternalError());
+        const std::vector<std::shared_ptr<PointHistory<dim,NumberType> > > lqph =
+          quadrature_point_history.get_data(cell);
+        Assert(lqph.size() == n_q_points, ExcInternalError());
 
-      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-        lqph[q_point]->setup_lqp(parameters);
+        for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+          lqph[q_point]->setup_lqp(parameters);
       }
   }
 
@@ -1359,7 +1359,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
   }
 
 // At the end we also output the result that can be compared to that found in
-// the literature, namely the displacement at the upper right corner of the 
+// the literature, namely the displacement at the upper right corner of the
 // beam.
   template <int dim,typename NumberType>
   void Solid<dim,NumberType>::print_vertical_tip_displacement()
@@ -1369,46 +1369,46 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     for (unsigned int i = 0; i < l_width; ++i)
       std::cout << "_";
     std::cout << std::endl;
-    
+
     Point<dim> soln_pt (48.0*parameters.scale,60.0*parameters.scale);
     if (dim == 3)
       soln_pt[2] = 0.5*parameters.scale;
     double vertical_tip_displacement = 0.0;
     double vertical_tip_displacement_check = 0.0;
-    
+
     typename DoFHandler<dim>::active_cell_iterator cell =
       dof_handler_ref.begin_active(), endc = dof_handler_ref.end();
     for (; cell != endc; ++cell)
-    {
-      // if (cell->point_inside(soln_pt) == true)
-      for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
-        if (cell->vertex(v).distance(soln_pt) < 1e-6)
       {
-        // Extract y-component of solution at the given point
-        // This point is coindicent with a vertex, so we can
-        // extract it directly as we're using FE_Q finite elements
-        // that have support at the vertices
-        vertical_tip_displacement = solution_n(cell->vertex_dof_index(v,u_dof+1));
-        
-        // Sanity check using alternate method to extract the solution
-        // at the given point. To do this, we must create an FEValues instance
-        // to help us extract the solution value at the desired point
-        const MappingQ<dim> mapping (parameters.poly_degree);
-        const Point<dim> qp_unit = mapping.transform_real_to_unit_cell(cell,soln_pt);
-        const Quadrature<dim> soln_qrule (qp_unit);
-        AssertThrow(soln_qrule.size() == 1, ExcInternalError());
-        FEValues<dim> fe_values_soln (fe, soln_qrule, update_values);
-        fe_values_soln.reinit(cell);
-        
-        // Extract y-component of solution at given point
-        std::vector< Tensor<1,dim> > soln_values (soln_qrule.size());
-        fe_values_soln[u_fe].get_function_values(solution_n,
-                                                 soln_values);
-        vertical_tip_displacement_check = soln_values[0][u_dof+1];
-        
-        break;
+        // if (cell->point_inside(soln_pt) == true)
+        for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+          if (cell->vertex(v).distance(soln_pt) < 1e-6)
+            {
+              // Extract y-component of solution at the given point
+              // This point is coindicent with a vertex, so we can
+              // extract it directly as we're using FE_Q finite elements
+              // that have support at the vertices
+              vertical_tip_displacement = solution_n(cell->vertex_dof_index(v,u_dof+1));
+
+              // Sanity check using alternate method to extract the solution
+              // at the given point. To do this, we must create an FEValues instance
+              // to help us extract the solution value at the desired point
+              const MappingQ<dim> mapping (parameters.poly_degree);
+              const Point<dim> qp_unit = mapping.transform_real_to_unit_cell(cell,soln_pt);
+              const Quadrature<dim> soln_qrule (qp_unit);
+              AssertThrow(soln_qrule.size() == 1, ExcInternalError());
+              FEValues<dim> fe_values_soln (fe, soln_qrule, update_values);
+              fe_values_soln.reinit(cell);
+
+              // Extract y-component of solution at given point
+              std::vector< Tensor<1,dim> > soln_values (soln_qrule.size());
+              fe_values_soln[u_fe].get_function_values(solution_n,
+                                                       soln_values);
+              vertical_tip_displacement_check = soln_values[0][u_dof+1];
+
+              break;
+            }
       }
-    }
     AssertThrow(vertical_tip_displacement > 0.0, ExcMessage("Found no cell with point inside!"))
 
     std::cout << "Vertical tip displacement: " << vertical_tip_displacement
@@ -1442,7 +1442,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
 // Determine the true Newton update error for the problem
   template <int dim,typename NumberType>
   void Solid<dim,NumberType>::get_error_update(const BlockVector<double> &newton_update,
-                                    Errors &error_update)
+                                               Errors &error_update)
   {
     BlockVector<double> error_ud(dofs_per_block);
     for (unsigned int i = 0; i < dof_handler_ref.n_dofs(); ++i)
@@ -1519,7 +1519,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       ScratchData_ASM(const FiniteElement<dim> &fe_cell,
                       const QGauss<dim> &qf_cell,
                       const UpdateFlags uf_cell,
-                      const QGauss<dim-1> & qf_face, 
+                      const QGauss<dim-1> & qf_face,
                       const UpdateFlags uf_face,
                       const BlockVector<double> &solution_total)
         :
@@ -1571,7 +1571,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
     };
 
     // Of course, we still have to define how we assemble the tangent matrix
-    // contribution for a single cell. 
+    // contribution for a single cell.
     void
     assemble_system_one_cell(const typename DoFHandler<dim>::active_cell_iterator &cell,
                              ScratchData_ASM &scratch,
@@ -1597,9 +1597,9 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       BlockVector<double> &system_rhs =  const_cast<Solid<dim,NumberType> *>(data.solid)->system_rhs;
 
       constraints.distribute_local_to_global(
-          data.cell_matrix, data.cell_rhs,
-          data.local_dof_indices,
-          tangent_matrix, system_rhs);
+        data.cell_matrix, data.cell_rhs,
+        data.local_dof_indices,
+        tangent_matrix, system_rhs);
     }
 
   protected:
@@ -1640,12 +1640,12 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
             for (unsigned int f_q_point = 0; f_q_point < n_q_points_f;
                  ++f_q_point)
               {
-                // We specify the traction in reference configuration. 
-                // For this problem, a defined total vertical force is applied 
+                // We specify the traction in reference configuration.
+                // For this problem, a defined total vertical force is applied
                 // in the reference configuration.
                 // The direction of the applied traction is assumed not to
-                // evolve with the deformation of the domain. 
-                
+                // evolve with the deformation of the domain.
+
                 // Note that the contributions to the right hand side vector we
                 // compute here only exist in the displacement components of the
                 // vector.
@@ -1707,7 +1707,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       cell->get_dof_indices(data.local_dof_indices);
 
       const std::vector<std::shared_ptr<const PointHistory<dim,NumberType> > > lqph =
-          const_cast<const Solid<dim,NumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
+        const_cast<const Solid<dim,NumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
       // We first need to find the solution gradients at quadrature points
@@ -1830,14 +1830,14 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       cell->get_dof_indices(data.local_dof_indices);
 
       const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
-          const_cast<const Solid<dim,ADNumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
+        const_cast<const Solid<dim,ADNumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
       const unsigned int n_independent_variables = data.local_dof_indices.size();
       std::vector<double> local_dof_values(n_independent_variables);
       cell->get_dof_values(scratch.solution_total,
-          local_dof_values.begin(),
-          local_dof_values.end());
+                           local_dof_values.begin(),
+                           local_dof_values.end());
 
       // We now retrieve a set of degree-of-freedom values that
       // have the operations that are performed with them tracked.
@@ -1848,68 +1848,68 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       // Compute all values, gradients etc. based on sensitive
       // AD degree-of-freedom values.
       scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
-          local_dof_values_ad,
-          scratch.solution_grads_u_total);
+        local_dof_values_ad,
+        scratch.solution_grads_u_total);
 
       // Accumulate the residual value for each degree of freedom.
       // Note: Its important that the vectors is initialised (zero'd) correctly.
       std::vector<ADNumberType> residual_ad (dofs_per_cell, ADNumberType(0.0));
       for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-      {
-        const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
-        const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
-        const ADNumberType               det_F = determinant(F);
-        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
-        const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
-        const Tensor<2,dim,ADNumberType> F_inv = invert(F);
-        Assert(det_F > ADNumberType(0.0), ExcInternalError());
+        {
+          const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
+          const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+          const ADNumberType               det_F = determinant(F);
+          const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
+          const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
+          const Tensor<2,dim,ADNumberType> F_inv = invert(F);
+          Assert(det_F > ADNumberType(0.0), ExcInternalError());
 
-        for (unsigned int k = 0; k < dofs_per_cell; ++k)
-          {
-            const unsigned int k_group = fe.system_to_base_index(k).first.first;
+          for (unsigned int k = 0; k < dofs_per_cell; ++k)
+            {
+              const unsigned int k_group = fe.system_to_base_index(k).first.first;
 
-            if (k_group == u_dof)
-              {
-                scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point) * F_inv;
-                scratch.symm_grad_Nx[q_point][k] = symmetrize(scratch.grad_Nx[q_point][k]);
-              }
-            else
-              Assert(k_group <= u_dof, ExcInternalError());
-          }
+              if (k_group == u_dof)
+                {
+                  scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point) * F_inv;
+                  scratch.symm_grad_Nx[q_point][k] = symmetrize(scratch.grad_Nx[q_point][k]);
+                }
+              else
+                Assert(k_group <= u_dof, ExcInternalError());
+            }
 
-        const SymmetricTensor<2,dim,ADNumberType> tau = lqph[q_point]->get_tau(det_F,b_bar);
+          const SymmetricTensor<2,dim,ADNumberType> tau = lqph[q_point]->get_tau(det_F,b_bar);
 
-        // Next we define some position-dependent aliases, again to
-        // make the assembly process easier to follow.
-        const std::vector<SymmetricTensor<2, dim,ADNumberType> > &symm_grad_Nx = scratch.symm_grad_Nx[q_point];
-        const double JxW = scratch.fe_values_ref.JxW(q_point);
+          // Next we define some position-dependent aliases, again to
+          // make the assembly process easier to follow.
+          const std::vector<SymmetricTensor<2, dim,ADNumberType> > &symm_grad_Nx = scratch.symm_grad_Nx[q_point];
+          const double JxW = scratch.fe_values_ref.JxW(q_point);
 
-        for (unsigned int i = 0; i < dofs_per_cell; ++i)
-          {
-            const unsigned int i_group     = fe.system_to_base_index(i).first.first;
+          for (unsigned int i = 0; i < dofs_per_cell; ++i)
+            {
+              const unsigned int i_group     = fe.system_to_base_index(i).first.first;
 
-            if (i_group == u_dof)
-              residual_ad[i] += (symm_grad_Nx[i] * tau) * JxW;
-            else
-              Assert(i_group <= u_dof, ExcInternalError());
-          }
-      }
+              if (i_group == u_dof)
+                residual_ad[i] += (symm_grad_Nx[i] * tau) * JxW;
+              else
+                Assert(i_group <= u_dof, ExcInternalError());
+            }
+        }
 
       for (unsigned int I=0; I<n_independent_variables; ++I)
-      {
-        const ADNumberType &residual_I = residual_ad[I];
-        data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
-        for (unsigned int J=0; J<n_independent_variables; ++J)
         {
-          // Compute the gradients of the residual entry [forward-mode]
-          data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
+          const ADNumberType &residual_I = residual_ad[I];
+          data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
+          for (unsigned int J=0; J<n_independent_variables; ++J)
+            {
+              // Compute the gradients of the residual entry [forward-mode]
+              data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
+            }
         }
-      }
     }
 
   };
 
-  
+
   template <int dim>
   struct Assembler<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > > : Assembler_Base<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > >
   {
@@ -1935,14 +1935,14 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       cell->get_dof_indices(data.local_dof_indices);
 
       const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
-          data.solid->quadrature_point_history.get_data(cell);
+        data.solid->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
       const unsigned int n_independent_variables = data.local_dof_indices.size();
       std::vector<double> local_dof_values(n_independent_variables);
       cell->get_dof_values(scratch.solution_total,
-          local_dof_values.begin(),
-          local_dof_values.end());
+                           local_dof_values.begin(),
+                           local_dof_values.end());
 
       // We now retrieve a set of degree-of-freedom values that
       // have the operations that are performed with them tracked.
@@ -1953,8 +1953,8 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       // Compute all values, gradients etc. based on sensitive
       // AD degree-of-freedom values.
       scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
-          local_dof_values_ad,
-          scratch.solution_grads_u_total);
+        local_dof_values_ad,
+        scratch.solution_grads_u_total);
 
       // Next we compute the total potential energy of the element.
       // This is defined as follows:
@@ -1962,41 +1962,41 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
       // Note: Its important that this value is initialised (zero'd) correctly.
       ADNumberType cell_energy_ad = ADNumberType(0.0);
       for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
-      {
-        const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
-        const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
-        const ADNumberType               det_F = determinant(F);
-        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
-        const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
-        Assert(det_F > ADNumberType(0.0), ExcInternalError());
+        {
+          const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
+          const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+          const ADNumberType               det_F = determinant(F);
+          const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
+          const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
+          Assert(det_F > ADNumberType(0.0), ExcInternalError());
 
-        // Next we define some position-dependent aliases, again to
-        // make the assembly process easier to follow.
-        const double JxW = scratch.fe_values_ref.JxW(q_point);
+          // Next we define some position-dependent aliases, again to
+          // make the assembly process easier to follow.
+          const double JxW = scratch.fe_values_ref.JxW(q_point);
 
-        const ADNumberType Psi = lqph[q_point]->get_Psi(det_F,b_bar);
+          const ADNumberType Psi = lqph[q_point]->get_Psi(det_F,b_bar);
 
-        // We extract the configuration-dependent material energy
-        // from our QPH history objects for the current quadrature point
-        // and integrate its contribution to increment the total
-        // cell energy.
-        cell_energy_ad += Psi * JxW;
-      }
+          // We extract the configuration-dependent material energy
+          // from our QPH history objects for the current quadrature point
+          // and integrate its contribution to increment the total
+          // cell energy.
+          cell_energy_ad += Psi * JxW;
+        }
 
       // Compute derivatives of reverse-mode AD variables
       ADNumberType::Gradcomp();
 
       for (unsigned int I=0; I<n_independent_variables; ++I)
-      {
-        // This computes the adjoint df/dX_{i} [reverse-mode]
-        const ADDerivType residual_I = local_dof_values_ad[I].adj();
-        data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
-        for (unsigned int J=0; J<n_independent_variables; ++J)
         {
-          // Compute the gradients of the residual entry [forward-mode]
-          data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
+          // This computes the adjoint df/dX_{i} [reverse-mode]
+          const ADDerivType residual_I = local_dof_values_ad[I].adj();
+          data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
+          for (unsigned int J=0; J<n_independent_variables; ++J)
+            {
+              // Compute the gradients of the residual entry [forward-mode]
+              data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
+            }
         }
-      }
     }
 
   };
@@ -2096,27 +2096,27 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
                                                  constraints,
                                                  fe.component_mask(u_fe));
     }
-    
+
     // Zero Z-displacement through thickness direction
     // This corresponds to a plane strain condition being imposed on the beam
     if (dim == 3)
-    {
-      const int boundary_id = 2;
-      const FEValuesExtractors::Scalar z_displacement(2);
+      {
+        const int boundary_id = 2;
+        const FEValuesExtractors::Scalar z_displacement(2);
 
-      if (apply_dirichlet_bc == true)
-        VectorTools::interpolate_boundary_values(dof_handler_ref,
-                                                 boundary_id,
-                                                 ZeroFunction<dim>(n_components),
-                                                 constraints,
-                                                 fe.component_mask(z_displacement));
-      else
-        VectorTools::interpolate_boundary_values(dof_handler_ref,
-                                                 boundary_id,
-                                                 ZeroFunction<dim>(n_components),
-                                                 constraints,
-                                                 fe.component_mask(z_displacement));
-    }
+        if (apply_dirichlet_bc == true)
+          VectorTools::interpolate_boundary_values(dof_handler_ref,
+                                                   boundary_id,
+                                                   ZeroFunction<dim>(n_components),
+                                                   constraints,
+                                                   fe.component_mask(z_displacement));
+        else
+          VectorTools::interpolate_boundary_values(dof_handler_ref,
+                                                   boundary_id,
+                                                   ZeroFunction<dim>(n_components),
+                                                   constraints,
+                                                   fe.component_mask(z_displacement));
+      }
 
     constraints.close();
   }
@@ -2251,51 +2251,51 @@ int main (int argc, char *argv[])
       deallog.depth_console(0);
       Parameters::AllParameters parameters("parameters.prm");
       if (parameters.automatic_differentiation_order == 0)
-      {
-        std::cout << "Assembly method: Residual and linearisation are computed manually." << std::endl;
+        {
+          std::cout << "Assembly method: Residual and linearisation are computed manually." << std::endl;
 
-        // Allow multi-threading
-        Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-                                                            dealii::numbers::invalid_unsigned_int);
+          // Allow multi-threading
+          Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                              dealii::numbers::invalid_unsigned_int);
 
-        typedef double NumberType;
-        Solid<dim,NumberType> solid_3d(parameters);
-        solid_3d.run();
-      }
- #ifdef ENABLE_SACADO_FORMULATION
-       else if (parameters.automatic_differentiation_order == 1)
-       {
-         std::cout << "Assembly method: Residual computed manually; linearisation performed using AD." << std::endl;
+          typedef double NumberType;
+          Solid<dim,NumberType> solid_3d(parameters);
+          solid_3d.run();
+        }
+#ifdef ENABLE_SACADO_FORMULATION
+      else if (parameters.automatic_differentiation_order == 1)
+        {
+          std::cout << "Assembly method: Residual computed manually; linearisation performed using AD." << std::endl;
 
-         // Allow multi-threading
-         Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-                                                             dealii::numbers::invalid_unsigned_int);
+          // Allow multi-threading
+          Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                              dealii::numbers::invalid_unsigned_int);
 
-         typedef Sacado::Fad::DFad<double> NumberType;
-         Solid<dim,NumberType> solid_3d(parameters);
-         solid_3d.run();
-       }
-       else if (parameters.automatic_differentiation_order == 2)
-       {
-         std::cout << "Assembly method: Residual and linearisation computed using AD." << std::endl;
+          typedef Sacado::Fad::DFad<double> NumberType;
+          Solid<dim,NumberType> solid_3d(parameters);
+          solid_3d.run();
+        }
+      else if (parameters.automatic_differentiation_order == 2)
+        {
+          std::cout << "Assembly method: Residual and linearisation computed using AD." << std::endl;
 
-         // Sacado Rad-Fad is not thread-safe, so disable threading.
-         // Parallisation using MPI would be possible though.
-         Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-                                                             1);
+          // Sacado Rad-Fad is not thread-safe, so disable threading.
+          // Parallisation using MPI would be possible though.
+          Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                              1);
 
-         typedef Sacado::Rad::ADvar< Sacado::Fad::DFad<double> > NumberType;
-         Solid<dim,NumberType> solid_3d(parameters);
-         solid_3d.run();
-       }
- #endif
+          typedef Sacado::Rad::ADvar< Sacado::Fad::DFad<double> > NumberType;
+          Solid<dim,NumberType> solid_3d(parameters);
+          solid_3d.run();
+        }
+#endif
       else
-      {
-        AssertThrow(false,
-            ExcMessage("The selected assembly method is not supported. "
-                       "You need deal.II 9.0 and Trilinos with the Sacado package "
-                       "to enable assembly using automatic differentiation."));
-      }
+        {
+          AssertThrow(false,
+                      ExcMessage("The selected assembly method is not supported. "
+                                 "You need deal.II 9.0 and Trilinos with the Sacado package "
+                                 "to enable assembly using automatic differentiation."));
+        }
     }
   catch (std::exception &exc)
     {

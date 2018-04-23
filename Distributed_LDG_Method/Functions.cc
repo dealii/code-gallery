@@ -14,33 +14,33 @@ template <int dim>
 class RightHandSide : public Function<dim>
 {
 public:
-    RightHandSide() : Function<dim>(1)
-    {}
+  RightHandSide() : Function<dim>(1)
+  {}
 
-    virtual double value(const Point<dim> &p,
-                         const unsigned int component = 0 ) const;
+  virtual double value(const Point<dim> &p,
+                       const unsigned int component = 0 ) const;
 };
 
 template <int dim>
 class DirichletBoundaryValues : public Function<dim>
 {
 public:
-    DirichletBoundaryValues() : Function<dim>(1)
-    {}
+  DirichletBoundaryValues() : Function<dim>(1)
+  {}
 
-    virtual double value(const Point<dim> &p,
-                         const unsigned int component = 0 ) const;
+  virtual double value(const Point<dim> &p,
+                       const unsigned int component = 0 ) const;
 };
 
 template<int dim>
 class TrueSolution : public Function<dim>
 {
 public:
-    TrueSolution() : Function<dim>(dim+1)
-    {}
+  TrueSolution() : Function<dim>(dim+1)
+  {}
 
-    virtual void vector_value(const Point<dim> & p,
-                              Vector<double> &valuess) const;
+  virtual void vector_value(const Point<dim> &p,
+                            Vector<double> &valuess) const;
 };
 
 template <int dim>
@@ -49,9 +49,9 @@ RightHandSide<dim>::
 value(const Point<dim> &p,
       const unsigned int ) const
 {
-    const double x = p[0];
-    const double y = p[1];
-    return 4*M_PI*M_PI*(cos(2*M_PI*y) - sin(2*M_PI*x));
+  const double x = p[0];
+  const double y = p[1];
+  return 4*M_PI*M_PI*(cos(2*M_PI*y) - sin(2*M_PI*x));
 
 }
 
@@ -61,9 +61,9 @@ DirichletBoundaryValues<dim>::
 value(const Point<dim> &p,
       const unsigned int ) const
 {
-    const double x = p[0];
-    const double y = p[1];
-    return cos(2*M_PI*y) -sin(2*M_PI*x) - x;
+  const double x = p[0];
+  const double y = p[1];
+  return cos(2*M_PI*y) -sin(2*M_PI*x) - x;
 }
 
 
@@ -73,14 +73,14 @@ TrueSolution<dim>::
 vector_value(const Point<dim> &p,
              Vector<double> &values) const
 {
-    Assert(values.size() == dim+1,
-           ExcDimensionMismatch(values.size(), dim+1) );
+  Assert(values.size() == dim+1,
+         ExcDimensionMismatch(values.size(), dim+1) );
 
-    double x = p[0];
-    double y = p[1];
+  double x = p[0];
+  double y = p[1];
 
-    values(0) = 1 + 2*M_PI*cos(2*M_PI*x);
-    values(1) = 2*M_PI*sin(2*M_PI*y);
+  values(0) = 1 + 2*M_PI*cos(2*M_PI*x);
+  values(1) = 2*M_PI*sin(2*M_PI*y);
 
-    values(2) = cos(2*M_PI*y) - sin(2*M_PI*x) - x;
+  values(2) = cos(2*M_PI*y) - sin(2*M_PI*x) - x;
 }

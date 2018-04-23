@@ -58,9 +58,9 @@ namespace CDR
       }
 
     std::ofstream output
-      ("solution-" + Utilities::int_to_string(time_step_n) + "."
-       + Utilities::int_to_string(subdomain_n, 4)
-       + ".vtu");
+    ("solution-" + Utilities::int_to_string(time_step_n) + "."
+     + Utilities::int_to_string(subdomain_n, 4)
+     + ".vtu");
 
     data_out.write_vtu(output);
 
@@ -70,10 +70,10 @@ namespace CDR
         for (unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
              ++i)
           filenames.push_back
-            ("solution-" + Utilities::int_to_string (time_step_n) + "."
-             + Utilities::int_to_string (i, 4) + ".vtu");
+          ("solution-" + Utilities::int_to_string (time_step_n) + "."
+           + Utilities::int_to_string (i, 4) + ".vtu");
         std::ofstream master_output
-          ("solution-" + Utilities::int_to_string(time_step_n) + ".pvtu");
+        ("solution-" + Utilities::int_to_string(time_step_n) + ".pvtu");
         data_out.write_pvtu_record(master_output, filenames);
       }
   }

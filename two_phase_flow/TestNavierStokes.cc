@@ -50,7 +50,7 @@ class TestNavierStokes
 {
 public:
   TestNavierStokes (const unsigned int degree_LS,
-		    const unsigned int degree_U);
+                    const unsigned int degree_U);
   ~TestNavierStokes ();
   void run ();
 
@@ -62,7 +62,7 @@ private:
   void setup();
   void initial_condition();
   void init_constraints();
-  
+
   PETScWrappers::MPI::Vector locally_relevant_solution_rho;
   PETScWrappers::MPI::Vector locally_relevant_solution_u;
   PETScWrappers::MPI::Vector locally_relevant_solution_v;
@@ -136,14 +136,14 @@ private:
 };
 
 template <int dim>
-TestNavierStokes<dim>::TestNavierStokes (const unsigned int degree_LS, 
-					 const unsigned int degree_U)
+TestNavierStokes<dim>::TestNavierStokes (const unsigned int degree_LS,
+                                         const unsigned int degree_U)
   :
   mpi_communicator (MPI_COMM_WORLD),
   triangulation (mpi_communicator,
-		 typename Triangulation<dim>::MeshSmoothing
-		 (Triangulation<dim>::smoothing_on_refinement |
-		  Triangulation<dim>::smoothing_on_coarsening)),
+                 typename Triangulation<dim>::MeshSmoothing
+                 (Triangulation<dim>::smoothing_on_refinement |
+                  Triangulation<dim>::smoothing_on_coarsening)),
   degree_LS(degree_LS),
   dof_handler_LS (triangulation),
   fe_LS (degree_LS),
@@ -169,22 +169,22 @@ TestNavierStokes<dim>::~TestNavierStokes ()
 /////////////////////////////////////////
 template <int dim>
 void TestNavierStokes<dim>::setup()
-{ 
+{
   // setup system LS
   dof_handler_LS.distribute_dofs (fe_LS);
   locally_owned_dofs_LS = dof_handler_LS.locally_owned_dofs ();
   DoFTools::extract_locally_relevant_dofs (dof_handler_LS,
-					   locally_relevant_dofs_LS);
-  // setup system U 
+                                           locally_relevant_dofs_LS);
+  // setup system U
   dof_handler_U.distribute_dofs (fe_U);
   locally_owned_dofs_U = dof_handler_U.locally_owned_dofs ();
   DoFTools::extract_locally_relevant_dofs (dof_handler_U,
-					   locally_relevant_dofs_U);
+                                           locally_relevant_dofs_U);
   // setup system P //
   dof_handler_P.distribute_dofs (fe_P);
   locally_owned_dofs_P = dof_handler_P.locally_owned_dofs ();
   DoFTools::extract_locally_relevant_dofs (dof_handler_P,
-					   locally_relevant_dofs_P);  
+                                           locally_relevant_dofs_P);
   init_constraints();
   // init vectors for rho
   locally_relevant_solution_rho.reinit (locally_owned_dofs_LS,locally_relevant_dofs_LS,mpi_communicator);
@@ -194,7 +194,7 @@ void TestNavierStokes<dim>::setup()
   locally_relevant_solution_u.reinit (locally_owned_dofs_U,locally_relevant_dofs_U,mpi_communicator);
   locally_relevant_solution_u = 0;
   completely_distributed_solution_u.reinit(locally_owned_dofs_U,mpi_communicator);
-  //init vectors for v                                           
+  //init vectors for v
   locally_relevant_solution_v.reinit (locally_owned_dofs_U,locally_relevant_dofs_U,mpi_communicator);
   locally_relevant_solution_v = 0;
   completely_distributed_solution_v.reinit(locally_owned_dofs_U,mpi_communicator);
@@ -205,7 +205,7 @@ void TestNavierStokes<dim>::setup()
   //init vectors for p
   locally_relevant_solution_p.reinit(locally_owned_dofs_P,locally_relevant_dofs_P,mpi_communicator);
   locally_relevant_solution_p = 0;
-  completely_distributed_solution_p.reinit(locally_owned_dofs_P,mpi_communicator); 
+  completely_distributed_solution_p.reinit(locally_owned_dofs_P,mpi_communicator);
 }
 
 template <int dim>
@@ -216,22 +216,22 @@ void TestNavierStokes<dim>::initial_condition()
   // init condition for rho
   completely_distributed_solution_rho = 0;
   VectorTools::interpolate(dof_handler_LS,
-			   RhoFunction<dim>(0),
-			   completely_distributed_solution_rho);
+                           RhoFunction<dim>(0),
+                           completely_distributed_solution_rho);
   constraints.distribute (completely_distributed_solution_rho);
   locally_relevant_solution_rho = completely_distributed_solution_rho;
   // init condition for u
   completely_distributed_solution_u = 0;
   VectorTools::interpolate(dof_handler_U,
-			   ExactSolution_and_BC_U<dim>(0,0),
-			   completely_distributed_solution_u);
+                           ExactSolution_and_BC_U<dim>(0,0),
+                           completely_distributed_solution_u);
   constraints.distribute (completely_distributed_solution_u);
   locally_relevant_solution_u = completely_distributed_solution_u;
   // init condition for v
   completely_distributed_solution_v = 0;
   VectorTools::interpolate(dof_handler_U,
-			   ExactSolution_and_BC_U<dim>(0,1),
-			   completely_distributed_solution_v);
+                           ExactSolution_and_BC_U<dim>(0,1),
+                           completely_distributed_solution_v);
   constraints.distribute (completely_distributed_solution_v);
   locally_relevant_solution_v = completely_distributed_solution_v;
   // init condition for w
@@ -239,20 +239,20 @@ void TestNavierStokes<dim>::initial_condition()
     {
       completely_distributed_solution_w = 0;
       VectorTools::interpolate(dof_handler_U,
-			       ExactSolution_and_BC_U<dim>(0,2),
-			       completely_distributed_solution_w);
+                               ExactSolution_and_BC_U<dim>(0,2),
+                               completely_distributed_solution_w);
       constraints.distribute (completely_distributed_solution_w);
       locally_relevant_solution_w = completely_distributed_solution_w;
     }
   // init condition for p
   completely_distributed_solution_p = 0;
   VectorTools::interpolate(dof_handler_P,
-			   ExactSolution_p<dim>(0),
-			   completely_distributed_solution_p);
+                           ExactSolution_p<dim>(0),
+                           completely_distributed_solution_p);
   constraints.distribute (completely_distributed_solution_p);
   locally_relevant_solution_p = completely_distributed_solution_p;
 }
-  
+
 template <int dim>
 void TestNavierStokes<dim>::init_constraints()
 {
@@ -268,12 +268,12 @@ void TestNavierStokes<dim>::fix_pressure()
   // fix the constant in the pressure
   completely_distributed_solution_p = locally_relevant_solution_p;
   double mean_value = VectorTools::compute_mean_value(dof_handler_P,
-						      QGauss<dim>(3),
-						      locally_relevant_solution_p,
-						      0);
+                                                      QGauss<dim>(3),
+                                                      locally_relevant_solution_p,
+                                                      0);
   if (dim==2)
     completely_distributed_solution_p.add(-mean_value+std::sin(1)*(std::cos(time)-cos(1+time)));
-  else 
+  else
     completely_distributed_solution_p.add(-mean_value+8*std::pow(std::sin(0.5),3)*std::sin(1.5+time));
   locally_relevant_solution_p = completely_distributed_solution_p;
 }
@@ -286,7 +286,7 @@ void TestNavierStokes<dim>::output_results ()
   data_out.add_data_vector (locally_relevant_solution_u, "u");
   data_out.add_data_vector (locally_relevant_solution_v, "v");
   if (dim==3) data_out.add_data_vector (locally_relevant_solution_w, "w");
-    
+
   Vector<float> subdomain (triangulation.n_active_cells());
   for (unsigned int i=0; i<subdomain.size(); ++i)
     subdomain(i) = triangulation.locally_owned_subdomain();
@@ -295,10 +295,10 @@ void TestNavierStokes<dim>::output_results ()
   data_out.build_patches ();
 
   const std::string filename = ("solution-" +
-				Utilities::int_to_string (output_number, 3) +
-				"." +
-				Utilities::int_to_string
-				(triangulation.locally_owned_subdomain(), 4));
+                                Utilities::int_to_string (output_number, 3) +
+                                "." +
+                                Utilities::int_to_string
+                                (triangulation.locally_owned_subdomain(), 4));
   std::ofstream output ((filename + ".vtu").c_str());
   data_out.write_vtu (output);
 
@@ -306,13 +306,13 @@ void TestNavierStokes<dim>::output_results ()
     {
       std::vector<std::string> filenames;
       for (unsigned int i=0;
-	   i<Utilities::MPI::n_mpi_processes(mpi_communicator);
-	   ++i)
-	filenames.push_back ("solution-" +
-			     Utilities::int_to_string (output_number, 3) +
-			     "." +
-			     Utilities::int_to_string (i, 4) +
-			     ".vtu");
+           i<Utilities::MPI::n_mpi_processes(mpi_communicator);
+           ++i)
+        filenames.push_back ("solution-" +
+                             Utilities::int_to_string (output_number, 3) +
+                             "." +
+                             Utilities::int_to_string (i, 4) +
+                             ".vtu");
 
       std::ofstream master_output ((filename + ".pvtu").c_str());
       data_out.write_pvtu_record (master_output, filenames);
@@ -326,96 +326,96 @@ void TestNavierStokes<dim>::process_solution(const unsigned int cycle)
   Vector<double> difference_per_cell (triangulation.n_active_cells());
   // error for u
   VectorTools::integrate_difference (dof_handler_U,
-				     locally_relevant_solution_u,
-				     ExactSolution_and_BC_U<dim>(time,0),
-				     difference_per_cell,
-				     QGauss<dim>(degree_U+1),
-				     VectorTools::L2_norm);	
+                                     locally_relevant_solution_u,
+                                     ExactSolution_and_BC_U<dim>(time,0),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_U+1),
+                                     VectorTools::L2_norm);
   double u_L2_error = difference_per_cell.l2_norm();
-  u_L2_error = 
+  u_L2_error =
     std::sqrt(Utilities::MPI::sum(u_L2_error * u_L2_error, mpi_communicator));
   VectorTools::integrate_difference (dof_handler_U,
-				     locally_relevant_solution_u,
-				     ExactSolution_and_BC_U<dim>(time,0),
-				     difference_per_cell,
-				     QGauss<dim>(degree_U+1),
-				     VectorTools::H1_norm);
+                                     locally_relevant_solution_u,
+                                     ExactSolution_and_BC_U<dim>(time,0),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_U+1),
+                                     VectorTools::H1_norm);
   double u_H1_error = difference_per_cell.l2_norm();
-  u_H1_error = 
+  u_H1_error =
     std::sqrt(Utilities::MPI::sum(u_H1_error * u_H1_error, mpi_communicator));
-  // error for v    
+  // error for v
   VectorTools::integrate_difference (dof_handler_U,
-				     locally_relevant_solution_v,
-				     ExactSolution_and_BC_U<dim>(time,1),
-				     difference_per_cell,
-				     QGauss<dim>(degree_U+1),
-				     VectorTools::L2_norm);
+                                     locally_relevant_solution_v,
+                                     ExactSolution_and_BC_U<dim>(time,1),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_U+1),
+                                     VectorTools::L2_norm);
   double v_L2_error = difference_per_cell.l2_norm();
-  v_L2_error = 
-    std::sqrt(Utilities::MPI::sum(v_L2_error * v_L2_error, 
-				  mpi_communicator));
+  v_L2_error =
+    std::sqrt(Utilities::MPI::sum(v_L2_error * v_L2_error,
+                                  mpi_communicator));
   VectorTools::integrate_difference (dof_handler_U,
-				     locally_relevant_solution_v,
-				     ExactSolution_and_BC_U<dim>(time,1),
-				     difference_per_cell,
-				     QGauss<dim>(degree_U+1),
-				     VectorTools::H1_norm);
+                                     locally_relevant_solution_v,
+                                     ExactSolution_and_BC_U<dim>(time,1),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_U+1),
+                                     VectorTools::H1_norm);
   double v_H1_error = difference_per_cell.l2_norm();
-  v_H1_error = 
-    std::sqrt(Utilities::MPI::sum(v_H1_error * 
-				  v_H1_error, mpi_communicator));
+  v_H1_error =
+    std::sqrt(Utilities::MPI::sum(v_H1_error *
+                                  v_H1_error, mpi_communicator));
   // error for w
   double w_L2_error = 0;
   double w_H1_error = 0;
   if (dim == 3)
     {
       VectorTools::integrate_difference (dof_handler_U,
-					 locally_relevant_solution_w,
-					 ExactSolution_and_BC_U<dim>(time,2),
-					 difference_per_cell,
-					 QGauss<dim>(degree_U+1),
-					 VectorTools::L2_norm);
+                                         locally_relevant_solution_w,
+                                         ExactSolution_and_BC_U<dim>(time,2),
+                                         difference_per_cell,
+                                         QGauss<dim>(degree_U+1),
+                                         VectorTools::L2_norm);
       w_L2_error = difference_per_cell.l2_norm();
-      w_L2_error = 
-	std::sqrt(Utilities::MPI::sum(w_L2_error * w_L2_error, 
-				      mpi_communicator));
+      w_L2_error =
+        std::sqrt(Utilities::MPI::sum(w_L2_error * w_L2_error,
+                                      mpi_communicator));
       VectorTools::integrate_difference (dof_handler_U,
-					 locally_relevant_solution_w,
-					 ExactSolution_and_BC_U<dim>(time,2),
-					 difference_per_cell,
-					 QGauss<dim>(degree_U+1),
-					 VectorTools::H1_norm);
+                                         locally_relevant_solution_w,
+                                         ExactSolution_and_BC_U<dim>(time,2),
+                                         difference_per_cell,
+                                         QGauss<dim>(degree_U+1),
+                                         VectorTools::H1_norm);
       w_H1_error = difference_per_cell.l2_norm();
-      w_H1_error = 
-	std::sqrt(Utilities::MPI::sum(w_H1_error * 
-				      w_H1_error, mpi_communicator));
+      w_H1_error =
+        std::sqrt(Utilities::MPI::sum(w_H1_error *
+                                      w_H1_error, mpi_communicator));
     }
   // error for p
   VectorTools::integrate_difference (dof_handler_P,
-				     locally_relevant_solution_p,
-				     ExactSolution_p<dim>(time),
-				     difference_per_cell,
-				     QGauss<dim>(degree_U+1),
-				     VectorTools::L2_norm);
+                                     locally_relevant_solution_p,
+                                     ExactSolution_p<dim>(time),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_U+1),
+                                     VectorTools::L2_norm);
   double p_L2_error = difference_per_cell.l2_norm();
-  p_L2_error = 
-    std::sqrt(Utilities::MPI::sum(p_L2_error * p_L2_error, 
-				  mpi_communicator));
+  p_L2_error =
+    std::sqrt(Utilities::MPI::sum(p_L2_error * p_L2_error,
+                                  mpi_communicator));
   VectorTools::integrate_difference (dof_handler_P,
-				     locally_relevant_solution_p,
-				     ExactSolution_p<dim>(time),
-				     difference_per_cell,
-				     QGauss<dim>(degree_U+1),
-				     VectorTools::H1_norm);
+                                     locally_relevant_solution_p,
+                                     ExactSolution_p<dim>(time),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_U+1),
+                                     VectorTools::H1_norm);
   double p_H1_error = difference_per_cell.l2_norm();
-  p_H1_error = 
-    std::sqrt(Utilities::MPI::sum(p_H1_error * p_H1_error, 
-				  mpi_communicator));
+  p_H1_error =
+    std::sqrt(Utilities::MPI::sum(p_H1_error * p_H1_error,
+                                  mpi_communicator));
 
-  const unsigned int n_active_cells=triangulation.n_active_cells();    
+  const unsigned int n_active_cells=triangulation.n_active_cells();
   const unsigned int n_dofs_U=dof_handler_U.n_dofs();
   const unsigned int n_dofs_P=dof_handler_P.n_dofs();
-	
+
   convergence_table.add_value("cycle", cycle);
   convergence_table.add_value("cells", n_active_cells);
   convergence_table.add_value("dofs_U", n_dofs_U);
@@ -457,11 +457,11 @@ void TestNavierStokes<dim>::get_boundary_values_U(double t)
       boundary_values_w.resize(map_boundary_values_w.size());
       std::map<unsigned int,double>::const_iterator boundary_value_w =map_boundary_values_w.begin();
       for (int i=0; boundary_value_w !=map_boundary_values_w.end(); ++boundary_value_w, ++i)
-	{
-	  boundary_values_id_w[i]=boundary_value_w->first;
-	  boundary_values_w[i]=boundary_value_w->second;
-	}
-    } 
+        {
+          boundary_values_id_w[i]=boundary_value_w->first;
+          boundary_values_w[i]=boundary_value_w->second;
+        }
+    }
   for (int i=0; boundary_value_u !=map_boundary_values_u.end(); ++boundary_value_u, ++i)
     {
       boundary_values_id_u[i]=boundary_value_u->first;
@@ -501,161 +501,161 @@ void TestNavierStokes<dim>::run()
   for (unsigned int cycle=0; cycle<n_cycles; ++cycle)
     {
       if (cycle == 0)
-	{
-	  GridGenerator::hyper_cube (triangulation);
-	  triangulation.refine_global (n_refinement);
-	  setup();
-	  initial_condition();
-	}
+        {
+          GridGenerator::hyper_cube (triangulation);
+          triangulation.refine_global (n_refinement);
+          setup();
+          initial_condition();
+        }
       else
-	{
-	  triangulation.refine_global(1); 
-	  setup();
-	  initial_condition();
-	  time_step*=0.5;
-	}
+        {
+          triangulation.refine_global(1);
+          setup();
+          initial_condition();
+          time_step*=0.5;
+        }
 
       output_results();
       //      if (cycle==0)
       NavierStokesSolver<dim> navier_stokes (degree_LS,
-					     degree_U,
-					     time_step,
-					     force_function,
-					     rho_function,
-					     nu_function,
-					     verbose,
-					     triangulation,
-					     mpi_communicator);
+                                             degree_U,
+                                             time_step,
+                                             force_function,
+                                             rho_function,
+                                             nu_function,
+                                             verbose,
+                                             triangulation,
+                                             mpi_communicator);
       //set INITIAL CONDITION within TRANSPORT PROBLEM
       if (dim==2)
-	navier_stokes.initial_condition(locally_relevant_solution_rho,
-					locally_relevant_solution_u,
-					locally_relevant_solution_v,
-					locally_relevant_solution_p);
+        navier_stokes.initial_condition(locally_relevant_solution_rho,
+                                        locally_relevant_solution_u,
+                                        locally_relevant_solution_v,
+                                        locally_relevant_solution_p);
       else //dim=3
-	navier_stokes.initial_condition(locally_relevant_solution_rho,
-					locally_relevant_solution_u,
-					locally_relevant_solution_v,
-					locally_relevant_solution_w,
-					locally_relevant_solution_p);
+        navier_stokes.initial_condition(locally_relevant_solution_rho,
+                                        locally_relevant_solution_u,
+                                        locally_relevant_solution_v,
+                                        locally_relevant_solution_w,
+                                        locally_relevant_solution_p);
 
       pcout << "Cycle " << cycle << ':' << std::endl;
       pcout << "   Cycle   " << cycle
-	    << "   Number of active cells:       " 
-	    << triangulation.n_global_active_cells() << std::endl
-	    << "   Number of degrees of freedom (velocity): "
-	    << dof_handler_U.n_dofs() << std::endl
-	    << "   min h=" << GridTools::minimal_cell_diameter(triangulation)/std::sqrt(2)/degree_U
-	    << std::endl;
-      
+            << "   Number of active cells:       "
+            << triangulation.n_global_active_cells() << std::endl
+            << "   Number of degrees of freedom (velocity): "
+            << dof_handler_U.n_dofs() << std::endl
+            << "   min h=" << GridTools::minimal_cell_diameter(triangulation)/std::sqrt(2)/degree_U
+            << std::endl;
+
       // TIME STEPPING
       timestep_number=0;
       time=0;
       double time_step_backup=time_step;
-      while(time<final_time)
-	{
-	  timestep_number++;
-	  ///////////////////
-	  // GET TIME_STEP //
-	  ///////////////////
-	  if (time+time_step > final_time-1E-10)
-	    {
-	      pcout << "FINAL TIME STEP..." << std::endl;
-	      time_step_backup=time_step;
-	      time_step=final_time-time;
-	    }
-	  pcout << "Time step " << timestep_number
-		<< "\twith dt=" << time_step 
-		<< "\tat tn=" << time
-		<< std::endl;
-	  /////////////////
-	  // FORCE TERMS //
-	  /////////////////
-	  force_function.set_time(time+time_step);
-	  /////////////////////////////////
-	  // DENSITY AND VISCOSITY FIELD //
-	  /////////////////////////////////
-	  rho_function.set_time(time+time_step);
-	  nu_function.set_time(time+time_step);
-	  /////////////////////////
-	  // BOUNDARY CONDITIONS //
-	  /////////////////////////
-	  get_boundary_values_U(time+time_step);
-	  if (dim==2) navier_stokes.set_boundary_conditions(boundary_values_id_u, boundary_values_id_v,
-							    boundary_values_u, boundary_values_v);
-	  else navier_stokes.set_boundary_conditions(boundary_values_id_u, 
-						     boundary_values_id_v, 
-						     boundary_values_id_w,
-						     boundary_values_u, boundary_values_v, boundary_values_w);
-	  //////////////////
-	  // GET SOLUTION //
-	  //////////////////
-	  navier_stokes.nth_time_step();
-	  if (dim==2) 
-	    navier_stokes.get_velocity(locally_relevant_solution_u,locally_relevant_solution_v);
-	  else 
-	    navier_stokes.get_velocity(locally_relevant_solution_u,
-				       locally_relevant_solution_v,
-				       locally_relevant_solution_w);
-	  navier_stokes.get_pressure(locally_relevant_solution_p);
-	  
-	  //////////////////
-	  // FIX PRESSURE //
-	  //////////////////
-	  fix_pressure();
+      while (time<final_time)
+        {
+          timestep_number++;
+          ///////////////////
+          // GET TIME_STEP //
+          ///////////////////
+          if (time+time_step > final_time-1E-10)
+            {
+              pcout << "FINAL TIME STEP..." << std::endl;
+              time_step_backup=time_step;
+              time_step=final_time-time;
+            }
+          pcout << "Time step " << timestep_number
+                << "\twith dt=" << time_step
+                << "\tat tn=" << time
+                << std::endl;
+          /////////////////
+          // FORCE TERMS //
+          /////////////////
+          force_function.set_time(time+time_step);
+          /////////////////////////////////
+          // DENSITY AND VISCOSITY FIELD //
+          /////////////////////////////////
+          rho_function.set_time(time+time_step);
+          nu_function.set_time(time+time_step);
+          /////////////////////////
+          // BOUNDARY CONDITIONS //
+          /////////////////////////
+          get_boundary_values_U(time+time_step);
+          if (dim==2) navier_stokes.set_boundary_conditions(boundary_values_id_u, boundary_values_id_v,
+                                                              boundary_values_u, boundary_values_v);
+          else navier_stokes.set_boundary_conditions(boundary_values_id_u,
+                                                       boundary_values_id_v,
+                                                       boundary_values_id_w,
+                                                       boundary_values_u, boundary_values_v, boundary_values_w);
+          //////////////////
+          // GET SOLUTION //
+          //////////////////
+          navier_stokes.nth_time_step();
+          if (dim==2)
+            navier_stokes.get_velocity(locally_relevant_solution_u,locally_relevant_solution_v);
+          else
+            navier_stokes.get_velocity(locally_relevant_solution_u,
+                                       locally_relevant_solution_v,
+                                       locally_relevant_solution_w);
+          navier_stokes.get_pressure(locally_relevant_solution_p);
 
-	  /////////////////
-	  // UPDATE TIME //
-	  /////////////////
-	  time+=time_step;
+          //////////////////
+          // FIX PRESSURE //
+          //////////////////
+          fix_pressure();
 
-	  ////////////
-	  // OUTPUT //
-	  ////////////
-	  if (get_output && time-(output_number)*output_time>=1E-10)
-	    output_results();
-	}
+          /////////////////
+          // UPDATE TIME //
+          /////////////////
+          time+=time_step;
+
+          ////////////
+          // OUTPUT //
+          ////////////
+          if (get_output && time-(output_number)*output_time>=1E-10)
+            output_results();
+        }
       pcout << "FINAL TIME: " << time << std::endl;
       time_step=time_step_backup;
       if (get_error)
-	process_solution(cycle);
-    
+        process_solution(cycle);
+
       if (get_error)
-	{
-	  convergence_table.set_precision("u L2", 2);
-	  convergence_table.set_precision("u H1", 2);
-	  convergence_table.set_scientific("u L2",true);
-	  convergence_table.set_scientific("u H1",true);
-	  
-	  convergence_table.set_precision("v L2", 2);
-	  convergence_table.set_precision("v H1", 2);
-	  convergence_table.set_scientific("v L2",true);
-	  convergence_table.set_scientific("v H1",true);
-	  
-	  if (dim==3)
-	    {
-	      convergence_table.set_precision("w L2", 2);
-	      convergence_table.set_precision("w H1", 2);
-	      convergence_table.set_scientific("w L2",true);
-	      convergence_table.set_scientific("w H1",true);
-	    }
-	  
-	  convergence_table.set_precision("p L2", 2);
-	  convergence_table.set_precision("p H1", 2);
-	  convergence_table.set_scientific("p L2",true);
-	  convergence_table.set_scientific("p H1",true);
+        {
+          convergence_table.set_precision("u L2", 2);
+          convergence_table.set_precision("u H1", 2);
+          convergence_table.set_scientific("u L2",true);
+          convergence_table.set_scientific("u H1",true);
 
-	  convergence_table.set_tex_format("cells","r");
-	  convergence_table.set_tex_format("dofs_U","r");
-	  convergence_table.set_tex_format("dofs_P","r");
-	  convergence_table.set_tex_format("dt","r");
+          convergence_table.set_precision("v L2", 2);
+          convergence_table.set_precision("v H1", 2);
+          convergence_table.set_scientific("v L2",true);
+          convergence_table.set_scientific("v H1",true);
 
-	  if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
-	    {
-	      std::cout << std::endl;
-	      convergence_table.write_text(std::cout);
-	    }	
-	}
+          if (dim==3)
+            {
+              convergence_table.set_precision("w L2", 2);
+              convergence_table.set_precision("w H1", 2);
+              convergence_table.set_scientific("w L2",true);
+              convergence_table.set_scientific("w H1",true);
+            }
+
+          convergence_table.set_precision("p L2", 2);
+          convergence_table.set_precision("p H1", 2);
+          convergence_table.set_scientific("p L2",true);
+          convergence_table.set_scientific("p H1",true);
+
+          convergence_table.set_tex_format("cells","r");
+          convergence_table.set_tex_format("dofs_U","r");
+          convergence_table.set_tex_format("dofs_P","r");
+          convergence_table.set_tex_format("dt","r");
+
+          if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+            {
+              std::cout << std::endl;
+              convergence_table.write_text(std::cout);
+            }
+        }
     }
 }
 
@@ -669,8 +669,8 @@ int main(int argc, char *argv[])
       deallog.depth_console (0);
 
       {
-	unsigned int degree_LS = 1;
-	unsigned int degree_U = 2;
+        unsigned int degree_LS = 1;
+        unsigned int degree_U = 2;
         TestNavierStokes<2> test_navier_stokes(degree_LS, degree_U);
         test_navier_stokes.run();
       }

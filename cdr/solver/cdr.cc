@@ -98,33 +98,34 @@ template<int dim>
 CDRProblem<dim>::CDRProblem(const CDR::Parameters &parameters) :
   parameters(parameters),
   time_step {(parameters.stop_time - parameters.start_time)
-             /parameters.n_time_steps},
-  current_time {parameters.start_time},
-  mpi_communicator (MPI_COMM_WORLD),
-  n_mpi_processes {Utilities::MPI::n_mpi_processes(mpi_communicator)},
-  this_mpi_process {Utilities::MPI::this_mpi_process(mpi_communicator)},
-  fe(parameters.fe_order),
-  quad(parameters.fe_order + 2),
-  boundary_description(Point<dim>()),
-  triangulation(mpi_communicator, typename Triangulation<dim>::MeshSmoothing
-                (Triangulation<dim>::smoothing_on_refinement |
-                 Triangulation<dim>::smoothing_on_coarsening)),
-  dof_handler(triangulation),
-  convection_function
+  /parameters.n_time_steps
+},
+current_time {parameters.start_time},
+mpi_communicator (MPI_COMM_WORLD),
+n_mpi_processes {Utilities::MPI::n_mpi_processes(mpi_communicator)},
+this_mpi_process {Utilities::MPI::this_mpi_process(mpi_communicator)},
+fe(parameters.fe_order),
+quad(parameters.fe_order + 2),
+boundary_description(Point<dim>()),
+triangulation(mpi_communicator, typename Triangulation<dim>::MeshSmoothing
+              (Triangulation<dim>::smoothing_on_refinement |
+               Triangulation<dim>::smoothing_on_coarsening)),
+dof_handler(triangulation),
+convection_function
+{
+  [](const Point<dim> p) -> Tensor<1, dim>
+  {Tensor<1, dim> v; v[0] = -p[1]; v[1] = p[0]; return v;}
+},
+forcing_function
+{
+  [](double t, const Point<dim> p) -> double
   {
-    [](const Point<dim> p) -> Tensor<1, dim>
-      {Tensor<1, dim> v; v[0] = -p[1]; v[1] = p[0]; return v;}
-  },
-  forcing_function
-  {
-    [](double t, const Point<dim> p) -> double
-      {
-        return std::exp(-8*t)*std::exp(-40*Utilities::fixed_power<6>(p[0] - 1.5))
-          *std::exp(-40*Utilities::fixed_power<6>(p[1]));
-      }
-  },
-  first_run {true},
-  pcout (std::cout, this_mpi_process == 0)
+    return std::exp(-8*t)*std::exp(-40*Utilities::fixed_power<6>(p[0] - 1.5))
+    *std::exp(-40*Utilities::fixed_power<6>(p[1]));
+  }
+},
+first_run {true},
+pcout (std::cout, this_mpi_process == 0)
 {
   Assert(dim == 2, ExcNotImplemented());
 }
@@ -264,11 +265,11 @@ void CDRProblem<dim>::refine_mesh()
   // Transferring the solution between different grids is ultimately just a
   // few function calls but they must be made in exactly the right order.
   parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
-    solution_transfer(dof_handler);
+  solution_transfer(dof_handler);
 
   triangulation.prepare_coarsening_and_refinement();
   solution_transfer.prepare_for_coarsening_and_refinement
-    (locally_relevant_solution);
+  (locally_relevant_solution);
   triangulation.execute_coarsening_and_refinement();
 
   setup_dofs();
@@ -278,7 +279,7 @@ void CDRProblem<dim>::refine_mesh()
   // parallel::distributed::SolutionTransfer::interpolate is called it uses
   // those values to populate <code>temporary</code>.
   TrilinosWrappers::MPI::Vector temporary
-    (locally_owned_dofs, mpi_communicator);
+  (locally_owned_dofs, mpi_communicator);
   solution_transfer.interpolate(temporary);
   // After <code>temporary</code> has the correct value, this call correctly
   // populates <code>completely_distributed_solution</code>, which had its
