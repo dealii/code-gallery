@@ -457,43 +457,6 @@ namespace Cook_Membrane
     }
   }
 
-// @sect3{Some standard tensors}
-
-// Now we define some frequently used second and fourth-order tensors:
-  template <int dim>
-  class StandardTensors
-  {
-  public:
-
-    // $\mathbf{I}$
-    static const SymmetricTensor<2, dim> I;
-    // $\mathbf{I} \otimes \mathbf{I}$
-    static const SymmetricTensor<4, dim> IxI;
-    // $\mathcal{S}$, note that as we only use this fourth-order unit tensor
-    // to operate on symmetric second-order tensors.  To maintain notation
-    // consistent with Holzapfel (2001) we name the tensor $\mathcal{I}$
-    static const SymmetricTensor<4, dim> II;
-    // Fourth-order deviatoric tensor such that
-    // $\textrm{dev} \{ \bullet \} = \{ \bullet \} -
-    //  [1/\textrm{dim}][ \{ \bullet\} :\mathbf{I}]\mathbf{I}$
-    static const SymmetricTensor<4, dim> dev_P;
-  };
-
-  template <int dim>
-  const SymmetricTensor<2, dim>
-  StandardTensors<dim>::I = unit_symmetric_tensor<dim>();
-
-  template <int dim>
-  const SymmetricTensor<4, dim>
-  StandardTensors<dim>::IxI = outer_product(I, I);
-
-  template <int dim>
-  const SymmetricTensor<4, dim>
-  StandardTensors<dim>::II = identity_tensor<dim>();
-
-  template <int dim>
-  const SymmetricTensor<4, dim>
-  StandardTensors<dim>::dev_P = deviator_tensor<dim>();
 
 // @sect3{Time class}
 
@@ -657,7 +620,7 @@ namespace Cook_Membrane
     SymmetricTensor<2,dim,NumberType>
     get_tau_vol(const NumberType &det_F) const
     {
-        return NumberType(get_dPsi_vol_dJ(det_F) * det_F) * StandardTensors<dim>::I;
+        return NumberType(get_dPsi_vol_dJ(det_F) * det_F) * Physics::Elasticity::StandardTensors<dim>::I;
     }
 
     // Next, determine the isochoric Kirchhoff stress
@@ -666,7 +629,7 @@ namespace Cook_Membrane
     SymmetricTensor<2,dim,NumberType>
     get_tau_iso(const SymmetricTensor<2,dim,NumberType> &b_bar) const
     {
-      return StandardTensors<dim>::dev_P * get_tau_bar(b_bar);
+      return Physics::Elasticity::StandardTensors<dim>::dev_P * get_tau_bar(b_bar);
     }
 
     // Then, determine the fictitious Kirchhoff stress
@@ -698,8 +661,8 @@ namespace Cook_Membrane
     {
         // See Holzapfel p265
         return det_F
-        * ( (get_dPsi_vol_dJ(det_F) + det_F * get_d2Psi_vol_dJ2(det_F))*StandardTensors<dim>::IxI
-           - (2.0 * get_dPsi_vol_dJ(det_F))*StandardTensors<dim>::II );
+        * ( (get_dPsi_vol_dJ(det_F) + det_F * get_d2Psi_vol_dJ2(det_F))*Physics::Elasticity::StandardTensors<dim>::IxI
+           - (2.0 * get_dPsi_vol_dJ(det_F))*Physics::Elasticity::StandardTensors<dim>::S );
     }
 
     // Calculate the isochoric part of the tangent $J
@@ -711,17 +674,17 @@ namespace Cook_Membrane
       const SymmetricTensor<2, dim> tau_iso = get_tau_iso(b_bar);
       const SymmetricTensor<4, dim> tau_iso_x_I
         = outer_product(tau_iso,
-                        StandardTensors<dim>::I);
+                        Physics::Elasticity::StandardTensors<dim>::I);
       const SymmetricTensor<4, dim> I_x_tau_iso
-        = outer_product(StandardTensors<dim>::I,
+        = outer_product(Physics::Elasticity::StandardTensors<dim>::I,
                         tau_iso);
       const SymmetricTensor<4, dim> c_bar = get_c_bar();
 
       return (2.0 / dim) * trace(tau_bar)
-             * StandardTensors<dim>::dev_P
+             * Physics::Elasticity::StandardTensors<dim>::dev_P
              - (2.0 / dim) * (tau_iso_x_I + I_x_tau_iso)
-             + StandardTensors<dim>::dev_P * c_bar
-             * StandardTensors<dim>::dev_P;
+             + Physics::Elasticity::StandardTensors<dim>::dev_P * c_bar
+             * Physics::Elasticity::StandardTensors<dim>::dev_P;
     }
 
     // Calculate the fictitious elasticity tensor $\overline{\mathfrak{c}}$.
@@ -1896,8 +1859,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
         const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
         const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
         const ADNumberType               det_F = determinant(F);
-//        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
-        const Tensor<2,dim,ADNumberType> F_bar = ADNumberType(std::pow(determinant(F),-1.0/dim))*F;
+        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
         const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
         const Tensor<2,dim,ADNumberType> F_inv = invert(F);
         Assert(det_F > ADNumberType(0.0), ExcInternalError());
