@@ -1896,8 +1896,7 @@ Point<dim> grid_y_transform (const Point<dim> &pt_in)
         const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
         const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
         const ADNumberType               det_F = determinant(F);
-//        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
-        const Tensor<2,dim,ADNumberType> F_bar = ADNumberType(std::pow(determinant(F),-1.0/dim))*F;
+        const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
         const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
         const Tensor<2,dim,ADNumberType> F_inv = invert(F);
         Assert(det_F > ADNumberType(0.0), ExcInternalError());
