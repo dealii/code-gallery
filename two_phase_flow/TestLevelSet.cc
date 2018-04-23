@@ -45,10 +45,10 @@ using namespace dealii;
 // TIME_INTEGRATION
 #define FORWARD_EULER 0
 #define SSP33 1
-// PROBLEM 
+// PROBLEM
 #define CIRCULAR_ROTATION 0
 #define DIAGONAL_ADVECTION 1
-// OTHER FLAGS 
+// OTHER FLAGS
 #define VARIABLE_VELOCITY 0
 
 #include "utilities_test_LS.cc"
@@ -62,7 +62,7 @@ class TestLevelSet
 {
 public:
   TestLevelSet (const unsigned int degree_LS,
-	    const unsigned int degree_U);
+                const unsigned int degree_U);
   ~TestLevelSet ();
   void run ();
 
@@ -70,7 +70,7 @@ private:
   // BOUNDARY //
   void set_boundary_inlet();
   void get_boundary_values_phi(std::vector<unsigned int> &boundary_values_id_phi,
-			       std::vector<double> &boundary_values_phi);
+                               std::vector<double> &boundary_values_phi);
   // VELOCITY //
   void get_interpolated_velocity();
   // SETUP AND INIT CONDITIONS //
@@ -79,8 +79,8 @@ private:
   void init_constraints();
   // POST PROCESSING //
   void process_solution(parallel::distributed::Triangulation<dim> &triangulation,
-			DoFHandler<dim> &dof_handler_LS, 
-			PETScWrappers::MPI::Vector &solution);
+                        DoFHandler<dim> &dof_handler_LS,
+                        PETScWrappers::MPI::Vector &solution);
   void output_results();
   void output_solution();
 
@@ -97,10 +97,10 @@ private:
   std::vector<unsigned int> boundary_values_id_phi;
   std::vector<double> boundary_values_phi;
 
-  // GENERAL 
+  // GENERAL
   MPI_Comm mpi_communicator;
   parallel::distributed::Triangulation<dim>   triangulation;
-  
+
   int                  degree;
   int                  degree_LS;
   DoFHandler<dim>      dof_handler_LS;
@@ -129,7 +129,7 @@ private:
   double cfl;
   double min_h;
 
-  double sharpness; 
+  double sharpness;
   int sharpness_integer;
 
   unsigned int n_refinement;
@@ -153,18 +153,18 @@ private:
   // MASS MATRIX
   PETScWrappers::MPI::SparseMatrix matrix_MC, matrix_MC_tnm1;
   std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_MC;
-  
+
 };
 
 template <int dim>
-TestLevelSet<dim>::TestLevelSet (const unsigned int degree_LS, 
-			 const unsigned int degree_U)
+TestLevelSet<dim>::TestLevelSet (const unsigned int degree_LS,
+                                 const unsigned int degree_U)
   :
   mpi_communicator (MPI_COMM_WORLD),
   triangulation (mpi_communicator,
-		 typename Triangulation<dim>::MeshSmoothing
-		 (Triangulation<dim>::smoothing_on_refinement |
-		  Triangulation<dim>::smoothing_on_coarsening)),
+                 typename Triangulation<dim>::MeshSmoothing
+                 (Triangulation<dim>::smoothing_on_refinement |
+                  Triangulation<dim>::smoothing_on_coarsening)),
   degree_LS(degree_LS),
   dof_handler_LS (triangulation),
   fe_LS (degree_LS),
@@ -192,23 +192,23 @@ void TestLevelSet<dim>::get_interpolated_velocity()
   // velocity in x
   completely_distributed_solution_u = 0;
   VectorTools::interpolate(dof_handler_U,
-			   ExactU<dim>(PROBLEM,time),
-			   completely_distributed_solution_u);
+                           ExactU<dim>(PROBLEM,time),
+                           completely_distributed_solution_u);
   constraints.distribute (completely_distributed_solution_u);
   locally_relevant_solution_u = completely_distributed_solution_u;
   // velocity in y
   completely_distributed_solution_v = 0;
   VectorTools::interpolate(dof_handler_U,
-			   ExactV<dim>(PROBLEM,time),
-			   completely_distributed_solution_v);
+                           ExactV<dim>(PROBLEM,time),
+                           completely_distributed_solution_v);
   constraints.distribute (completely_distributed_solution_v);
   locally_relevant_solution_v = completely_distributed_solution_v;
   if (dim==3)
     {
       completely_distributed_solution_w = 0;
       VectorTools::interpolate(dof_handler_U,
-			       ExactW<dim>(PROBLEM,time),
-			       completely_distributed_solution_w);
+                               ExactW<dim>(PROBLEM,time),
+                               completely_distributed_solution_w);
       constraints.distribute (completely_distributed_solution_w);
       locally_relevant_solution_w = completely_distributed_solution_w;
     }
@@ -222,52 +222,52 @@ void TestLevelSet<dim>::set_boundary_inlet()
 {
   const QGauss<dim-1>  face_quadrature_formula(1); // center of the face
   FEFaceValues<dim> fe_face_values (fe_U,face_quadrature_formula,
-				    update_values | update_quadrature_points |
-				    update_normal_vectors);
+                                    update_values | update_quadrature_points |
+                                    update_normal_vectors);
   const unsigned int n_face_q_points = face_quadrature_formula.size();
   std::vector<double>  u_value (n_face_q_points);
-  std::vector<double>  v_value (n_face_q_points); 
-  std::vector<double>  w_value (n_face_q_points); 
-  
+  std::vector<double>  v_value (n_face_q_points);
+  std::vector<double>  w_value (n_face_q_points);
+
   typename DoFHandler<dim>::active_cell_iterator
-    cell_U = dof_handler_U.begin_active(),
-    endc_U = dof_handler_U.end();
+  cell_U = dof_handler_U.begin_active(),
+  endc_U = dof_handler_U.end();
   Tensor<1,dim> u;
-  
+
   for (; cell_U!=endc_U; ++cell_U)
     if (cell_U->is_locally_owned())
       for (unsigned int face=0; face<GeometryInfo<dim>::faces_per_cell; ++face)
-	if (cell_U->face(face)->at_boundary())
-	  {
-	    fe_face_values.reinit(cell_U,face);
-	    fe_face_values.get_function_values(locally_relevant_solution_u,u_value);
-	    fe_face_values.get_function_values(locally_relevant_solution_v,v_value);
-	    if (dim==3)
-	      fe_face_values.get_function_values(locally_relevant_solution_w,w_value);
-	    u[0]=u_value[0];
-	    u[1]=v_value[0];
-	    if (dim==3) 
-	      u[2]=w_value[0];
-	    if (fe_face_values.normal_vector(0)*u < -1e-14)
-	      cell_U->face(face)->set_boundary_id(10);
-	  }
+        if (cell_U->face(face)->at_boundary())
+          {
+            fe_face_values.reinit(cell_U,face);
+            fe_face_values.get_function_values(locally_relevant_solution_u,u_value);
+            fe_face_values.get_function_values(locally_relevant_solution_v,v_value);
+            if (dim==3)
+              fe_face_values.get_function_values(locally_relevant_solution_w,w_value);
+            u[0]=u_value[0];
+            u[1]=v_value[0];
+            if (dim==3)
+              u[2]=w_value[0];
+            if (fe_face_values.normal_vector(0)*u < -1e-14)
+              cell_U->face(face)->set_boundary_id(10);
+          }
 }
 
 template <int dim>
 void TestLevelSet<dim>::get_boundary_values_phi(std::vector<unsigned int> &boundary_values_id_phi,
-					    std::vector<double> &boundary_values_phi)
+                                                std::vector<double> &boundary_values_phi)
 {
   std::map<unsigned int, double> map_boundary_values_phi;
   unsigned int boundary_id=0;
-  
+
   set_boundary_inlet();
   boundary_id=10; // inlet
   VectorTools::interpolate_boundary_values (dof_handler_LS,
-					    boundary_id,BoundaryPhi<dim>(),
-					    map_boundary_values_phi);
+                                            boundary_id,BoundaryPhi<dim>(),
+                                            map_boundary_values_phi);
 
   boundary_values_id_phi.resize(map_boundary_values_phi.size());
-  boundary_values_phi.resize(map_boundary_values_phi.size());  
+  boundary_values_phi.resize(map_boundary_values_phi.size());
   std::map<unsigned int,double>::const_iterator boundary_value_phi = map_boundary_values_phi.begin();
   for (int i=0; boundary_value_phi !=map_boundary_values_phi.end(); ++boundary_value_phi, ++i)
     {
@@ -281,73 +281,73 @@ void TestLevelSet<dim>::get_boundary_values_phi(std::vector<unsigned int> &bound
 //////////////////////////////////
 template <int dim>
 void TestLevelSet<dim>::setup()
-{ 
+{
   degree = std::max(degree_LS,degree_U);
   // setup system LS
   dof_handler_LS.distribute_dofs (fe_LS);
   locally_owned_dofs_LS = dof_handler_LS.locally_owned_dofs ();
   DoFTools::extract_locally_relevant_dofs (dof_handler_LS,
-					   locally_relevant_dofs_LS);
-  // setup system U 
+                                           locally_relevant_dofs_LS);
+  // setup system U
   dof_handler_U.distribute_dofs (fe_U);
   locally_owned_dofs_U = dof_handler_U.locally_owned_dofs ();
   DoFTools::extract_locally_relevant_dofs (dof_handler_U,
-					   locally_relevant_dofs_U);
+                                           locally_relevant_dofs_U);
   // setup system U for disp field
   dof_handler_U_disp_field.distribute_dofs (fe_U_disp_field);
   locally_owned_dofs_U_disp_field = dof_handler_U_disp_field.locally_owned_dofs ();
   DoFTools::extract_locally_relevant_dofs (dof_handler_U_disp_field,
-					   locally_relevant_dofs_U_disp_field);
+                                           locally_relevant_dofs_U_disp_field);
   // init vectors for phi
   locally_relevant_solution_phi.reinit(locally_owned_dofs_LS,
-				       locally_relevant_dofs_LS,
-				       mpi_communicator);
+                                       locally_relevant_dofs_LS,
+                                       mpi_communicator);
   locally_relevant_solution_phi = 0;
-  completely_distributed_solution_phi.reinit(mpi_communicator, 
-					     dof_handler_LS.n_dofs(),
-					     dof_handler_LS.n_locally_owned_dofs());
+  completely_distributed_solution_phi.reinit(mpi_communicator,
+                                             dof_handler_LS.n_dofs(),
+                                             dof_handler_LS.n_locally_owned_dofs());
   //init vectors for u
   locally_relevant_solution_u.reinit(locally_owned_dofs_U,
-				     locally_relevant_dofs_U,
-				     mpi_communicator);
+                                     locally_relevant_dofs_U,
+                                     mpi_communicator);
   locally_relevant_solution_u = 0;
-  completely_distributed_solution_u.reinit(mpi_communicator, 
-					   dof_handler_U.n_dofs(),
-					   dof_handler_U.n_locally_owned_dofs());
-  //init vectors for v                                           
+  completely_distributed_solution_u.reinit(mpi_communicator,
+                                           dof_handler_U.n_dofs(),
+                                           dof_handler_U.n_locally_owned_dofs());
+  //init vectors for v
   locally_relevant_solution_v.reinit(locally_owned_dofs_U,
-				     locally_relevant_dofs_U,
-				     mpi_communicator);
+                                     locally_relevant_dofs_U,
+                                     mpi_communicator);
   locally_relevant_solution_v = 0;
-  completely_distributed_solution_v.reinit(mpi_communicator, 
-					   dof_handler_U.n_dofs(),
-					   dof_handler_U.n_locally_owned_dofs());
+  completely_distributed_solution_v.reinit(mpi_communicator,
+                                           dof_handler_U.n_dofs(),
+                                           dof_handler_U.n_locally_owned_dofs());
   // init vectors for w
   locally_relevant_solution_w.reinit(locally_owned_dofs_U,
-				     locally_relevant_dofs_U,
-				     mpi_communicator);
+                                     locally_relevant_dofs_U,
+                                     mpi_communicator);
   locally_relevant_solution_w = 0;
-  completely_distributed_solution_w.reinit(mpi_communicator, 
-					   dof_handler_U.n_dofs(),
-					   dof_handler_U.n_locally_owned_dofs());
+  completely_distributed_solution_w.reinit(mpi_communicator,
+                                           dof_handler_U.n_dofs(),
+                                           dof_handler_U.n_locally_owned_dofs());
   init_constraints();
   // MASS MATRIX
   DynamicSparsityPattern dsp (locally_relevant_dofs_LS);
   DoFTools::make_sparsity_pattern (dof_handler_LS,dsp,constraints,false);
   SparsityTools::distribute_sparsity_pattern (dsp,
-					      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-					      mpi_communicator,
-					      locally_relevant_dofs_LS);
+                                              dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                                              mpi_communicator,
+                                              locally_relevant_dofs_LS);
   matrix_MC.reinit (mpi_communicator,
-		    dsp,
-		    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-		    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-		    Utilities::MPI::this_mpi_process(mpi_communicator));
+                    dsp,
+                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                    Utilities::MPI::this_mpi_process(mpi_communicator));
   matrix_MC_tnm1.reinit (mpi_communicator,
-			 dsp,
-			 dof_handler_LS.n_locally_owned_dofs_per_processor(),
-			 dof_handler_LS.n_locally_owned_dofs_per_processor(),
-			 Utilities::MPI::this_mpi_process(mpi_communicator));
+                         dsp,
+                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                         Utilities::MPI::this_mpi_process(mpi_communicator));
 }
 
 template <int dim>
@@ -358,27 +358,27 @@ void TestLevelSet<dim>::initial_condition()
   // init condition for phi
   completely_distributed_solution_phi = 0;
   VectorTools::interpolate(dof_handler_LS,
-			   InitialPhi<dim>(PROBLEM, sharpness),
-			   //ZeroFunction<dim>(),
-			   completely_distributed_solution_phi);
+                           InitialPhi<dim>(PROBLEM, sharpness),
+                           //ZeroFunction<dim>(),
+                           completely_distributed_solution_phi);
   constraints.distribute (completely_distributed_solution_phi);
   locally_relevant_solution_phi = completely_distributed_solution_phi;
   // init condition for u=0
   completely_distributed_solution_u = 0;
   VectorTools::interpolate(dof_handler_U,
-			   ExactU<dim>(PROBLEM,time),
-			   completely_distributed_solution_u);
+                           ExactU<dim>(PROBLEM,time),
+                           completely_distributed_solution_u);
   constraints.distribute (completely_distributed_solution_u);
   locally_relevant_solution_u = completely_distributed_solution_u;
   // init condition for v
   completely_distributed_solution_v = 0;
   VectorTools::interpolate(dof_handler_U,
-			   ExactV<dim>(PROBLEM,time),
-			   completely_distributed_solution_v);
+                           ExactV<dim>(PROBLEM,time),
+                           completely_distributed_solution_v);
   constraints.distribute (completely_distributed_solution_v);
   locally_relevant_solution_v = completely_distributed_solution_v;
 }
-  
+
 template <int dim>
 void TestLevelSet<dim>::init_constraints()
 {
@@ -396,31 +396,31 @@ void TestLevelSet<dim>::init_constraints()
 // POST PROCESSING //
 /////////////////////
 template <int dim>
-void TestLevelSet<dim>::process_solution(parallel::distributed::Triangulation<dim> &triangulation, 
-					 DoFHandler<dim> &dof_handler_LS, 
-					 PETScWrappers::MPI::Vector &solution)
+void TestLevelSet<dim>::process_solution(parallel::distributed::Triangulation<dim> &triangulation,
+                                         DoFHandler<dim> &dof_handler_LS,
+                                         PETScWrappers::MPI::Vector &solution)
 {
   Vector<double> difference_per_cell (triangulation.n_active_cells());
   // error for phi
   VectorTools::integrate_difference (dof_handler_LS,
-				     solution,
-				     InitialPhi<dim>(PROBLEM,sharpness),
-				     difference_per_cell,
-				     QGauss<dim>(degree_LS+3),
-				     VectorTools::L1_norm);
-  
+                                     solution,
+                                     InitialPhi<dim>(PROBLEM,sharpness),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_LS+3),
+                                     VectorTools::L1_norm);
+
   double u_L1_error = difference_per_cell.l1_norm();
   u_L1_error = std::sqrt(Utilities::MPI::sum(u_L1_error * u_L1_error, mpi_communicator));
-  
+
   VectorTools::integrate_difference (dof_handler_LS,
-				     solution,
-				     InitialPhi<dim>(PROBLEM,sharpness),
-				     difference_per_cell,
-				     QGauss<dim>(degree_LS+3),
-				     VectorTools::L2_norm);
+                                     solution,
+                                     InitialPhi<dim>(PROBLEM,sharpness),
+                                     difference_per_cell,
+                                     QGauss<dim>(degree_LS+3),
+                                     VectorTools::L2_norm);
   double u_L2_error = difference_per_cell.l2_norm();
   u_L2_error = std::sqrt(Utilities::MPI::sum(u_L2_error * u_L2_error, mpi_communicator));
-  
+
   pcout << "L1 error: " << u_L1_error << std::endl;
   pcout << "L2 error: " << u_L2_error << std::endl;
 }
@@ -436,30 +436,30 @@ template <int dim>
 void TestLevelSet<dim>::output_solution()
 {
   DataOut<dim> data_out;
-  data_out.attach_dof_handler(dof_handler_LS);  
+  data_out.attach_dof_handler(dof_handler_LS);
   data_out.add_data_vector (locally_relevant_solution_phi, "phi");
   data_out.build_patches();
 
   const std::string filename = ("solution-" +
-				Utilities::int_to_string (output_number, 3) +
-				"." +
-				Utilities::int_to_string
-				(triangulation.locally_owned_subdomain(), 4));
+                                Utilities::int_to_string (output_number, 3) +
+                                "." +
+                                Utilities::int_to_string
+                                (triangulation.locally_owned_subdomain(), 4));
   std::ofstream output ((filename + ".vtu").c_str());
   data_out.write_vtu (output);
-  
+
   if (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
     {
       std::vector<std::string> filenames;
       for (unsigned int i=0;
-	   i<Utilities::MPI::n_mpi_processes(mpi_communicator);
-	   ++i)
-	filenames.push_back ("solution-" +
-			     Utilities::int_to_string (output_number, 3) +
-			     "." +
-			     Utilities::int_to_string (i, 4) +
-			     ".vtu");
-      
+           i<Utilities::MPI::n_mpi_processes(mpi_communicator);
+           ++i)
+        filenames.push_back ("solution-" +
+                             Utilities::int_to_string (output_number, 3) +
+                             "." +
+                             Utilities::int_to_string (i, 4) +
+                             ".vtu");
+
       std::ofstream master_output ((filename + ".pvtu").c_str());
       data_out.write_pvtu_record (master_output, filenames);
     }
@@ -498,15 +498,15 @@ void TestLevelSet<dim>::run()
   //ALGORITHM = "MPP_u1";
   ALGORITHM = "NMPP_uH";
   //ALGORITHM = "MPP_uH";
-  
+
   //////////////
   // GEOMETRY //
   //////////////
-  if (PROBLEM==CIRCULAR_ROTATION || PROBLEM==DIAGONAL_ADVECTION) 
+  if (PROBLEM==CIRCULAR_ROTATION || PROBLEM==DIAGONAL_ADVECTION)
     GridGenerator::hyper_cube(triangulation);
-  //GridGenerator::hyper_rectangle(triangulation, Point<dim>(0.0,0.0), Point<dim>(1.0,1.0), true);      
+  //GridGenerator::hyper_rectangle(triangulation, Point<dim>(0.0,0.0), Point<dim>(1.0,1.0), true);
   triangulation.refine_global (n_refinement);
- 
+
   ///////////
   // SETUP //
   ///////////
@@ -526,12 +526,12 @@ void TestLevelSet<dim>::run()
   // TRANSPORT SOLVER //
   //////////////////////
   LevelSetSolver<dim> level_set (degree_LS,degree_U,
-				 time_step,cK,cE, 
-				 verbose, 
-				 ALGORITHM,
-				 TRANSPORT_TIME_INTEGRATION,
-				 triangulation,
-				 mpi_communicator); 
+                                 time_step,cK,cE,
+                                 verbose,
+                                 ALGORITHM,
+                                 TRANSPORT_TIME_INTEGRATION,
+                                 triangulation,
+                                 mpi_communicator);
 
   ///////////////////////
   // INITIAL CONDITION //
@@ -540,54 +540,54 @@ void TestLevelSet<dim>::run()
   output_results();
   if (dim==2)
     level_set.initial_condition(locally_relevant_solution_phi,
-				locally_relevant_solution_u,locally_relevant_solution_v);
+                                locally_relevant_solution_u,locally_relevant_solution_v);
   else //dim=3
     level_set.initial_condition(locally_relevant_solution_phi,
-				locally_relevant_solution_u,locally_relevant_solution_v,locally_relevant_solution_w);
-  
+                                locally_relevant_solution_u,locally_relevant_solution_v,locally_relevant_solution_w);
+
   /////////////////////////////////
-  // BOUNDARY CONDITIONS FOR PHI // 
+  // BOUNDARY CONDITIONS FOR PHI //
   /////////////////////////////////
   get_boundary_values_phi(boundary_values_id_phi,boundary_values_phi);
   level_set.set_boundary_conditions(boundary_values_id_phi,boundary_values_phi);
-  
+
   // OUTPUT DATA REGARDING TIME STEPPING AND MESH //
   int dofs_LS = dof_handler_LS.n_dofs();
   pcout << "Cfl: " << cfl << std::endl;
-  pcout << "   Number of active cells:       " 
-  	<< triangulation.n_global_active_cells() << std::endl
-  	<< "   Number of degrees of freedom: " << std::endl
-  	<< "      LS: " << dofs_LS << std::endl;
-  
-  // TIME STEPPING	
+  pcout << "   Number of active cells:       "
+        << triangulation.n_global_active_cells() << std::endl
+        << "   Number of degrees of freedom: " << std::endl
+        << "      LS: " << dofs_LS << std::endl;
+
+  // TIME STEPPING
   timestep_number=0;
   time=0;
-  while(time<final_time)
-    { 
+  while (time<final_time)
+    {
       timestep_number++;
       if (time+time_step > final_time)
-	{ 
-	  pcout << "FINAL TIME STEP... " << std::endl; 
-	  time_step = final_time-time;
-	}
-      pcout << "Time step " << timestep_number 
-	    << "\twith dt=" << time_step 
-	    << "\tat tn=" << time << std::endl;
+        {
+          pcout << "FINAL TIME STEP... " << std::endl;
+          time_step = final_time-time;
+        }
+      pcout << "Time step " << timestep_number
+            << "\twith dt=" << time_step
+            << "\tat tn=" << time << std::endl;
 
       //////////////////
       // GET VELOCITY // (NS or interpolate from a function) at current time tn
       //////////////////
       if (VARIABLE_VELOCITY)
-	{
-	  get_interpolated_velocity();
-	  // SET VELOCITY TO LEVEL SET SOLVER
-	  level_set.set_velocity(locally_relevant_solution_u,locally_relevant_solution_v);
-	}
+        {
+          get_interpolated_velocity();
+          // SET VELOCITY TO LEVEL SET SOLVER
+          level_set.set_velocity(locally_relevant_solution_u,locally_relevant_solution_v);
+        }
       ////////////////////////////
       // GET LEVEL SET SOLUTION // (at tnp1)
       ////////////////////////////
       level_set.nth_time_step();
-      
+
       /////////////////
       // UPDATE TIME //
       /////////////////
@@ -597,10 +597,10 @@ void TestLevelSet<dim>::run()
       // OUTPUT //
       ////////////
       if (get_output && time-(output_number)*output_time>=0)
-	{
-	  level_set.get_unp1(locally_relevant_solution_phi); 
-	  output_results();
-	}
+        {
+          level_set.get_unp1(locally_relevant_solution_phi);
+          output_results();
+        }
     }
   pcout << "FINAL TIME T=" << time << std::endl;
 }
@@ -614,7 +614,7 @@ int main(int argc, char *argv[])
       PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
       deallog.depth_console (0);
       {
-	unsigned int degree = 1;
+        unsigned int degree = 1;
         TestLevelSet<2> multiphase(degree, degree);
         multiphase.run();
       }

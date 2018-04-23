@@ -38,10 +38,10 @@
 
       step-15 step-29.
 
- For further details see the technical report 
+ For further details see the technical report
  "Solving variational problems with uniform gradient bounds by p-Laplacian
-  approximation: Elastoplastic torsion implementation using the deal.II 
-  library" 
+  approximation: Elastoplastic torsion implementation using the deal.II
+  library"
  available at the documentation and at http://www.dim.uchile.cl/~sflores.
 
 */

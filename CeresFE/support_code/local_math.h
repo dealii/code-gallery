@@ -91,5 +91,5 @@
 //}
 
 
-#endif	/* LOCALMATH_H */
+#endif  /* LOCALMATH_H */
 

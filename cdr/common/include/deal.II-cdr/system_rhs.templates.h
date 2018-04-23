@@ -37,7 +37,7 @@ namespace CDR
     auto &fe = dof_handler.get_fe();
     const auto dofs_per_cell = fe.dofs_per_cell;
     const double time_step = (parameters.stop_time - parameters.start_time)
-      /parameters.n_time_steps;
+                             /parameters.n_time_steps;
     FEValues<dim> fe_values(fe, quad, update_values | update_gradients |
                             update_quadrature_points | update_JxW_values);
 
@@ -67,31 +67,31 @@ namespace CDR
                   convection_function(fe_values.quadrature_point(q));
 
                 const double current_forcing = forcing_function
-                  (current_time, fe_values.quadrature_point(q));
+                                               (current_time, fe_values.quadrature_point(q));
                 const double previous_forcing = forcing_function
-                  (previous_time, fe_values.quadrature_point(q));
+                                                (previous_time, fe_values.quadrature_point(q));
                 for (unsigned int i = 0; i < dofs_per_cell; ++i)
                   {
                     for (unsigned int j = 0; j < dofs_per_cell; ++j)
                       {
                         const auto convection_contribution = current_convection
-                          *fe_values.shape_grad(j, q);
+                                                             *fe_values.shape_grad(j, q);
 
                         cell_rhs(i) += fe_values.JxW(q)*
-                          // Here are the mass and reaction part:
-                          (((1.0 - time_step/2.0*parameters.reaction_coefficient)
-                            *fe_values.shape_value(i, q)*fe_values.shape_value(j, q)
-                            - time_step/2.0*
-                            // the convection part:
-                            (fe_values.shape_value(i, q)*convection_contribution
-                             // the diffusion part:
-                             + parameters.diffusion_coefficient
-                             *(fe_values.shape_grad(i, q)*fe_values.shape_grad(j, q))))
-                           *current_fe_coefficients[j]
-                           // and, finally, the forcing function part:
-                           + time_step/2.0*
-                           (current_forcing + previous_forcing)
-                           *fe_values.shape_value(i, q));
+                                       // Here are the mass and reaction part:
+                                       (((1.0 - time_step/2.0*parameters.reaction_coefficient)
+                                         *fe_values.shape_value(i, q)*fe_values.shape_value(j, q)
+                                         - time_step/2.0*
+                                         // the convection part:
+                                         (fe_values.shape_value(i, q)*convection_contribution
+                                          // the diffusion part:
+                                          + parameters.diffusion_coefficient
+                                          *(fe_values.shape_grad(i, q)*fe_values.shape_grad(j, q))))
+                                        *current_fe_coefficients[j]
+                                        // and, finally, the forcing function part:
+                                        + time_step/2.0*
+                                        (current_forcing + previous_forcing)
+                                        *fe_values.shape_value(i, q));
                       }
                   }
               }

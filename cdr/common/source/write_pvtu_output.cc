@@ -11,7 +11,7 @@ namespace CDR
 
   WritePVTUOutput::WritePVTUOutput(const unsigned int patch_level)
     : patch_level {patch_level},
-      this_mpi_process {Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)}
+  this_mpi_process {Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)}
   {}
 
   template
