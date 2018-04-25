@@ -32,7 +32,7 @@ nor plane-stress conditions.
 
 
 ## Requirements
-* Version 8.2.1 or greater of `deal.II`
+* Version 8.5 or greater of `deal.II`
 
 
 ## Compiling and running
@@ -58,7 +58,7 @@ make run
 ## Reference for this work
 If you use this program as a basis for your own work, please consider citing it in your list of references.
 The initial version of this work was contributed to the deal.II project by the authors listed in the following citation:
-* J-P. V. Pelteret and A. McBride, The deal.II code gallery: Quasi-Static Finite-Strain Compressible Elasticity, 2016. DOI: [10.5281/zenodo.437601](http://doi.org/10.5281/zenodo.437601) <img style="float: right;" src="https://zenodo.org/badge/DOI/10.5281/zenodo.437601.svg">
+* J-P. V. Pelteret and A. McBride, The deal.II code gallery: Quasi-Static Finite-Strain Compressible Elasticity, 2016. DOI: [10.5281/zenodo.1228964](http://doi.org/10.5281/zenodo.1228964) <img style="float: right;" src="https://zenodo.org/badge/DOI/10.5281/zenodo.1228964.svg">
 
 ### Acknowledgements
 The support of this work by the European Research Council (ERC) through the Advanced Grant 289049 MOCOPOLY is gratefully acknowledged by the first author.
@@ -80,6 +80,11 @@ It amounts to a reduction and slight reworking of `step-44` (accounting for
 the removal of the two additional fields used therein). We also refer the reader
 to `step-44` for a brief overview of the continuum mechanics and kinematics
 related to solid mechanics.
+We also provide two alternative assembly mechanisms, which can be selected within
+the parameter file, that use automatic differentiation to assemble the linear
+system. These not only demonstrate how one might employ such automated techniques
+to linearise the residual, but also serve as a verification of the correctness of
+the hand-developed implementation of the tangent stiffness matrix.
 
 ## Results
 These results were produced using the following material properties:
