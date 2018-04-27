@@ -127,9 +127,12 @@ For more information about preconditioning incompressible Navier-Stokes equation
 to [1] and [2].
 
 #### Test case ####
-We test the code with a classical benchmark case, flow past a cylinder, with Reynold's
-number 100. The geometry setup of the case can be found on
-[this webpage](http://www.featflow.de/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark2_re100.html).
+We test the code with a classical benchmark case, flow past a cylinder, in both 2D and 3D.
+The geometry setup of the case can be found on
+[this webpage](http://www.featflow.de/en/benchmarks/cfdbenchmarking/flow.html).
+The video shows the 2D flow when $Re = 100$, where mesh refinement is periodically performed.
+To test the parallel scaling, a 3D case with 1009804 degrees of freedom was ran for 10 time steps on different
+number of (Xeon E5-2560) processors, results are shown in the graph.
 
 ### Acknowledgements ###
 Thanks go to Wolfgang Bangerth, Timo Heister and Martin Kronbichler for their helpful discussions
