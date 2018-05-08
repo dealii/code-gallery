@@ -30,6 +30,13 @@ int my_Step(braid_App        app,
   return 0;
 }
 
+/**
+ * In this function we initialize a vector at an arbitrary time.
+ * At this point we don't know anything about what the solution
+ * looks like, and we can really initialize to anything, so in
+ * this case use reinit to initialize the memory and set the
+ * values to zero.
+ */
 int
 my_Init(braid_App     app,
         double        t,

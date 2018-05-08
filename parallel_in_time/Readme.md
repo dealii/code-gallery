@@ -164,9 +164,9 @@ For MPI, parallel_in_time looks in standard installation folders only, for that 
 A compile process of the parallel in time code may look like,
 
     mkdir build
-	cd build
-	BRAID_DIR=/path/to/braid/ cmake ../
-	make
+    cd build
+    BRAID_DIR=/path/to/braid/ cmake ../
+    make
 
 There is currently no option to install parallel_in_time anywhere.
 The binaries are generated in the <kbd>bin</kbd> folder, and tests are placed into the <kbd>test</kbd> folder.
