@@ -48,13 +48,13 @@ More detailed properties of the code in CeresFE
 Description of files in repo
 ----------------------------
 
-* src/ceres.cc 											Main code
-* support_code/config_in.h					Reads config file and intializes system parameters
-* support_code/ellipsoid_fit.h			Finds best-fit ellipse for surface and internal density boundaries.  Also uses deal.II
-* support_code/ellipsoid_grav.h			Analytically computes self gravity of layered ellipsoids structure
-* support_code/local_math.h					Defines some constants for convenience
-* meshes/sample_CeresFE_mesh.inp		Sample input mesh
-* config/sample_CeresFE_config.cfg	Sample configurations file with simulation parameters
+* src/ceres.cc                     Main code
+* support_code/config_in.h         Reads config file and intializes system parameters
+* support_code/ellipsoid_fit.h     Finds best-fit ellipse for surface and internal density boundaries.  Also uses deal.II
+* support_code/ellipsoid_grav.h    Analytically computes self gravity of layered ellipsoids structure
+* support_code/local_math.h        Defines some constants for convenience
+* meshes/sample_CeresFE_mesh.inp   Sample input mesh
+* config/sample_CeresFE_config.cfg ample configurations file with simulation parameters
 
 Other dependencies
 ------------------
@@ -67,17 +67,8 @@ Two more code packages are necessary to run CeresFE:
 To run code
 -----------
 
-After running cmake ., add the -lconfig++ and -larmadillo tags into the CMakeCache.txt file:
+After running cmake and compiling, run the executable with one argument, 
+which is the config file:
 
-//Flags used by the compiler during all build types.
-CMAKE_CXX_FLAGS:STRING=-lconfig++ -larmadillo
-
-Then, run the executable with one argument, which is the config file:
-
->>src/ceres config/sample_CeresFE_config.cfg
-
-
-
-
-
+$ceres ${SOURCE_DIR}/config/sample_CeresFE_config.cfg
 
