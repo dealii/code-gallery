@@ -3648,8 +3648,8 @@ namespace ElastoPlastic
 
         triangulation.refine_global(n_initial_global_refinements);
 
-        triangulation.set_manifold (0);
-        triangulation.set_manifold (1);
+        triangulation.reset_manifold (0);
+        triangulation.reset_manifold (1);
 
       }
     else if (base_mesh == "Perforated_strip_tension")
@@ -3787,7 +3787,7 @@ namespace ElastoPlastic
 
           triangulation_2d.refine_global(3);
 
-          triangulation_2d.set_manifold (10);
+          triangulation_2d.reset_manifold (10);
         }
 
         // Extrude the triangulation_2d and make it 3d
@@ -3868,7 +3868,7 @@ namespace ElastoPlastic
 
         triangulation.refine_global(n_initial_global_refinements);
 
-        triangulation.set_manifold (10);
+        triangulation.reset_manifold (10);
 
       }
     else if (base_mesh == "Cantiliver_beam_3d")
@@ -4242,7 +4242,7 @@ namespace ElastoPlastic
   {
     TimerOutput::Scope t(computing_timer, "Assembling");
 
-    types::boundary_id traction_surface_id;
+    types::boundary_id traction_surface_id = numbers::invalid_boundary_id;
     if (base_mesh == "Timoshenko beam")
       {
         traction_surface_id = 5;
@@ -4254,6 +4254,10 @@ namespace ElastoPlastic
     else if (base_mesh == "Cantiliver_beam_3d")
       {
         traction_surface_id = 2;
+      }
+    else
+      {
+        AssertThrow(false, ExcNotImplemented());
       }
 
     FEValues<dim> fe_values(fe, quadrature_formula,
@@ -4451,7 +4455,7 @@ namespace ElastoPlastic
   ElastoPlasticProblem<dim>::
   compute_nonlinear_residual (const TrilinosWrappers::MPI::Vector &linearization_point)
   {
-    types::boundary_id traction_surface_id;
+    types::boundary_id traction_surface_id = numbers::invalid_boundary_id;
     if (base_mesh == "Timoshenko beam")
       {
         traction_surface_id = 5;
@@ -4463,6 +4467,10 @@ namespace ElastoPlastic
     else if (base_mesh == "Cantiliver_beam_3d")
       {
         traction_surface_id = 2;
+      }
+    else
+      {
+        AssertThrow(false, ExcNotImplemented());
       }
 
     FEValues<dim> fe_values(fe, quadrature_formula,
@@ -6904,7 +6912,7 @@ namespace ElastoPlastic
         // table_results_3: Demonstrate the Stress_mean (average tensile stress)
         //  on the bottom edge versus epsilon_yy on the bottom left corner
         {
-          double strain_yy_A;
+          double strain_yy_A = 0.;
 
           // compute strain_yy_A
           // Since the point A is the node on the bottom left corner,
@@ -7216,12 +7224,12 @@ namespace ElastoPlastic
 
     if (base_mesh == "Thick_tube_internal_pressure")
       {
-        triangulation.set_manifold (0);
-        triangulation.set_manifold (1);
+        triangulation.reset_manifold (0);
+        triangulation.reset_manifold (1);
       }
     else if (base_mesh == "Perforated_strip_tension")
       {
-        triangulation.set_manifold (10);
+        triangulation.reset_manifold (10);
       }
 
   }
