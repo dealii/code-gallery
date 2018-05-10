@@ -1318,7 +1318,7 @@ namespace ViscoElasStripHole
     SphericalManifold<2> spherical_manifold_2d (centre_2d);
     tria_2d_not_flat.set_manifold(10,spherical_manifold_2d);
     tria_2d_not_flat.refine_global(std::max (1U, n_repetitions_xy));
-    tria_2d_not_flat.set_manifold(10); // Clear manifold
+    tria_2d_not_flat.reset_manifold(10); // Clear manifold
 
     GridGenerator::flatten_triangulation(tria_2d_not_flat,tria_2d);
   }
