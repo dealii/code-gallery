@@ -617,7 +617,7 @@ namespace fluid
   template <int dim>
   InsIMEX<dim>::InsIMEX(parallel::distributed::Triangulation<dim> &tria)
     : viscosity(0.001),
-      gamma(1),
+      gamma(0.1),
       degree(1),
       triangulation(tria),
       fe(FE_Q<dim>(degree + 1), dim, FE_Q<dim>(degree), 1),
@@ -865,8 +865,8 @@ namespace fluid
                        current_velocity_divergences[q] * phi_p[i] -
                        current_pressure_values[q] * div_phi_u[i] +
                        gamma * current_velocity_divergences[q] * div_phi_u[i] +
-                       current_velocity_values[q] *
-                         current_velocity_gradients[q] * phi_u[i]) *
+                       current_velocity_gradients[q] *
+                         current_velocity_values[q] * phi_u[i]) *
                       fe_values.JxW(q);
                   }
               }
