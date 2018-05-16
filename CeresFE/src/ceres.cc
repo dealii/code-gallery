@@ -743,15 +743,9 @@ namespace Step22
 
         // Finds vertices where the radius is zero DIM
         bool is_singular = false;
-        unsigned int singular_vertex_id = 0;
         for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
-          {
-            if (cell->face(f)->center()[0] == 0)
-              {
-                is_singular = true;
-                singular_vertex_id = f;
-              }
-          }
+          if (cell->face(f)->center()[0] == 0)
+            is_singular = true;
 
         if (is_singular == false || system_parameters::cylindrical == false)
           {
