@@ -2,6 +2,8 @@
 #include <math.h>
 #include "Utilities.hh"
 
+// Calculates the forcing function for the RightHandSide. See the
+// documentation for the math.
 template <int dim>
 double RightHandSide<dim>::value (const Point<dim> &p,
                                   const unsigned int component) const
@@ -28,6 +30,8 @@ double RightHandSide<dim>::value (const Point<dim> &p,
   return 0; // No forcing function
 }
 
+// Calculates the forcing function for the method of manufactured
+// solutions. See the documentation for the math.
 template <int dim>
 double RightHandSideMFG<dim>::value (const Point<dim> &p,
                                      const unsigned int component) const
@@ -38,11 +42,11 @@ double RightHandSideMFG<dim>::value (const Point<dim> &p,
 
   double time = this->get_time();
 
-  // return the manufactured solution of the right hand side
   double pi = numbers::PI;
   return 4*pi*pi*std::exp(-4*pi*pi*time)*std::cos(2*pi*p[0])*std::cos(2*pi*p[1]);
 }
 
+// Calculates the boundary conditions, essentially zero everywhere.
 template <int dim>
 double BoundaryValues<dim>::value (const Point<dim> &p,
                             const unsigned int component) const
@@ -53,6 +57,8 @@ double BoundaryValues<dim>::value (const Point<dim> &p,
   return 0;
 }
 
+// Calculates the exact solution (and thus also boundary conditions)
+// for the method of manufactured solutions.
 template <int dim>
 double ExactValuesMFG<dim>::value (const Point<dim> &p,
                                    const unsigned int component) const
@@ -62,16 +68,18 @@ double ExactValuesMFG<dim>::value (const Point<dim> &p,
 
   double time = this->get_time();
   const double pi = numbers::PI;
-  // Return our manufactured solution boundary value
+
   return std::exp(-4*pi*pi*time)*std::cos(2*pi*p[0])*std::cos(2*pi*p[1]);
 }
 
-
-// TODO: Find bug in here
+// Calculates the gradient of the exact solution for the method of manufactured
+// solutions. See the documentation for the math.
 template <int dim>
 Tensor<1,dim> ExactValuesMFG<dim>::gradient (const Point<dim>   &p,
                                              const unsigned int) const
 {
+  Assert (dim == 2, ExcNotImplemented());
+
   Tensor<1,dim> return_value;
   const double pi = numbers::PI;
   double time = this->get_time();
@@ -80,6 +88,8 @@ Tensor<1,dim> ExactValuesMFG<dim>::gradient (const Point<dim>   &p,
   return return_value;
 }
 
+// Calculates the initial values for the method of manufactured solutions.
+// See the documentation for the math.
 template <int dim>
 double InitialValuesMFG<dim>::value (const Point<dim> &p,
                                      const unsigned int component) const
@@ -87,7 +97,7 @@ double InitialValuesMFG<dim>::value (const Point<dim> &p,
   (void) component;
   Assert (component == 0, ExcIndexRange(component, 0, 1));
   const double pi = numbers::PI;
-  // Return our manufactured solution initial value
+
   return std::cos(2*pi*p[0])*std::cos(2*pi*p[1]);
 }
 
@@ -122,15 +132,6 @@ template <int dim>
 void HeatEquation<dim>::setup_system()
 {
   dof_handler.distribute_dofs(fe);
-
-  // pout() << std::endl
-  //        << "==========================================="
-  //        << std::endl
-  //        << "Number of active cells: " << triangulation.n_active_cells()
-  //        << std::endl
-  //        << "Number of degrees of freedom: " << dof_handler.n_dofs()
-  //        << std::endl
-  //        << std::endl;
 
   constraints.clear ();
   DoFTools::make_hanging_node_constraints (dof_handler,
@@ -201,7 +202,9 @@ void HeatEquation<dim>::output_results(int a_time_idx,
   data_out.write_vtk(output);
 }
 
-// This function won't make much sense in real parallel in time...
+// We define the geometry here, this is called on each processor
+// and doesn't change in time. Once doing AMR, this won't need
+// to exist anymore.
 template <int dim>
 void HeatEquation<dim>::define()
 {
@@ -216,14 +219,14 @@ void HeatEquation<dim>::define()
   forcing_terms.reinit (dof_handler.n_dofs());
 }
 
+// Here we advance the solution forward in time. This is done
+// the same way as in the loop in step-26's run function.
 template<int dim>
 void HeatEquation<dim>::step(Vector<double>& braid_data,
                              double deltaT,
                              double a_time,
                              int a_time_idx)
 {
-  // Set old solution to the braid data
-  // old_solution = braid_data;
   a_time += deltaT;
   ++a_time_idx;
 
@@ -263,7 +266,9 @@ void HeatEquation<dim>::step(Vector<double>& braid_data,
 
   {
 #if DO_MFG
-    // Set boundary to exact value in MFG solution
+    // If we are doing the method of manufactured solutions
+    // then we set the boundary conditions to the exact solution.
+    // Otherwise the boundary conditions are zero.
     ExactValuesMFG<dim> boundary_values_function;
 #else
     BoundaryValues<dim> boundary_values_function;
@@ -291,18 +296,11 @@ int HeatEquation<dim>::size() const
   return dof_handler.n_dofs();
 }
 
-template<int dim> void
-HeatEquation<dim>::dump_vec(std::ofstream& file,
-                            const Vector<double>& vector) const
-{
-  file << "Dumping vec:";
-  for(int i=0; i != vector.size(); ++i)
-    {
-      file << "\n" << vector[i];
-    }
-  file << std::endl;
-}
-
+// This function computes the error for the time step when doing
+// the method of manufactured solutions. First the exact values
+// is calculated, then the difference per cell is computed for
+// the various norms, and the error is computed. This is written
+// out to a pretty table.
 template<int dim> void
 HeatEquation<dim>::process_solution(double a_time,
                                     int a_index,
@@ -350,14 +348,14 @@ HeatEquation<dim>::process_solution(double a_time,
   const unsigned int n_active_cells = triangulation.n_active_cells();
   const unsigned int n_dofs = dof_handler.n_dofs();
 
-  std::cout << "Cycle " << a_index << ':'
-            << std::endl
-            << "   Number of active cells:       "
-            << n_active_cells
-            << std::endl
-            << "   Number of degrees of freedom: "
-            << n_dofs
-            << std::endl;
+  pout() << "Cycle " << a_index << ':'
+         << std::endl
+         << "   Number of active cells:       "
+         << n_active_cells
+         << std::endl
+         << "   Number of degrees of freedom: "
+         << n_dofs
+         << std::endl;
 
   convergence_table.add_value("cycle", a_index);
   convergence_table.add_value("cells", n_active_cells);

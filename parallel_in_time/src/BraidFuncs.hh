@@ -13,7 +13,6 @@
  *
  */
 
-/*-------- System --------*/
 
 /*-------- Third Party --------*/
 #include <deal.II/numerics/vector_tools.h>
@@ -24,15 +23,23 @@
 /*-------- Project --------*/
 #include "HeatEquation.hh"
 
+// This struct contains all data that changes with time. For now
+// this is just the solution data. When doing AMR this should
+// probably include the triangulization, the sparsity patter,
+// constraints, etc.
 /**
- * \brief Struct that contains the data 
+ * \brief Struct that contains the deal.ii vector.
  */
 typedef struct _braid_Vector_struct
 {
   dealii::Vector<double> data;
 } my_Vector;
 
-// Wrap the Heat Equation in a struct
+// This struct contains all the data that is unchanging with time.
+/**
+ * \brief Struct that contains the HeatEquation and final
+ * time step number.
+ */
 typedef struct _braid_App_struct
 {
   HeatEquation<2> eq;

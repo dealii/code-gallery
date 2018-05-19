@@ -7,7 +7,7 @@
 
 int procID = 0;
 
-// the shared variables
+// The shared variables
 
 static std::string       s_pout_filename ;
 static std::string       s_pout_basename ;

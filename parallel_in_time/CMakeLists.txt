@@ -60,29 +60,6 @@ endif()
 # Include the braid paths and libraries
 include_directories(${BRAID_DIR})
 
-
-##############################
-# Finally start building stuff
-
-# First, build the "library" that consists of all the source files
-# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIB_PATH})
-# set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIB_PATH})
-# add_library(${LIB_NAME} ${SRC})
-
-
-# Next build the main function
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_PATH})
-# add_executable(${BIN_NAME} ${MAIN_SRC})
-# target_link_libraries(${MAIN_NAME} ${LIB_NAME}) # link my library
-# target_link_libraries(${MAIN_NAME} ${BRAID_DIR}libbraid.a) # link braid
-# DEAL_II_SETUP_TARGET(${MAIN_NAME}) # Link dealii
-# if(USE_MPI)
-# set_target_properties(${MAIN_NAME} PROPERTIES
-#   LINK_FLAGS "${MPI_LINK_FLAGS}") # Link MPI
-# set_target_properties(${MAIN_NAME} PROPERTIES
-#   COMPILE_FLAGS "${MPI_COMPILE_FLAGS}") # Use MPI compile flags
-# endif(USE_MPI)
-
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
 DEAL_II_INVOKE_AUTOPILOT()

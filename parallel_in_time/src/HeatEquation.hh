@@ -34,6 +34,10 @@
 
 using namespace dealii;
 
+// The HeatEquation class is describes the finite element
+// solver for the heat equation. It contains all the functions
+// needed to define the problem domain and advance the solution
+// in time.
 template <int dim>
 class HeatEquation
 {
@@ -46,9 +50,6 @@ public:
             int a_time_idx);
 
   int size() const; /// Returns the size of the solution vector
-
-  void dump_vec(std::ofstream& file,
-                const Vector<double>& vector) const;
 
   void output_results(int a_time_idx,
                       double a_time,
@@ -91,6 +92,8 @@ private:
   ConvergenceTable convergence_table;
 };
 
+// The RightHandSide class describes the RHS of the governing
+// equations. In this case, it is the forcing function.
 template <int dim>
 class RightHandSide : public Function<dim>
 {
@@ -108,6 +111,8 @@ private:
   const double period;
 };
 
+// The BoundaryValues class describes the boundary conditions
+// of the governing equations.
 template <int dim>
 class BoundaryValues : public Function<dim>
 {
@@ -116,6 +121,8 @@ public:
                         const unsigned int component = 0) const;
 };
 
+// The RightHandSideMFG class describes the right hand side
+// function when doing the method of manufactured solutions.
 template <int dim>
 class RightHandSideMFG : public Function<dim>
 {
@@ -124,7 +131,8 @@ public:
                         const unsigned int component = 0) const;
 };
 
-
+// The InitialValuesMFG class describes the initial values
+// when doing the method of manufactured solutions.
 template <int dim>
 class InitialValuesMFG : public Function<dim>
 {
@@ -133,12 +141,8 @@ public:
                         const unsigned int component = 0) const;
 };
 
-/**
- * Provides the exact value for the manufactured solution.
- * User must set the time using ExactValuesMFG::set_time(const Number new_time);
- * Calculates \f$u_h=e^(-4\pi\pi t)*\cos(2\pi x)\cos(2\pi y)\f$ for all points given to it.
- * In the context of manufactured solutions, this is used on the boundary.
- */
+// Provides the exact value for the manufactured solution. This
+// is used for the boundary conditions as well.
 template <int dim>
 class ExactValuesMFG : public Function<dim>
 {
