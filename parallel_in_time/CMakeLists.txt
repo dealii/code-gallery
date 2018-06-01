@@ -12,14 +12,18 @@ set(PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 set(SRC_PATH "${PROJECT_PATH}/src")
 set(TEST_SRC_PATH "${PROJECT_PATH}/test")
 # set(BIN_PATH  "${PROJECT_BINARY_DIR}/bin")
+set(LIB_NAME "${TARGET}_lib")
 set(BIN_NAME "${TARGET}")
 set(TEST_PATH "${PROJECT_BINARY_DIR}/test")
 set(TEST_NAME "test_${TARGET}")
 
-SET(TARGET_SRC
-  ${SRC_PATH}/${TARGET}.cc
+SET(LIB_SRC
   ${SRC_PATH}/BraidFuncs.cc
   ${SRC_PATH}/Utilities.cc
+  )
+
+SET(TARGET_SRC
+  ${SRC_PATH}/${TARGET}.cc
   )
 
 SET(TEST_SRC
@@ -35,7 +39,7 @@ add_definitions(-DUSE_MPI)
 
 if(DO_MFG)
   # If we are doing the manufactured solution, tell
-  # the C++ processor so it can enable it
+  # the C++ processor so it can enable MFG solutions
   add_definitions(-DDO_MFG)
 endif(DO_MFG)
 
@@ -49,9 +53,6 @@ IF(NOT ${deal.II_FOUND})
     "or set an environment variable \"DEAL_II_DIR\" that contains this path."
     )
 ENDIF()
-# include_directories(${DEAL_II_INCLUDE_DIRS})
-
-
 
 # Find braid details
 if (NOT "$ENV{BRAID_DIR}" STREQUAL "")
@@ -60,10 +61,15 @@ endif()
 # Include the braid paths and libraries
 include_directories(${BRAID_DIR})
 
+# Build the library
+ADD_LIBRARY(${LIB_NAME} SHARED ${LIB_SRC})
+DEAL_II_SETUP_TARGET(${LIB_NAME})
+
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
 DEAL_II_INVOKE_AUTOPILOT()
 target_link_libraries(${TARGET} ${BRAID_DIR}libbraid.a) # link braid
+target_link_libraries(${TARGET} ${LIB_NAME})
 set_target_properties(${TARGET} PROPERTIES
   LINK_FLAGS "${MPI_LINK_FLAGS}") # Link MPI
 set_target_properties(${MAIN_NAME} PROPERTIES
@@ -71,7 +77,6 @@ set_target_properties(${MAIN_NAME} PROPERTIES
 
 # Lastly build the tests
 enable_testing()
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_PATH})
 add_subdirectory(test)
 
 
