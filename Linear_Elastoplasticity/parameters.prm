@@ -1,0 +1,57 @@
+# Listing of Parameters
+# ---------------------
+subsection Finite element system
+  # Displacement system polynomial order
+  set Polynomial degree = 1
+
+  # Gauss quadrature order
+  set Quadrature order  = 2
+end
+
+
+subsection Boundary conditions
+  # The amount by which the specimen is to be stretched
+  set Final stretch = 2.0
+end
+
+
+subsection Geometry
+  # Overall length of the specimen
+  set Length                  = 100
+
+  # Overall radius of the specimen
+  set Radius                  = 10
+
+  # Overall length of the notch in the specimen
+  set Notch length            = 10
+
+  # Overall radius of the notch in the specimen
+  set Notch radius            = 1
+
+  # Global grid scaling factor
+  set Grid scale              = 1e-3
+
+  # Number of global refinement steps
+  set Global refinement steps = 1
+
+  # Number of initial local refinement cycles
+  set Local refinement steps  = 1
+end
+
+
+subsection Material properties
+  # Young's modulus
+  set Young's modulus = 100
+
+  # Poisson ratio
+  set Poisson ratio = 0.3
+end
+
+
+subsection Time
+  # End time
+  set End time       = 1.0
+
+  # Time step size
+  set Time step size = 0.1
+end
