@@ -227,11 +227,11 @@ namespace LMM
 
         struct MaterialProperties
         {
-          double E_e; // Young's modulus
-          double nu_e; // Poisson ratio
-
+          std::string mat_type;
           double mu_e; // Shear modulus
-          double lambda_e; // Lame parameter
+          double nu_e; // Poisson ratio
+          double k_p; // Isotropic hardening constant
+          double sigma_y_p; // Yield stress
 
           static void
           declare_parameters(ParameterHandler &prm);
@@ -244,13 +244,25 @@ namespace LMM
         {
           prm.enter_subsection("Material properties");
           {
-            prm.declare_entry("Young's modulus", "100",
-                              Patterns::Double(0),
-                              "Young's modulus of the specimen");
+            prm.declare_entry("Type", "Elastic",
+                              Patterns::Selection("Elastic|Elastoplastic (isotropic hardening)"),
+                              "Type of material that composes the specimen");
 
-            prm.declare_entry("Poisson ratio", "10",
+            prm.declare_entry("Shear modulus", "100",
                               Patterns::Double(0),
+                              "Shear modulus of the specimen");
+
+            prm.declare_entry("Poisson ratio", "0.3",
+                              Patterns::Double(-1,0.5),
                               "Poisson ratio of the specimen");
+
+            prm.declare_entry("Isotropic hardening constant", "10",
+                              Patterns::Double(0),
+                              "Isotropic hardening constant");
+
+            prm.declare_entry("Yield stress", "20",
+                              Patterns::Double(0),
+                              "Yield stress");
           }
           prm.leave_subsection();
         }
@@ -259,13 +271,13 @@ namespace LMM
         {
           prm.enter_subsection("Material properties");
           {
-            E_e = prm.get_double("Young's modulus");
+            mat_type = prm.get("Type");
+            mu_e = prm.get_double("Shear modulus");
             nu_e = prm.get_double("Poisson ratio");
+            k_p = prm.get_double("Isotropic hardening constant");
+            sigma_y_p = prm.get_double("Yield stress");
           }
           prm.leave_subsection();
-
-          mu_e = E_e/(2.0*(1.0 + nu_e));
-          lambda_e = 2.0*mu_e*nu_e/(1.0 - 2.0*nu_e);
         }
 
 
@@ -400,80 +412,269 @@ namespace LMM
 };
 
 
-
   template <int dim>
-  class Material_Linear_Elastoplastic
+  class Material_Base
   {
   public:
-    Material_Linear_Elastoplastic(const double lambda_e,
-                                  const double mu_e,
-//                                  const double mu_v,
-//                                  const double tau_v,
-                                  const Time  &time)
-      :
-      lambda_e(lambda_e),
-      mu_e(mu_e),
-//      mu_v(mu_v),
-//      tau_v(tau_v),
-      time(time)
-//      Q_n_t(Physics::Elasticity::StandardTensors<dim>::I),
-//      Q_t1(Physics::Elasticity::StandardTensors<dim>::I)
-    {
-//      Assert(kappa > 0, ExcInternalError());
-    }
-    ~Material_Linear_Elastoplastic()
+    Material_Base()
     {}
 
+    virtual ~Material_Base()
+    {}
+
+    // Cauchy stress
+    virtual SymmetricTensor<2,dim>
+    get_sigma(const SymmetricTensor<2, dim> &epsilon) const = 0;
+
+    // Elastic / Elastoplastic tangent
+    virtual SymmetricTensor<4,dim>
+    get_K(const SymmetricTensor<2, dim> &epsilon) const = 0;
+
+    virtual void
+    update_internal_equilibrium(const SymmetricTensor<2, dim> &epsilon) = 0;
+
+    virtual void
+    update_end_timestep() = 0;
+  };
+
+
+  template <int dim>
+  class Material_Linear_Elastic : public Material_Base<dim>
+  {
+  public:
+    Material_Linear_Elastic(const double mu_e,
+                            const double nu_e)
+      :
+      kappa_e((2.0 * mu_e * (1.0 + nu_e)) / (3.0 * (1.0 - 2.0 * nu_e))),
+      mu_e(mu_e)
+    {
+      Assert(kappa_e > 0, ExcInternalError());
+    }
+
+    virtual ~Material_Linear_Elastic()
+    {}
+
+    // Cauchy stress
     SymmetricTensor<2,dim>
-    get_sigma(const SymmetricTensor<2, dim> &epsilon) const
+    get_sigma(const SymmetricTensor<2, dim> &epsilon) const override
     {
-      return get_K(epsilon)*epsilon;
+      // Assume isochoric/deviatoric split
+      const SymmetricTensor<2, dim> epsilon_vol = (trace(epsilon)/dim)*Physics::Elasticity::StandardTensors<dim>::I;
+      const SymmetricTensor<2, dim> epsilon_dev = epsilon - epsilon_vol;
+
+      return dim*kappa_e*epsilon_vol
+          + 2.0*mu_e*epsilon_dev;
     }
-    SymmetricTensor<4,dim> get_K(const SymmetricTensor<2, dim> &epsilon) const
+
+    // Elastic / Elastoplastic tangent
+    SymmetricTensor<4,dim> get_K(const SymmetricTensor<2, dim> &epsilon) const override
     {
       (void)epsilon;
-      static const SymmetricTensor<2,dim> I = unit_symmetric_tensor<dim>();
 
-      SymmetricTensor<4,dim> K;
-      for (unsigned int i=0; i < dim; ++i)
-        for (unsigned int j=i; j < dim; ++j)
-          for (unsigned int k=0; k < dim; ++k)
-            for (unsigned int l=k; l < dim; ++l)
-              {
-                // Matrix contribution
-                K[i][j][k][l] = lambda_e * I[i][j]*I[k][l]
-                                + mu_e * (I[i][k]*I[j][l] + I[i][l]*I[j][k]);
-              }
+      // Elastic part of tangent, assuming an isochoric/deviatoric split
+      const SymmetricTensor<4,dim> K_e
+        = (kappa_e - 2.0/dim*mu_e)*Physics::Elasticity::StandardTensors<dim>::IxI
+        + (2.0*mu_e)*Physics::Elasticity::StandardTensors<dim>::S;
 
-      return K;
+      // Check that stress-strain relationship really is linear and
+      // correctly implemented
+      Assert((get_sigma(epsilon) - K_e*epsilon).norm() < 1e-9, ExcInternalError());
+
+      return K_e;
     }
+
     void
-    update_internal_equilibrium(const SymmetricTensor<2, dim> &epsilon)
+    update_internal_equilibrium(const SymmetricTensor<2, dim> &epsilon)  override
     {
       (void)epsilon;
-//      const double det_F = determinant(F);
-//      const SymmetricTensor<2,dim> C_bar = std::pow(det_F, -2.0 / dim) * Physics::Elasticity::Kinematics::C(F);
-//      // Linder2011 eq 54
-//      // Assumes first-oder backward Euler time discretisation
-//      Q_n_t = (1.0/(1.0 + time.get_delta_t()/tau_v))*(Q_t1 + (time.get_delta_t()/tau_v)*invert(C_bar));
     }
+
     void
-    update_end_timestep()
+    update_end_timestep() override
+    {}
+
+  protected:
+    const double kappa_e; // buld modulus
+    const double mu_e; // shear modulus
+  };
+
+
+
+  template <int dim>
+  class Material_Linear_Elastoplastic : public Material_Base<dim>
+  {
+  public:
+    Material_Linear_Elastoplastic(const double mu_e,
+                                  const double nu_e,
+                                  const double k_p,
+                                  const double sigma_y_p,
+                                  const Time  &time)
+      :
+      kappa_e((2.0 * mu_e * (1.0 + nu_e)) / (3.0 * (1.0 - 2.0 * nu_e))),
+      mu_e(mu_e),
+      k_p (k_p),
+      sigma_y_p (sigma_y_p),
+      time(time),
+      phi_t(std::numeric_limits<double>::min()),
+      n_t(),
+      delta_lambda_t(0.0),
+      sigma_dev_trial_norm(1.0),
+      epsilon_p_t(),
+      epsilon_p_t1(),
+      alpha_p_t (0.0),
+      alpha_p_t1 (0.0)
     {
-//      Q_t1 = Q_n_t;
+      Assert(kappa_e > 0, ExcInternalError());
+    }
+
+    virtual ~Material_Linear_Elastoplastic()
+    {}
+
+    // Cauchy stress
+    SymmetricTensor<2,dim>
+    get_sigma(const SymmetricTensor<2, dim> &epsilon) const override
+    {
+      return get_sigma(epsilon, epsilon_p_t);
+    }
+
+    // Isotropic hardening stress
+    double
+    get_R() const
+    {
+      return get_R(alpha_p_t);
+    }
+
+    // Elastic / Elastoplastic tangent
+    SymmetricTensor<4,dim>
+    get_K(const SymmetricTensor<2, dim> &epsilon) const override
+    {
+      (void)epsilon;
+
+      // Elastic part of tangent, assuming an isochoric/deviatoric split
+      const SymmetricTensor<4,dim> K_e
+        = (kappa_e - 2.0/dim*mu_e)*Physics::Elasticity::StandardTensors<dim>::IxI
+        + (2.0*mu_e)*Physics::Elasticity::StandardTensors<dim>::S;
+
+      if (phi_t <= 0)
+      {
+        // Check that stress-strain relationship really is linear and
+        // correctly implemented
+        Assert((get_sigma(epsilon) - K_e*epsilon).norm() < 1e-9, ExcInternalError());
+
+        return K_e;
+      }
+      else
+      {
+        // Compute correction for radial projection during plastic flow
+        static const SymmetricTensor<4,dim> I_dev
+          = Physics::Elasticity::StandardTensors<dim>::S
+          - (1.0/dim)*Physics::Elasticity::StandardTensors<dim>::IxI;
+        const SymmetricTensor<4,dim> n_t_x_n_t = outer_product(n_t,n_t);
+
+        Assert(sigma_dev_trial_norm != 0.0, ExcInternalError());
+        const SymmetricTensor<4,dim> K_p_correction
+          = - (Utilities::fixed_power<2>(2.0*mu_e))/(2.0*mu_e + 2.0/dim*kappa_e)*n_t_x_n_t
+          - (Utilities::fixed_power<2>(2.0*mu_e)*delta_lambda_t)/(sigma_dev_trial_norm)*(I_dev - n_t_x_n_t);
+
+        return K_e + K_p_correction;
+      }
+    }
+
+    void
+    update_internal_equilibrium(const SymmetricTensor<2, dim> &epsilon) override
+    {
+      // Trial stress
+      const SymmetricTensor<2, dim> sigma_trial = get_sigma(epsilon,epsilon_p_t1);
+      // Deviatoric part of trial stress
+      const SymmetricTensor<2, dim> sigma_dev_trial = deviator(sigma_trial);
+      // Trial hardening stress
+      const double R_trial = get_R(alpha_p_t1);
+
+      // Update yield function value (von Mises plasticity for linear
+      // isotropic hardening)
+      {
+        phi_t = sigma_dev_trial.norm() - std::sqrt(2.0/dim)*(sigma_y_p - R_trial);
+
+        // Update internal variables based condition of
+        // elasticity or plastic flow
+        if (phi_t <= 0.0)
+        {
+          // Elastic update
+          epsilon_p_t = epsilon_p_t1;
+          alpha_p_t = alpha_p_t1;
+        }
+        else
+        {
+          // Plastic update:
+          // Linear isotropic hardening -> use radial return algorithm
+
+          // Internal variables for radial return algorithm
+          sigma_dev_trial_norm = sigma_dev_trial.norm();
+          n_t = sigma_dev_trial / sigma_dev_trial_norm;
+          delta_lambda_t = phi_t / (2.0*mu_e + 2.0/dim*kappa_e);
+
+          // Update internal plastic variables
+          epsilon_p_t = epsilon_p_t1 + delta_lambda_t*n_t;
+          alpha_p_t = alpha_p_t1 + delta_lambda_t*std::sqrt(2.0/dim);
+        }
+      }
+    }
+
+    void
+    update_end_timestep() override
+    {
+      // For the linear problem, it is easier to do the update
+      // between the previous and the current timestep in the
+      // call to update_internal_equilibrium(). For a nonlinear
+      // problem, it is more useful to employ this function to
+      // accept the accumulation of incremental values in the
+      // context of a Newton scheme.
     }
 
   protected:
-    const double lambda_e;
-    const double mu_e;
-//    const double mu_v;
-//    const double tau_v;
+    const double kappa_e; // buld modulus
+    const double mu_e; // shear modulus
+    const double k_p; // isotropic hardening modulus
+    const double sigma_y_p; // yield stress
 
     const Time  &time;
 
-//    SymmetricTensor<2,dim> Q_n_t; // Value of internal variable at this Newton step and timestep
-//    SymmetricTensor<2,dim> Q_t1; // Value of internal variable at the previous timestep
+    // Variables related to yield function at current timestep
+    double phi_t; // yield function
+    SymmetricTensor<2,dim> n_t; // radial return direction
+    double delta_lambda_t;// increment in plastic multiplier
+    double sigma_dev_trial_norm; // norm of deviatoric part of trial stress
+
+    // Internal variables:
+    // Plastic strain
+    SymmetricTensor<2,dim> epsilon_p_t;  // current timestep
+    SymmetricTensor<2,dim> epsilon_p_t1;  // previous timestep
+    // Isotropic hardening variable
+    double alpha_p_t;  // current timestep
+    double alpha_p_t1; // previous timestep
+
+    SymmetricTensor<2,dim>
+    get_sigma(const SymmetricTensor<2, dim> &epsilon,
+        const SymmetricTensor<2, dim> &epsilon_p) const
+    {
+      // Assume isochoric/deviatoric split
+      const SymmetricTensor<2, dim> epsilon_vol = (trace(epsilon)/dim)*Physics::Elasticity::StandardTensors<dim>::I;
+      const SymmetricTensor<2, dim> epsilon_dev = epsilon - epsilon_vol;
+
+      const SymmetricTensor<2,dim> sigma
+      = dim*kappa_e*epsilon_vol
+      + 2.0*mu_e*(epsilon_dev - epsilon_p);
+      return sigma;
+    }
+
+    double
+    get_R(const double alpha_p) const
+    {
+      return -k_p*alpha_p;
+    }
   };
+
+
   template <int dim>
   class PointHistory
   {
@@ -483,13 +684,24 @@ namespace LMM
     virtual ~PointHistory()
     {}
     void
-    setup_lqp (const Parameters::AllParameters &parameters,
+    setup_lqp (const types::material_id         mat_id,
+               const Parameters::AllParameters &parameters,
                const Time                      &time)
     {
-      material.reset(new Material_Linear_Elastoplastic<dim>(
-                       parameters.lambda_e, parameters.mu_e,
-//                       parameters.mu_v, parameters.tau_v,
-                       time));
+      if (mat_id == 0)
+      {
+        material.reset(new Material_Linear_Elastic<dim>(
+                         parameters.mu_e, parameters.nu_e));
+      }
+      else if (mat_id == 1)
+      {
+        material.reset(new Material_Linear_Elastoplastic<dim>(
+                         parameters.mu_e, parameters.nu_e,
+                         parameters.k_p, parameters.sigma_y_p,
+                         time));
+      }
+      else
+        AssertThrow(mat_id <= 1, ExcMessage("Unknown material id"));
     }
 
     SymmetricTensor<2, dim>
@@ -513,7 +725,7 @@ namespace LMM
       material->update_end_timestep();
     }
   private:
-    std::shared_ptr< Material_Linear_Elastoplastic<dim> > material;
+    std::shared_ptr< Material_Base<dim> > material;
 };
 
 
@@ -571,10 +783,10 @@ namespace LMM
     :
     parameters(input_file),
     dof_handler (triangulation),
+    time (parameters.end_time, parameters.delta_t),
     fe (FE_Q<dim>(parameters.poly_degree), dim),
     qf_cell (parameters.quad_order),
     qf_face (parameters.quad_order),
-    time (parameters.end_time, parameters.delta_t),
     u_fe(first_u_component)
   {
     Assert(dim==3, ExcNotImplemented());
@@ -600,6 +812,18 @@ namespace LMM
     GridGenerator::cylinder (triangulation, parameters.radius, parameters.length/2.0);
     triangulation.refine_global(parameters.n_global_refinement_steps);
     GridTools::scale (parameters.scale, triangulation);
+
+    for (typename Triangulation<dim>::active_cell_iterator
+         cell = triangulation.begin_active();
+         cell!=triangulation.end(); ++cell)
+      {
+        if (parameters.mat_type == "Elastic")
+          cell->set_material_id(0);
+        else if (parameters.mat_type == "Elastoplastic (isotropic hardening)")
+          cell->set_material_id(1);
+        else
+          AssertThrow(false, ExcMessage("Unknown material id"));
+      }
   }
 
   // @sect4{LinearElastoplasticProblem::setup_system}
@@ -657,7 +881,7 @@ namespace LMM
           quadrature_point_history.get_data(cell);
         Assert(lqph.size() == n_q_points_cell, ExcInternalError());
         for (unsigned int q_point = 0; q_point < n_q_points_cell; ++q_point)
-          lqph[q_point]->setup_lqp(parameters, time);
+          lqph[q_point]->setup_lqp(cell->material_id(), parameters, time);
       }
 }
 
@@ -679,7 +903,7 @@ namespace LMM
 
     const unsigned int   dofs_per_cell   = fe.dofs_per_cell;
     const unsigned int   n_q_points_cell = qf_cell.size();
-    const unsigned int   n_q_points_face = qf_face.size();
+    // const unsigned int   n_q_points_face = qf_face.size();
 
     FullMatrix<double>   cell_matrix (dofs_per_cell, dofs_per_cell);
     Vector<double>       cell_rhs (dofs_per_cell);
@@ -704,40 +928,36 @@ namespace LMM
 
         for (unsigned int q_point_cell=0; q_point_cell<n_q_points_cell; ++q_point_cell)
           {
-          const SymmetricTensor<2,dim> epsilon = Physics::Elasticity::Kinematics::epsilon(solution_grads_u_total[q_point_cell]);
+            const Tensor<2,dim> &Grad_u = solution_grads_u_total[q_point_cell];
+            const SymmetricTensor<2,dim> epsilon = Physics::Elasticity::Kinematics::epsilon(Grad_u);
+            lqph[q_point_cell]->update_internal_equilibrium(epsilon);
             const SymmetricTensor<4,dim> K = lqph[q_point_cell]->get_K(epsilon);
+
+            const double JxW = fe_values.JxW(q_point_cell);
+
+            // Precompute the shape function symmetric gradients
+            // (related to the variation of the small strain)
+            std::vector< SymmetricTensor<2,dim> > d_epsilon (dofs_per_cell);
+            for (unsigned int K=0; K<dofs_per_cell; ++K)
+              d_epsilon[K] = fe_values[u_fe].symmetric_gradient(K,q_point_cell);
 
             for (unsigned int I=0; I<dofs_per_cell; ++I)
               {
-                const unsigned int
-                component_I = fe.system_to_component_index(I).first;
+                const SymmetricTensor<2,dim> &d_epsilon_I = d_epsilon[I];
 
-                for (unsigned int J=0; J<dofs_per_cell; ++J)
+                for (unsigned int J=I; J<dofs_per_cell; ++J)
                   {
-                    const unsigned int
-                    component_J = fe.system_to_component_index(J).first;
+                    const SymmetricTensor<2,dim> &d_epsilon_J = d_epsilon[J];
 
-                    for (unsigned int k=0; k < dim; ++k)
-                      for (unsigned int l=0; l < dim; ++l)
-                        cell_matrix(I,J)
-                        += (fe_values.shape_grad(I,q_point_cell)[k] *
-                            K[component_I][k][component_J][l] *
-                            fe_values.shape_grad(J,q_point_cell)[l]) *
-                           fe_values.JxW(q_point_cell);
+                    cell_matrix(I,J)
+                      += contract3(d_epsilon_I,K,d_epsilon_J) * JxW;
                   }
               }
-
-//            for (unsigned int I=0; I<dofs_per_cell; ++I)
-//              {
-//                const unsigned int
-//                component_I = fe.system_to_component_index(I).first;
-//
-//                cell_rhs(I)
-//                += fe_values.shape_value(I,q_point_cell) *
-//                   body_force_values[q_point_cell](component_I) *
-//                   fe_values.JxW(q_point_cell);
-//              }
           }
+
+        for (unsigned int I=0; I<dofs_per_cell; ++I)
+          for (unsigned int J=I+1; J<dofs_per_cell; ++J)
+            cell_matrix(J,I) = cell_matrix(I,J);
 
         cell->get_dof_indices (local_dof_indices);
         for (unsigned int i=0; i<dofs_per_cell; ++i)
@@ -784,48 +1004,6 @@ namespace LMM
                                                 boundary_values,
                                                 component_mask_x);
     }
-
-//        // Fixed point on -X face
-//        {
-//          const Point<dim> fixed_point (-parameters.half_length_x,0.0,0.0);
-//          std::vector<types::global_dof_index> fixed_dof_indices;
-//          bool found_point_of_interest = false;
-//
-//          for (typename DoFHandler<dim>::active_cell_iterator
-//               cell = dof_handler.begin_active(),
-//               endc = dof_handler.end(); cell != endc; ++cell)
-//            {
-//              for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
-//                {
-//                  // We know that the fixed point is on the -X Dirichlet boundary
-//                  if (cell->face(face)->at_boundary() == true &&
-//                      cell->face(face)->boundary_id() == parameters.bid_CC_dirichlet_symm_X)
-//                    {
-//                      for (unsigned int face_vertex_index = 0; face_vertex_index < GeometryInfo<dim>::vertices_per_face; ++face_vertex_index)
-//                        {
-//                          if (cell->face(face)->vertex(face_vertex_index).distance(fixed_point) < 1e-6)
-//                            {
-//                              found_point_of_interest = true;
-//                              for (unsigned int index_component = 0; index_component < dim; ++index_component)
-//                                fixed_dof_indices.push_back(cell->face(face)->vertex_dof_index(face_vertex_index,
-//                                                            index_component));
-//                            }
-//
-//                          if (found_point_of_interest == true) break;
-//                        }
-//                    }
-//                  if (found_point_of_interest == true) break;
-//                }
-//              if (found_point_of_interest == true) break;
-//            }
-//
-//          Assert(found_point_of_interest == true, ExcMessage("Didn't find point of interest"));
-//          AssertThrow(fixed_dof_indices.size() == dim, ExcMessage("Didn't find the correct number of DoFs to fix"));
-//
-//          for (unsigned int i=0; i < fixed_dof_indices.size(); ++i)
-//            boundary_values[fixed_dof_indices[i]] = 0.0;
-//        }
-//      }
 
     MatrixTools::apply_boundary_values (boundary_values,
                                         system_matrix,
@@ -888,6 +1066,7 @@ namespace LMM
   {
     make_grid();
     setup_system ();
+    output_results ();
 
 //    const bool do_grid_refinement = false;
     time.increment();
