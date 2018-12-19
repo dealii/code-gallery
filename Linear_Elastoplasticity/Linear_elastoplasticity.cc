@@ -151,6 +151,7 @@ namespace LMM
 
     struct Geometry
     {
+      std::string  geometry_type;
       double       length;
       double       radius;
       double       notch_length;
@@ -170,6 +171,10 @@ namespace LMM
     {
       prm.enter_subsection("Geometry");
       {
+        prm.declare_entry("Geometry type", "Notched cylinder",
+                          Patterns::Selection("Notched cylinder|Notched tensile specimen"),
+                          "The geometry to be modelled");
+
         prm.declare_entry("Length", "100",
                           Patterns::Double(0),
                           "Overall length of the specimen");
@@ -205,6 +210,7 @@ namespace LMM
     {
       prm.enter_subsection("Geometry");
       {
+        geometry_type = prm.get("Geometry type");
         length = prm.get_double("Length");
         radius = prm.get_double("Radius");
         notch_length = prm.get_double("Notch length");
@@ -814,9 +820,101 @@ namespace LMM
   {
     Assert (dim == 3, ExcNotImplemented());
 
-    GridGenerator::cylinder (triangulation, parameters.radius, parameters.length/2.0);
-    triangulation.refine_global(parameters.n_global_refinement_steps);
-    GridTools::scale (parameters.scale, triangulation);
+    if (parameters.geometry_type == "Notched cylinder")
+    {
+      Triangulation<2> tria_cross_section;
+      {
+        const Point<2> centre;
+        const double notch_radius_inner = parameters.notch_radius - (parameters.radius-parameters.notch_radius);
+        Triangulation<2> tria_inner_1;
+        GridGenerator::hyper_ball (tria_inner_1,centre,
+                                   notch_radius_inner,false);
+
+        Triangulation<2> tria_inner_2;
+        GridGenerator::hyper_shell  (tria_inner_2,centre,
+                                     notch_radius_inner,
+                                     parameters.notch_radius,
+                                     4);
+        GridTools::rotate(M_PI/4,tria_inner_2);
+
+        Triangulation<2> tria_outer;
+        GridGenerator::hyper_shell  (tria_outer,centre,
+                                     parameters.notch_radius,
+                                     parameters.radius,
+                                     4);
+        GridTools::rotate(M_PI/4,tria_outer);
+
+        Triangulation<2> tria_inner;
+        GridGenerator::merge_triangulations(tria_inner_1,tria_inner_2,tria_inner);
+        GridGenerator::merge_triangulations(tria_inner,tria_outer,tria_cross_section);
+      }
+
+      Triangulation<dim> tria_unnotched;
+      {
+        std::vector<double> slice_coordinates;
+        slice_coordinates.push_back(0.0);
+        slice_coordinates.push_back(parameters.notch_length);
+        slice_coordinates.push_back(2.0*parameters.notch_length);
+        slice_coordinates.push_back(parameters.length);
+        GridGenerator::extrude_triangulation  (tria_cross_section,
+                                               slice_coordinates,
+                                               tria_unnotched);
+        GridTools::rotate(M_PI/2,1,tria_unnotched);
+      }
+
+      // Remove all cells within the notch length and greater than
+      // the notch radius
+      std::set<typename Triangulation<dim>::active_cell_iterator> cells_to_remove;
+      for (typename Triangulation<dim>::active_cell_iterator
+           cell = tria_unnotched.begin_active();
+           cell!=tria_unnotched.end(); ++cell)
+        {
+          if (cell->center()[0] < parameters.notch_length)
+          {
+            // Outer layer of cells correspond to the notch to be removed
+            for (unsigned int face=0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+              if (cell->face(face)->at_boundary() == true &&
+                  std::abs(cell->face(face)->center()[0] - parameters.notch_length/2.0) < 1e-12)
+                cells_to_remove.insert(cell);
+
+            // Additional verification
+            Point<dim> rad = cell->center();
+            rad[0] = 0.0;
+            const double radius = rad.norm();
+            if (radius > parameters.notch_radius)
+              cells_to_remove.insert(cell);
+          }
+        }
+
+      AssertThrow(cells_to_remove.empty() == false, ExcMessage("Found no cells to remove."));
+      GridGenerator::create_triangulation_with_removed_cells(tria_unnotched,cells_to_remove,triangulation);
+
+      // Set boundary and manifold IDs
+      for (typename Triangulation<dim>::active_cell_iterator
+           cell = triangulation.begin_active();
+           cell!=triangulation.end(); ++cell)
+        {
+          for (unsigned int face=0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+          {
+            if (cell->face(face)->at_boundary() == true)
+            {
+              if (std::abs(cell->face(face)->center()[0] - 0.0) < 1e-6)
+                cell->face(face)->set_boundary_id(1);
+              else if (std::abs(cell->face(face)->center()[0] - parameters.length) < 1e-6)
+                cell->face(face)->set_boundary_id(2);
+            }
+          }
+        }
+
+      triangulation.refine_global(1);
+      GridTools::scale (parameters.scale, triangulation);
+    }
+    else if (parameters.geometry_type == "Notched tensile specimen")
+    {
+      AssertThrow(false, ExcNotImplemented());
+    }
+    else
+      AssertThrow(false, ExcMessage("Unknown geometry"));
 
     for (typename Triangulation<dim>::active_cell_iterator
          cell = triangulation.begin_active();
@@ -985,30 +1083,49 @@ namespace LMM
   {
     std::map<types::global_dof_index,double> boundary_values;
 
-    // Full constraint on -X faces
+    if (parameters.geometry_type == "Notched cylinder")
     {
-      ComponentMask component_mask_all (n_components, true);
-      component_mask_all.set(0, true);
-      VectorTools::interpolate_boundary_values (dof_handler,
-                                                1,
-                                                ZeroFunction<dim>(dim),
-                                                boundary_values,
-                                                component_mask_all);
+      // No X displacement on constraint on -X faces
+      {
+        ComponentMask component_mask_x (n_components, false);
+        component_mask_x.set(0, true);
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  1,
+                                                  ZeroFunction<dim>(dim),
+                                                  boundary_values,
+                                                  component_mask_x);
+      }
+      // Prescribed horizontal displacement on +X faces
+      {
+        ComponentMask component_mask_x (n_components, false);
+        component_mask_x.set(0, true);
+        const double total_displacement
+        = (parameters.final_stretch-1.0)*parameters.length
+        * parameters.scale
+        * (time.current()/time.end());
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  2,
+                                                  ConstantFunction<dim>(total_displacement,dim),
+                                                  boundary_values,
+                                                  component_mask_x);
+      }
+      // No radial displacement of +X faces
+      {
+        ComponentMask component_mask_yz (n_components, true);
+        component_mask_yz.set(0, false);
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  2,
+                                                  ZeroFunction<dim>(dim),
+                                                  boundary_values,
+                                                  component_mask_yz);
+      }
     }
-    // Horizontal displacement on +X faces
+    else if (parameters.geometry_type == "Notched tensile specimen")
     {
-      ComponentMask component_mask_x (n_components, false);
-      component_mask_x.set(0, true);
-      const double total_displacement
-      = (parameters.final_stretch-1.0)*parameters.length
-      * parameters.scale
-      * (time.current()/time.end());
-      VectorTools::interpolate_boundary_values (dof_handler,
-                                                2,
-                                                ConstantFunction<dim>(total_displacement,dim),
-                                                boundary_values,
-                                                component_mask_x);
+      AssertThrow(false, ExcNotImplemented());
     }
+    else
+      AssertThrow(false, ExcMessage("Unknown geometry"));
 
     MatrixTools::apply_boundary_values (boundary_values,
                                         system_matrix,

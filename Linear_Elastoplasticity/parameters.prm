@@ -23,10 +23,10 @@ subsection Geometry
   set Radius                  = 10
 
   # Overall length of the notch in the specimen
-  set Notch length            = 10
+  set Notch length            = 1
 
   # Overall radius of the notch in the specimen
-  set Notch radius            = 1
+  set Notch radius            = 9
 
   # Global grid scaling factor
   set Grid scale              = 1e-3
