@@ -31,7 +31,7 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria.h>
@@ -438,6 +438,9 @@ namespace LMM
   };
 
 
+  /**
+   * Linear elastic material
+   */
   template <int dim>
   class Material_Linear_Elastic : public Material_Base<dim>
   {
@@ -499,12 +502,14 @@ namespace LMM
   };
 
 
-
+  /**
+   * Linear elastoplastic material: von Mises plasticity with linear isotropic hardening
+   */
   template <int dim>
-  class Material_Linear_Elastoplastic : public Material_Base<dim>
+  class Material_Linear_Elastoplastic_Isotropic_Hardening : public Material_Base<dim>
   {
   public:
-    Material_Linear_Elastoplastic(const double mu_e,
+    Material_Linear_Elastoplastic_Isotropic_Hardening(const double mu_e,
                                   const double nu_e,
                                   const double k_p,
                                   const double sigma_y_p,
@@ -527,7 +532,7 @@ namespace LMM
       Assert(kappa_e > 0, ExcInternalError());
     }
 
-    virtual ~Material_Linear_Elastoplastic()
+    virtual ~Material_Linear_Elastoplastic_Isotropic_Hardening()
     {}
 
     // Cauchy stress
@@ -695,7 +700,7 @@ namespace LMM
       }
       else if (mat_id == 1)
       {
-        material.reset(new Material_Linear_Elastoplastic<dim>(
+        material.reset(new Material_Linear_Elastoplastic_Isotropic_Hardening<dim>(
                          parameters.mu_e, parameters.nu_e,
                          parameters.k_p, parameters.sigma_y_p,
                          time));
@@ -759,7 +764,7 @@ namespace LMM
     QGauss<dim>          qf_cell;
     QGauss<dim-1>        qf_face;
 
-    ConstraintMatrix     hanging_node_constraints;
+    AffineConstraints<double>     hanging_node_constraints;
 
     SparsityPattern      sparsity_pattern;
     SparseMatrix<double> system_matrix;
