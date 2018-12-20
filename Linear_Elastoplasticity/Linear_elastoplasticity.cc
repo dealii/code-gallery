@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  * Copyright (C) 2018 by the deal.II authors and
- *                           Jean-Paul Pelteret and Tim Hamann
+ *                           Jean-Paul Pelteret
  *
  * This file is part of the deal.II library.
  *
@@ -38,6 +38,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
 #include <deal.II/grid/tria_boundary_lib.h>
@@ -822,10 +823,11 @@ namespace LMM
 
     if (parameters.geometry_type == "Notched cylinder")
     {
+      const double notch_radius_inner = parameters.notch_radius - (parameters.radius-parameters.notch_radius);
+
       Triangulation<2> tria_cross_section;
       {
         const Point<2> centre;
-        const double notch_radius_inner = parameters.notch_radius - (parameters.radius-parameters.notch_radius);
         Triangulation<2> tria_inner_1;
         GridGenerator::hyper_ball (tria_inner_1,centre,
                                    notch_radius_inner,false);
@@ -855,6 +857,19 @@ namespace LMM
         slice_coordinates.push_back(0.0);
         slice_coordinates.push_back(parameters.notch_length);
         slice_coordinates.push_back(2.0*parameters.notch_length);
+        // Biased slices with function taken from GridGenerator::concentric_hyper_shells
+        const double bias_first_slice = 2.0*parameters.notch_length;
+        const double bias_last_slice = parameters.length;
+        const double skewness = 2.0;
+        const unsigned int n_slices = 5;
+        for (unsigned int s=0; s<n_slices; ++s)
+        {
+          const double f = (1 - std::tanh(skewness*(1-s/static_cast<double>(n_slices)))) / std::tanh(skewness);
+          AssertThrow(f >= 0.0 && f <= 1.0, ExcMessage("Bias function not in correct range."));
+          const double r = bias_first_slice + (bias_last_slice-bias_first_slice)*f;
+          AssertThrow(r >= bias_first_slice && r <= bias_last_slice, ExcMessage("New slice location not in correct range."));
+          slice_coordinates.push_back(r);
+        }
         slice_coordinates.push_back(parameters.length);
         GridGenerator::extrude_triangulation  (tria_cross_section,
                                                slice_coordinates,
@@ -890,6 +905,19 @@ namespace LMM
       GridGenerator::create_triangulation_with_removed_cells(tria_unnotched,cells_to_remove,triangulation);
 
       // Set boundary and manifold IDs
+      triangulation.set_all_manifold_ids(2); // TFI manifold
+
+      const double radius_for_cyl_cells = notch_radius_inner*std::cos(M_PI/4);
+      for (typename Triangulation<dim>::active_cell_iterator
+           cell = triangulation.begin_active();
+           cell!=triangulation.end(); ++cell)
+        {
+          Point<dim> rad = cell->center();
+          rad[0] = 0.0;
+          const double radius = rad.norm();
+          if (radius > radius_for_cyl_cells)
+            cell->set_all_manifold_ids(1); // Cylindrical manifold
+        }
       for (typename Triangulation<dim>::active_cell_iterator
            cell = triangulation.begin_active();
            cell!=triangulation.end(); ++cell)
@@ -902,11 +930,21 @@ namespace LMM
                 cell->face(face)->set_boundary_id(1);
               else if (std::abs(cell->face(face)->center()[0] - parameters.length) < 1e-6)
                 cell->face(face)->set_boundary_id(2);
+              else
+                cell->face(face)->set_all_manifold_ids(1); // Cylindrical manifold
             }
           }
         }
 
-      triangulation.refine_global(1);
+      CylindricalManifold<dim> cylindrical_manifold (0 /*axis*/);
+      CylindricalManifold<dim> cylindrical_manifold_tfi (0 /*axis*/);
+      TransfiniteInterpolationManifold<dim> tfi_manifold;
+
+      triangulation.set_manifold (1, cylindrical_manifold);
+      tfi_manifold.initialize(triangulation);
+      triangulation.set_manifold (2, tfi_manifold);
+
+      triangulation.refine_global(parameters.n_global_refinement_steps);
       GridTools::scale (parameters.scale, triangulation);
     }
     else if (parameters.geometry_type == "Notched tensile specimen")
