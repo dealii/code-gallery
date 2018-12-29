@@ -37,6 +37,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_refinement.h>
+#include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria_accessor.h>
@@ -153,13 +154,26 @@ namespace LMM
     struct Geometry
     {
       std::string  geometry_type;
-      double       length;
-      double       radius;
-      double       notch_length;
-      double       notch_radius;
       double       scale;
       unsigned int n_global_refinement_steps;
       unsigned int n_local_refinement_steps;
+
+      struct NotchedCylinder
+      {
+        double       length;
+        double       radius;
+        double       notch_length;
+        double       notch_radius;
+      } notched_cylinder;
+
+      struct TensileSpecimen
+      {
+        const double length = 35.0/2;
+
+        const Tensor<1,3> manifold_direction  = Tensor<1,3>({0,0,1});
+        const Point<3> centre_manifold_id_10  = {6.0,4.0,0.0};
+        const Point<3> centre_manifold_id_11  = {10.472135955,0.0,0.0};
+      } tensile_specimen;
 
       static void
       declare_parameters(ParameterHandler &prm);
@@ -173,9 +187,23 @@ namespace LMM
       prm.enter_subsection("Geometry");
       {
         prm.declare_entry("Geometry type", "Notched cylinder",
-                          Patterns::Selection("Notched cylinder|Notched tensile specimen"),
+                          Patterns::Selection("Notched cylinder|Tensile specimen|Notched tensile specimen"),
                           "The geometry to be modelled");
 
+        prm.declare_entry("Grid scale", "1e-3",
+                          Patterns::Double(0),
+                          "Global grid scaling factor");
+
+        prm.declare_entry("Global refinement steps", "1",
+                          Patterns::Integer(0),
+                          "Number of global refinement steps");
+
+        prm.declare_entry("Local refinement steps", "1",
+                          Patterns::Integer(0),
+                          "Number of initial local refinement cycles");
+
+        prm.enter_subsection("Notched cylinder");
+        {
         prm.declare_entry("Length", "100",
                           Patterns::Double(0),
                           "Overall length of the specimen");
@@ -191,18 +219,8 @@ namespace LMM
         prm.declare_entry("Notch radius", "1",
                           Patterns::Double(0),
                           "Overall radius of the notch in the specimen");
-
-        prm.declare_entry("Grid scale", "1e-3",
-                          Patterns::Double(0),
-                          "Global grid scaling factor");
-
-        prm.declare_entry("Global refinement steps", "1",
-                          Patterns::Integer(0),
-                          "Number of global refinement steps");
-
-        prm.declare_entry("Local refinement steps", "1",
-                          Patterns::Integer(0),
-                          "Number of initial local refinement cycles");
+        }
+        prm.leave_subsection();
       }
       prm.leave_subsection();
     }
@@ -212,19 +230,24 @@ namespace LMM
       prm.enter_subsection("Geometry");
       {
         geometry_type = prm.get("Geometry type");
-        length = prm.get_double("Length");
-        radius = prm.get_double("Radius");
-        notch_length = prm.get_double("Notch length");
-        notch_radius = prm.get_double("Notch radius");
         scale = prm.get_double("Grid scale");
         n_global_refinement_steps = prm.get_integer("Global refinement steps");
         n_local_refinement_steps = prm.get_integer("Local refinement steps");
+
+        prm.enter_subsection("Notched cylinder");
+        {
+          notched_cylinder.length = prm.get_double("Length");
+          notched_cylinder.radius = prm.get_double("Radius");
+          notched_cylinder.notch_length = prm.get_double("Notch length");
+          notched_cylinder.notch_radius = prm.get_double("Notch radius");
+        }
+        prm.leave_subsection();
       }
       prm.leave_subsection();
 
-      AssertThrow(length > notch_length,
+      AssertThrow(notched_cylinder.length > notched_cylinder.notch_length,
                   ExcMessage("Cannot create geometry with given dimensions"));
-      AssertThrow(radius > notch_radius,
+      AssertThrow(notched_cylinder.radius > notched_cylinder.notch_radius,
                   ExcMessage("Cannot create geometry with given dimensions"));
     }
 
@@ -643,6 +666,15 @@ namespace LMM
       // context of a Newton scheme.
     }
 
+    // --- Post-processing ---
+
+    // Plastic variables
+    double
+    get_alpha_p()
+    {
+      return alpha_p_t;
+    }
+
   protected:
     const double kappa_e; // buld modulus
     const double mu_e; // shear modulus
@@ -755,8 +787,8 @@ namespace LMM
     void make_grid ();
     void setup_system ();
     void setup_qph();
+    void make_constraints ();
     void assemble_system ();
-    void apply_boundary_conditions ();
     void solve ();
     void output_results () const;
 
@@ -772,6 +804,7 @@ namespace LMM
     QGauss<dim-1>        qf_face;
 
     AffineConstraints<double>     hanging_node_constraints;
+    AffineConstraints<double>     constraints;
 
     SparsityPattern      sparsity_pattern;
     SparseMatrix<double> system_matrix;
@@ -823,7 +856,7 @@ namespace LMM
 
     if (parameters.geometry_type == "Notched cylinder")
     {
-      const double notch_radius_inner = parameters.notch_radius - (parameters.radius-parameters.notch_radius);
+      const double notch_radius_inner = parameters.notched_cylinder.notch_radius - (parameters.notched_cylinder.radius-parameters.notched_cylinder.notch_radius);
 
       Triangulation<2> tria_cross_section;
       {
@@ -835,14 +868,14 @@ namespace LMM
         Triangulation<2> tria_inner_2;
         GridGenerator::hyper_shell  (tria_inner_2,centre,
                                      notch_radius_inner,
-                                     parameters.notch_radius,
+                                     parameters.notched_cylinder.notch_radius,
                                      4);
         GridTools::rotate(M_PI/4,tria_inner_2);
 
         Triangulation<2> tria_outer;
         GridGenerator::hyper_shell  (tria_outer,centre,
-                                     parameters.notch_radius,
-                                     parameters.radius,
+                                     parameters.notched_cylinder.notch_radius,
+                                     parameters.notched_cylinder.radius,
                                      4);
         GridTools::rotate(M_PI/4,tria_outer);
 
@@ -855,11 +888,11 @@ namespace LMM
       {
         std::vector<double> slice_coordinates;
         slice_coordinates.push_back(0.0);
-        slice_coordinates.push_back(parameters.notch_length);
-        slice_coordinates.push_back(2.0*parameters.notch_length);
+        slice_coordinates.push_back(parameters.notched_cylinder.notch_length);
+        slice_coordinates.push_back(2.0*parameters.notched_cylinder.notch_length);
         // Biased slices with function taken from GridGenerator::concentric_hyper_shells
-        const double bias_first_slice = 2.0*parameters.notch_length;
-        const double bias_last_slice = parameters.length;
+        const double bias_first_slice = 2.0*parameters.notched_cylinder.notch_length;
+        const double bias_last_slice = parameters.notched_cylinder.length;
         const double skewness = 2.0;
         const unsigned int n_slices = 5;
         for (unsigned int s=0; s<n_slices; ++s)
@@ -870,33 +903,33 @@ namespace LMM
           AssertThrow(r >= bias_first_slice && r <= bias_last_slice, ExcMessage("New slice location not in correct range."));
           slice_coordinates.push_back(r);
         }
-        slice_coordinates.push_back(parameters.length);
+        slice_coordinates.push_back(parameters.notched_cylinder.length);
         GridGenerator::extrude_triangulation  (tria_cross_section,
                                                slice_coordinates,
                                                tria_unnotched);
         GridTools::rotate(M_PI/2,1,tria_unnotched);
       }
 
-      // Remove all cells within the notch length and greater than
-      // the notch radius
       std::set<typename Triangulation<dim>::active_cell_iterator> cells_to_remove;
       for (typename Triangulation<dim>::active_cell_iterator
            cell = tria_unnotched.begin_active();
            cell!=tria_unnotched.end(); ++cell)
         {
-          if (cell->center()[0] < parameters.notch_length)
+          // Remove all cells within the notch length and greater than
+          // the notch radius.
+          if (cell->center()[0] < parameters.notched_cylinder.notch_length)
           {
             // Outer layer of cells correspond to the notch to be removed
             for (unsigned int face=0; face < GeometryInfo<dim>::faces_per_cell; ++face)
               if (cell->face(face)->at_boundary() == true &&
-                  std::abs(cell->face(face)->center()[0] - parameters.notch_length/2.0) < 1e-12)
+                  std::abs(cell->face(face)->center()[0] - parameters.notched_cylinder.notch_length/2.0) < 1e-12)
                 cells_to_remove.insert(cell);
 
             // Additional verification
             Point<dim> rad = cell->center();
             rad[0] = 0.0;
             const double radius = rad.norm();
-            if (radius > parameters.notch_radius)
+            if (radius > parameters.notched_cylinder.notch_radius)
               cells_to_remove.insert(cell);
           }
         }
@@ -928,7 +961,7 @@ namespace LMM
             {
               if (std::abs(cell->face(face)->center()[0] - 0.0) < 1e-6)
                 cell->face(face)->set_boundary_id(1);
-              else if (std::abs(cell->face(face)->center()[0] - parameters.length) < 1e-6)
+              else if (std::abs(cell->face(face)->center()[0] - parameters.notched_cylinder.length) < 1e-6)
                 cell->face(face)->set_boundary_id(2);
               else
                 cell->face(face)->set_all_manifold_ids(1); // Cylindrical manifold
@@ -946,6 +979,39 @@ namespace LMM
 
       triangulation.refine_global(parameters.n_global_refinement_steps);
       GridTools::scale (parameters.scale, triangulation);
+    }
+    else if (parameters.geometry_type == "Tensile specimen")
+    {
+      const std::string filename = "tensile_specimen.inp";
+      std::ifstream input (filename.c_str());
+
+      GridIn<dim> gridin;
+      gridin.attach_triangulation(triangulation);
+      gridin.read_abaqus(input, false);
+
+//      GridTools::copy_boundary_to_manifold_id(triangulation,false);
+      for (typename Triangulation<dim>::active_cell_iterator
+           cell = triangulation.begin_active();
+           cell!=triangulation.end(); ++cell)
+        {
+          for (unsigned int face=0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+          {
+            if (cell->face(face)->at_boundary() == true)
+            {
+              if (cell->face(face)->boundary_id() == 10 || cell->face(face)->boundary_id() == 11)
+                cell->face(face)->set_all_manifold_ids(cell->face(face)->boundary_id());
+            }
+          }
+        }
+
+      GridTools::scale (parameters.scale, triangulation);
+
+      CylindricalManifold<dim> cylindrical_manifold_id_10 (parameters.tensile_specimen.manifold_direction,parameters.tensile_specimen.centre_manifold_id_10*parameters.scale);
+      CylindricalManifold<dim> cylindrical_manifold_id_11 (parameters.tensile_specimen.manifold_direction,parameters.tensile_specimen.centre_manifold_id_11*parameters.scale);
+      triangulation.set_manifold (10, cylindrical_manifold_id_10);
+      triangulation.set_manifold (11, cylindrical_manifold_id_11);
+
+      triangulation.refine_global(parameters.n_global_refinement_steps);
     }
     else if (parameters.geometry_type == "Notched tensile specimen")
     {
@@ -1101,27 +1167,58 @@ namespace LMM
             cell_matrix(J,I) = cell_matrix(I,J);
 
         cell->get_dof_indices (local_dof_indices);
-        for (unsigned int i=0; i<dofs_per_cell; ++i)
-          {
-            for (unsigned int j=0; j<dofs_per_cell; ++j)
-              system_matrix.add (local_dof_indices[i],
-                                 local_dof_indices[j],
-                                 cell_matrix(i,j));
-
-            system_rhs(local_dof_indices[i]) += cell_rhs(i);
-          }
+        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
       }
-
-    hanging_node_constraints.condense (system_matrix);
-    hanging_node_constraints.condense (system_rhs);
   }
 
   template <int dim>
-  void LinearElastoplasticProblem<dim>::apply_boundary_conditions ()
+  void LinearElastoplasticProblem<dim>::make_constraints ()
   {
-    std::map<types::global_dof_index,double> boundary_values;
+    constraints.clear();
 
     if (parameters.geometry_type == "Notched cylinder")
+    {
+      // Fully constraints (pinned) vertex at centre of notched (-X) face
+      {
+        Point<dim> pinned_point;
+        typename DoFHandler<dim>::active_cell_iterator cell =
+            dof_handler.begin_active(), endc = dof_handler.end();
+          for (; cell != endc; ++cell)
+            {
+            for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+              if (cell->vertex(v).distance(pinned_point) < 1e-9)
+                {
+                  for (unsigned int d=0; d<dim; ++d)
+                    constraints.add_line(cell->vertex_dof_index(v,d));
+                }
+            }
+      }
+      // No X displacement on constraint on -X faces
+      {
+        ComponentMask component_mask_x (n_components, false);
+        component_mask_x.set(0, true);
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  1,
+                                                  ZeroFunction<dim>(dim),
+                                                  constraints,
+                                                  component_mask_x);
+      }
+      // Prescribed horizontal displacement on +X faces
+      {
+        ComponentMask component_mask_x (n_components, false);
+        component_mask_x.set(0, true);
+        const double total_displacement
+        = (parameters.final_stretch-1.0)*parameters.notched_cylinder.length
+        * parameters.scale
+        * (time.current()/time.end());
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  2,
+                                                  ConstantFunction<dim>(total_displacement,dim),
+                                                  constraints,
+                                                  component_mask_x);
+      }
+    }
+    else if (parameters.geometry_type == "Tensile specimen")
     {
       // No X displacement on constraint on -X faces
       {
@@ -1130,31 +1227,51 @@ namespace LMM
         VectorTools::interpolate_boundary_values (dof_handler,
                                                   1,
                                                   ZeroFunction<dim>(dim),
-                                                  boundary_values,
+                                                  constraints,
                                                   component_mask_x);
       }
-      // Prescribed horizontal displacement on +X faces
+      // No Y displacement on constraint on -Y faces
+      {
+        ComponentMask component_mask_y (n_components, false);
+        component_mask_y.set(1, true);
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  3,
+                                                  ZeroFunction<dim>(dim),
+                                                  constraints,
+                                                  component_mask_y);
+      }
+      // No Z displacement on constraint on -Z faces
+      {
+        ComponentMask component_mask_z (n_components, false);
+        component_mask_z.set(2, true);
+        VectorTools::interpolate_boundary_values (dof_handler,
+                                                  5,
+                                                  ZeroFunction<dim>(dim),
+                                                  constraints,
+                                                  component_mask_z);
+      }
+      // Prescribed horizontal displacement on clamped surface
       {
         ComponentMask component_mask_x (n_components, false);
         component_mask_x.set(0, true);
         const double total_displacement
-        = (parameters.final_stretch-1.0)*parameters.length
+        = (parameters.final_stretch-1.0)*parameters.tensile_specimen.length
         * parameters.scale
         * (time.current()/time.end());
         VectorTools::interpolate_boundary_values (dof_handler,
-                                                  2,
+                                                  6,
                                                   ConstantFunction<dim>(total_displacement,dim),
-                                                  boundary_values,
+                                                  constraints,
                                                   component_mask_x);
       }
-      // No radial displacement of +X faces
+      // No out-of-plane displacement on clamped surface
       {
         ComponentMask component_mask_yz (n_components, true);
         component_mask_yz.set(0, false);
         VectorTools::interpolate_boundary_values (dof_handler,
-                                                  2,
+                                                  6,
                                                   ZeroFunction<dim>(dim),
-                                                  boundary_values,
+                                                  constraints,
                                                   component_mask_yz);
       }
     }
@@ -1165,10 +1282,8 @@ namespace LMM
     else
       AssertThrow(false, ExcMessage("Unknown geometry"));
 
-    MatrixTools::apply_boundary_values (boundary_values,
-                                        system_matrix,
-                                        solution,
-                                        system_rhs);
+    constraints.merge(hanging_node_constraints, AffineConstraints<double>::right_object_wins);
+    constraints.close();
   }
 
 
@@ -1186,7 +1301,7 @@ namespace LMM
     cg.solve (system_matrix, solution, system_rhs,
               preconditioner);
 
-    hanging_node_constraints.distribute (solution);
+    constraints.distribute(solution);
   }
 
 
@@ -1228,7 +1343,6 @@ namespace LMM
     setup_system ();
     output_results ();
 
-//    const bool do_grid_refinement = false;
     time.increment();
     while (time.current() < time.end()+0.01*time.get_delta_t())
       {
@@ -1239,12 +1353,8 @@ namespace LMM
 
         // Next we assemble the system and enforce boundary
         // conditions.
-        // Here we assume that the system and fibres have
-        // a fixed state, and we will assemble based on how
-        // epsilon_c will update given the current state of
-        // the body.
+        make_constraints();
         assemble_system ();
-        apply_boundary_conditions ();
 
         // Then we solve the linear system
         solve ();

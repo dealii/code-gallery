@@ -11,31 +11,37 @@ end
 
 subsection Boundary conditions
   # The amount by which the specimen is to be stretched
-  set Final stretch = 1.5
+  set Final stretch = 1.2
 end
 
 
 subsection Geometry
-  # Overall length of the specimen
-  set Length                  = 100
-
-  # Overall radius of the specimen
-  set Radius                  = 10
-
-  # Overall length of the notch in the specimen
-  set Notch length            = 1
-
-  # Overall radius of the notch in the specimen
-  set Notch radius            = 9
+  # Geometry to simulate
+  # Options: Notched cylinder ; Tensile specimen ; Notched tensile specimen
+  set Geometry type = Tensile specimen
 
   # Global grid scaling factor
   set Grid scale              = 1e-3
 
   # Number of global refinement steps
-  set Global refinement steps = 2
+  set Global refinement steps = 1
 
   # Number of initial local refinement cycles
   set Local refinement steps  = 1
+  
+  subsection Notched cylinder
+    # Overall length of the specimen
+    set Length                  = 100
+  
+    # Overall radius of the specimen
+    set Radius                  = 10
+  
+    # Overall length of the notch in the specimen
+    set Notch length            = 1
+  
+    # Overall radius of the notch in the specimen
+    set Notch radius            = 9
+end
 end
 
 
