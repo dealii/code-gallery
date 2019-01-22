@@ -52,6 +52,7 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/data_postprocessor.h>
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/physics/transformations.h>
 #include <deal.II/physics/elasticity/kinematics.h>
@@ -1004,6 +1005,8 @@ namespace LMM
           }
         }
 
+      // The triangulation scaling needs to happen before the manifolds
+      // with a non-trivial centre point are defined / applied.
       GridTools::scale (parameters.scale, triangulation);
 
       CylindricalManifold<dim> cylindrical_manifold_id_10 (parameters.tensile_specimen.manifold_direction,parameters.tensile_specimen.centre_manifold_id_10*parameters.scale);
@@ -1307,6 +1310,47 @@ namespace LMM
 
   // @sect4{LinearElastoplasticProblem::output_results}
 
+  template <int dim>
+  class ComputeIntensity : public DataPostprocessorScalar<dim>
+  {
+  public:
+    ComputeIntensity();
+    virtual ~ComputeIntensity();
+    virtual void evaluate_vector_field(
+      const DataPostprocessorInputs::Vector<dim> &inputs,
+      std::vector<Vector<double>> &computed_quantities) const override;
+  };
+
+  template <int dim>
+  ComputeIntensity<dim>::ComputeIntensity()
+    : DataPostprocessorScalar<dim>("Intensity", update_values)
+  {}
+
+  template <int dim>
+  ComputeIntensity<dim>::~ComputeIntensity()
+  {}
+
+  template <int dim>
+  void ComputeIntensity<dim>::evaluate_vector_field(
+    const DataPostprocessorInputs::Vector<dim> &inputs,
+    std::vector<Vector<double>> &               computed_quantities) const
+  {
+    Assert(computed_quantities.size() == inputs.solution_values.size(),
+           ExcDimensionMismatch(computed_quantities.size(),
+                                inputs.solution_values.size()));
+
+    for (unsigned int i = 0; i < computed_quantities.size(); i++)
+      {
+        Assert(computed_quantities[i].size() == 1,
+               ExcDimensionMismatch(computed_quantities[i].size(), 1));
+        Assert(inputs.solution_values[i].size() == 2,
+               ExcDimensionMismatch(inputs.solution_values[i].size(), 2));
+        computed_quantities[i](0) = std::sqrt(
+          inputs.solution_values[i](0) * inputs.solution_values[i](0) +
+          inputs.solution_values[i](1) * inputs.solution_values[i](1));
+      }
+  }
+
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::output_results () const
@@ -1317,6 +1361,7 @@ namespace LMM
     filename += ".vtk";
     std::ofstream output (filename.c_str());
 
+    ComputeIntensity<dim> intensities;
     DataOut<dim> data_out;
     data_out.attach_dof_handler (dof_handler);
 
@@ -1328,6 +1373,7 @@ namespace LMM
     data_out.add_data_vector (solution, solution_name,
                               DataOut<dim>::type_dof_data,
                               data_component_interpretation);
+    data_out.add_data_vector(solution, intensities);
     data_out.build_patches ();
     data_out.write_vtk (output);
   }
