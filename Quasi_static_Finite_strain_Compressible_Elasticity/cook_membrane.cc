@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------
- * Copyright (C) 2010 - 2015 by the deal.II authors and
+ * Copyright (C) 2010 - 2015, 2017, 2019 by the deal.II authors and
  *                              Jean-Paul Pelteret and Andrew McBride
  *
  * This file is part of the deal.II library.
@@ -16,7 +16,7 @@
 
 /*
  * Authors: Jean-Paul Pelteret, University of Erlangen-Nuremberg,
- *          Andrew McBride, University of Cape Town, 2015, 2017
+ *          Andrew McBride, University of Cape Town, 2015, 2017, 2019
  */
 
 
@@ -58,15 +58,15 @@
 #include <deal.II/lac/precondition_selector.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/sparse_direct.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include <deal.II/base/config.h>
-#if DEAL_II_VERSION_MAJOR >= 9 && defined(DEAL_II_WITH_TRILINOS)
+#if DEAL_II_VERSION_MAJOR >= 9 && (defined(DEAL_II_WITH_ADOLC) || defined(DEAL_II_WITH_TRILINOS))
 #include <deal.II/differentiation/ad.h>
-#define ENABLE_SACADO_FORMULATION
+#define ENABLE_AD_FORMULATION
 #endif
 
 // These must be included below the AD headers so that
@@ -100,6 +100,7 @@ namespace Cook_Membrane
     struct AssemblyMethod
     {
       unsigned int automatic_differentiation_order;
+      std::string automatic_differentiation_library;
 
       static void
       declare_parameters(ParameterHandler &prm);
@@ -119,6 +120,10 @@ namespace Cook_Membrane
                           "# Order = 0: Both the residual and linearisation are computed manually.\n"
                           "# Order = 1: The residual is computed manually but the linearisation is performed using AD.\n"
                           "# Order = 2: Both the residual and linearisation are computed using AD.");
+
+        prm.declare_entry("Automatic differentiation library", "None",
+                          Patterns::Selection("None|ADOL-C|Sacado"),
+                          "The automatic differentiation library to be used in the assembly of the linear system.");
       }
       prm.leave_subsection();
     }
@@ -128,6 +133,7 @@ namespace Cook_Membrane
       prm.enter_subsection("Assembly method");
       {
         automatic_differentiation_order = prm.get_integer("Automatic differentiation order");
+        automatic_differentiation_library = prm.get("Automatic differentiation library");
       }
       prm.leave_subsection();
     }
@@ -893,10 +899,10 @@ namespace Cook_Membrane
     const unsigned int               n_q_points_f;
 
     // Objects that store the converged solution and right-hand side vectors,
-    // as well as the tangent matrix. There is a ConstraintMatrix object used
+    // as well as the tangent matrix. There is a AffineConstraints<double> object used
     // to keep track of constraints.  We make use of a sparsity pattern
     // designed for a block system.
-    ConstraintMatrix                 constraints;
+    AffineConstraints<double>                 constraints;
     BlockSparsityPattern             sparsity_pattern;
     BlockSparseMatrix<double>        tangent_matrix;
     BlockVector<double>              system_rhs;
@@ -1592,7 +1598,7 @@ namespace Cook_Membrane
     void
     copy_local_to_global_ASM(const PerTaskData_ASM &data)
     {
-      const ConstraintMatrix &constraints = data.solid->constraints;
+      const AffineConstraints<double> &constraints = data.solid->constraints;
       BlockSparseMatrix<double> &tangent_matrix = const_cast<Solid<dim,NumberType> *>(data.solid)->tangent_matrix;
       BlockVector<double> &system_rhs =  const_cast<Solid<dim,NumberType> *>(data.solid)->system_rhs;
 
@@ -1800,13 +1806,16 @@ namespace Cook_Membrane
 
   };
 
-#ifdef ENABLE_SACADO_FORMULATION
+#ifdef ENABLE_AD_FORMULATION
 
+  namespace AD = dealii::Differentiation::AD;
 
   template <int dim>
   struct Assembler<dim,Sacado::Fad::DFad<double> > : Assembler_Base<dim,Sacado::Fad::DFad<double> >
   {
-    typedef Sacado::Fad::DFad<double> ADNumberType;
+    using ADHelper = AD::ADHelperResidualLinearization<AD::NumberTypes::sacado_dfad,double>;
+    using ADNumberType = typename ADHelper::ad_type;
+
     using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
     using typename Assembler_Base<dim,ADNumberType>::PerTaskData_ASM;
 
@@ -1913,8 +1922,10 @@ namespace Cook_Membrane
   template <int dim>
   struct Assembler<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > > : Assembler_Base<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > >
   {
-    typedef Sacado::Fad::DFad<double>       ADDerivType;
-    typedef Sacado::Rad::ADvar<ADDerivType> ADNumberType;
+    using ADHelper = AD::ADHelperEnergyFunctional<AD::NumberTypes::sacado_rad_dfad,double>;
+    using ADNumberType = typename ADHelper::ad_type;
+    using ADDerivType = typename AD::ADNumberTraits<ADNumberType>::derivative_type;
+
     using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
     using typename Assembler_Base<dim,ADNumberType>::PerTaskData_ASM;
 
@@ -1925,46 +1936,84 @@ namespace Cook_Membrane
                                               ScratchData_ASM &scratch,
                                               PerTaskData_ASM &data)
     {
-      // Aliases for data referenced from the Solid class
-      const unsigned int &n_q_points = data.solid->n_q_points;
       const FEValuesExtractors::Vector &u_fe = data.solid->u_fe;
+      const unsigned int &n_q_points = data.solid->n_q_points;
 
       data.reset();
       scratch.reset();
       scratch.fe_values_ref.reinit(cell);
       cell->get_dof_indices(data.local_dof_indices);
+      const unsigned int n_independent_variables =
+          data.local_dof_indices.size();
 
       const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
-        data.solid->quadrature_point_history.get_data(cell);
+          data.solid->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
-      const unsigned int n_independent_variables = data.local_dof_indices.size();
-      std::vector<double> local_dof_values(n_independent_variables);
-      cell->get_dof_values(scratch.solution_total,
-                           local_dof_values.begin(),
-                           local_dof_values.end());
+      // Create and initialize an instance of the helper class.
+      ADHelper ad_helper(n_independent_variables);
+      // Initialize the local data structures for assembly.
+      // This is also taken care of by the ADHelper, so this step could
+      // be skipped.
+      Assert(data.cell_rhs.size() == n_independent_variables, ExcDimensionMismatch(data.cell_rhs.size(),n_independent_variables));
+      Assert(data.cell_matrix.m() == n_independent_variables, ExcDimensionMismatch(data.cell_matrix.m(),n_independent_variables));
+      Assert(data.cell_matrix.n() == n_independent_variables, ExcDimensionMismatch(data.cell_matrix.n(),n_independent_variables));
 
-      // We now retrieve a set of degree-of-freedom values that
-      // have the operations that are performed with them tracked.
-      std::vector<ADNumberType> local_dof_values_ad (n_independent_variables);
-      for (unsigned int i=0; i<n_independent_variables; ++i)
-        local_dof_values_ad[i] = ADDerivType(n_independent_variables, i, local_dof_values[i]);
+      // An optional call to set the amount of memory to be allocated to
+      // storing taped data.
+      // If using a taped AD number then we would likely want to increase
+      // the buffer size from the default values as the expression for each
+      // residual component will likely be lengthy, and therefore memory
+      // intensive.
+      ad_helper.set_tape_buffer_sizes();
+      // If using a taped AD number, then at this point we would initiate
+      // taping of the expression for the energy for this FE type and
+      // material combination:
+      // Select a tape number to record to
+      const typename AD::Types<ADNumberType>::tape_index tape_index = 1;
+      // Indicate that we are about to start tracing the operations for
+      // function evaluation on the tape. If this tape has already been
+      // used (i.e. the operations are already recorded) then we
+      // (optionally) load the tape and reuse this data.
+      const bool is_recording
+        = ad_helper.start_recording_operations(tape_index);
 
-      // Compute all values, gradients etc. based on sensitive
-      // AD degree-of-freedom values.
-      scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
-        local_dof_values_ad,
-        scratch.solution_grads_u_total);
+      // The steps that follow in the recording phase are required for
+      // tapeless methods as well.
+      if (is_recording == true)
+      {
+        // This is the "recording" phase of the operations.
+        // First, we set the values for all DoFs.
+        ad_helper.register_dof_values(scratch.solution_total, data.local_dof_indices);
+        // Then we get the complete set of degree of freedom values as
+        // represented by auto-differentiable numbers. The operations
+        // performed with these variables are tracked by the AD library
+        // from this point until stop_recording_operations() is called.
+        const std::vector<ADNumberType> &dof_values_ad
+          = ad_helper.get_sensitive_dof_values();
 
-      // Next we compute the total potential energy of the element.
-      // This is defined as follows:
-      // Total energy = (internal - external) energies
-      // Note: Its important that this value is initialised (zero'd) correctly.
-      ADNumberType cell_energy_ad = ADNumberType(0.0);
-      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+        // Then we do some problem specific tasks, the first being to
+        // compute all values, gradients, etc. based on sensitive AD DoF
+        // values. Here we are fetching the displacement gradients at each
+        // quadrature point.
+        std::vector<Tensor<2, dim, ADNumberType>> Grad_u(
+          n_q_points, Tensor<2, dim, ADNumberType>());
+        scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
+          dof_values_ad, Grad_u);
+
+        // This variable stores the cell total energy.
+        // IMPORTANT: Note that it is hand-initialized with a value of
+        // zero. This is a highly recommended practise, as some AD numbers
+        // appear not to safely initialize their internal data structures.
+        ADNumberType energy_ad = ADNumberType(0.0);
+        // Compute the cell total energy = (internal + external) energies
+        for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
         {
-          const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
-          const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+          // Calculate the deformation gradient at this quadrature point
+          const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(Grad_u[q_point]);
+          Assert(numbers::value_is_greater_than(determinant(F), 0.0),
+                 ExcMessage("Negative determinant of the deformation "
+                            "gradient detected!"));
           const ADNumberType               det_F = determinant(F);
           const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
           const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
@@ -1980,23 +2029,34 @@ namespace Cook_Membrane
           // from our QPH history objects for the current quadrature point
           // and integrate its contribution to increment the total
           // cell energy.
-          cell_energy_ad += Psi * JxW;
+          energy_ad += Psi * JxW;
         }
 
-      // Compute derivatives of reverse-mode AD variables
-      ADNumberType::Gradcomp();
+        // Register the definition of the total cell energy
+        ad_helper.register_energy_functional(energy_ad);
+        // Indicate that we have completed tracing the operations onto
+        // the tape.
+        ad_helper.stop_recording_operations(false); // write_tapes_to_file
+      }
+      else
+      {
+        // This is the "tape reuse" phase of the operations.
+        // Here we will leverage the already traced operations that reside
+        // on a tape, and simply re-evaluate the tape at a different point
+        // to get the function values and their derivatives.
+        // Load the existing tape to be reused
+        ad_helper.activate_recorded_tape(tape_index);
+        // Set the new values of the independent variables where the
+        // recorded dependent functions are to be evaluated (and
+        // differentiated around).
+        ad_helper.set_dof_values(scratch.solution_total, data.local_dof_indices);
+      }
 
-      for (unsigned int I=0; I<n_independent_variables; ++I)
-        {
-          // This computes the adjoint df/dX_{i} [reverse-mode]
-          const ADDerivType residual_I = local_dof_values_ad[I].adj();
-          data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
-          for (unsigned int J=0; J<n_independent_variables; ++J)
-            {
-              // Compute the gradients of the residual entry [forward-mode]
-              data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
-            }
-        }
+      // Compute the residual values and their Jacobian at the
+      // evaluation point
+      ad_helper.compute_residual(data.cell_rhs);
+      data.cell_rhs *= -1.0; // RHS = - residual
+      ad_helper.compute_linearization(data.cell_matrix);
     }
 
   };
@@ -2262,31 +2322,79 @@ int main (int argc, char *argv[])
           Solid<dim,NumberType> solid_3d(parameters);
           solid_3d.run();
         }
-#ifdef ENABLE_SACADO_FORMULATION
+#ifdef ENABLE_AD_FORMULATION
       else if (parameters.automatic_differentiation_order == 1)
         {
           std::cout << "Assembly method: Residual computed manually; linearisation performed using AD." << std::endl;
 
-          // Allow multi-threading
-          Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-                                                              dealii::numbers::invalid_unsigned_int);
+#ifdef DEAL_II_WITH_TRILINOS
+          if (parameters.automatic_differentiation_library == "Sacado")
+          {
+            // Allow multi-threading
+            Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                                dealii::numbers::invalid_unsigned_int);
 
-          typedef Sacado::Fad::DFad<double> NumberType;
-          Solid<dim,NumberType> solid_3d(parameters);
-          solid_3d.run();
+            typedef Sacado::Fad::DFad<double> NumberType;
+            Solid<dim,NumberType> solid_3d(parameters);
+            solid_3d.run();
+          }
+          else
+#endif
+#ifdef DEAL_II_WITH_ADOLC
+          if (parameters.automatic_differentiation_library == "ADOL-C")
+          {
+            AssertThrow(false, ExcNotImplemented());
+            // ADOL-C is not thread-safe, so disable threading.
+            // Parallisation using MPI would be possible though.
+//            Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+//
+//            typedef Sacado::Fad::DFad<double> NumberType;
+//            Solid<dim,NumberType> solid_3d(parameters);
+//            solid_3d.run();
+          }
+          else
+#endif
+          {
+            AssertThrow(false, ExcMessage("The selected auto-differentiable library is not supported."));
+          }
         }
       else if (parameters.automatic_differentiation_order == 2)
         {
           std::cout << "Assembly method: Residual and linearisation computed using AD." << std::endl;
 
-          // Sacado Rad-Fad is not thread-safe, so disable threading.
-          // Parallisation using MPI would be possible though.
-          Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-                                                              1);
+#ifdef DEAL_II_WITH_TRILINOS
 
-          typedef Sacado::Rad::ADvar< Sacado::Fad::DFad<double> > NumberType;
-          Solid<dim,NumberType> solid_3d(parameters);
-          solid_3d.run();
+          if (parameters.automatic_differentiation_library == "Sacado")
+          {
+            // Sacado Rad-Fad is not thread-safe, so disable threading.
+            // Parallisation using MPI would be possible though.
+            Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+                                                                1);
+
+            typedef Sacado::Rad::ADvar< Sacado::Fad::DFad<double> > NumberType;
+            Solid<dim,NumberType> solid_3d(parameters);
+            solid_3d.run();
+          }
+          else
+#endif
+#ifdef DEAL_II_WITH_ADOLC
+          if (parameters.automatic_differentiation_library == "ADOL-C")
+          {
+            AssertThrow(false, ExcNotImplemented());
+//            // ADOL-C is not thread-safe, so disable threading.
+//            // Parallisation using MPI would be possible though.
+//            Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
+//                                                                1);
+//
+//            typedef Sacado::Rad::ADvar< Sacado::Fad::DFad<double> > NumberType;
+//            Solid<dim,NumberType> solid_3d(parameters);
+//            solid_3d.run();
+          }
+          else
+#endif
+          {
+            AssertThrow(false, ExcMessage("The selected auto-differentiable library is not supported."));
+          }
         }
 #endif
       else
