@@ -1826,65 +1826,107 @@ namespace Cook_Membrane
                                               ScratchData_ASM &scratch,
                                               PerTaskData_ASM &data)
     {
-      // Aliases for data referenced from the Solid class
+      const FEValuesExtractors::Vector &u_fe = data.solid->u_fe;
       const unsigned int &n_q_points = data.solid->n_q_points;
       const unsigned int &dofs_per_cell = data.solid->dofs_per_cell;
       const FESystem<dim> &fe = data.solid->fe;
       const unsigned int &u_dof = data.solid->u_dof;
-      const FEValuesExtractors::Vector &u_fe = data.solid->u_fe;
 
       data.reset();
       scratch.reset();
       scratch.fe_values_ref.reinit(cell);
       cell->get_dof_indices(data.local_dof_indices);
+      const unsigned int n_independent_variables =
+          data.local_dof_indices.size();
+      const unsigned int n_dependent_variables = dofs_per_cell;
 
       const std::vector<std::shared_ptr<const PointHistory<dim,ADNumberType> > > lqph =
-        const_cast<const Solid<dim,ADNumberType> *>(data.solid)->quadrature_point_history.get_data(cell);
+          data.solid->quadrature_point_history.get_data(cell);
       Assert(lqph.size() == n_q_points, ExcInternalError());
 
-      const unsigned int n_independent_variables = data.local_dof_indices.size();
-      std::vector<double> local_dof_values(n_independent_variables);
-      cell->get_dof_values(scratch.solution_total,
-                           local_dof_values.begin(),
-                           local_dof_values.end());
+      // Create and initialize an instance of the helper class.
+      ADHelper ad_helper(n_independent_variables, n_dependent_variables);
+      // Initialize the local data structures for assembly.
+      // This is also taken care of by the ADHelper, so this step could
+      // be skipped.
+      Assert(data.cell_rhs.size() == n_independent_variables, ExcDimensionMismatch(data.cell_rhs.size(),n_independent_variables));
+      Assert(data.cell_matrix.m() == n_independent_variables, ExcDimensionMismatch(data.cell_matrix.m(),n_independent_variables));
+      Assert(data.cell_matrix.n() == n_dependent_variables, ExcDimensionMismatch(data.cell_matrix.n(),n_dependent_variables));
 
-      // We now retrieve a set of degree-of-freedom values that
-      // have the operations that are performed with them tracked.
-      std::vector<ADNumberType> local_dof_values_ad (n_independent_variables);
-      for (unsigned int i=0; i<n_independent_variables; ++i)
-        local_dof_values_ad[i] = ADNumberType(n_independent_variables, i, local_dof_values[i]);
+      // An optional call to set the amount of memory to be allocated to
+      // storing taped data.
+      // If using a taped AD number then we would likely want to increase
+      // the buffer size from the default values as the expression for each
+      // residual component will likely be lengthy, and therefore memory
+      // intensive.
+      ad_helper.set_tape_buffer_sizes();
+      // If using a taped AD number, then at this point we would initiate
+      // taping of the expression for the energy for this FE type and
+      // material combination:
+      // Select a tape number to record to
+      const typename AD::Types<ADNumberType>::tape_index tape_index = 1;
+      // Indicate that we are about to start tracing the operations for
+      // function evaluation on the tape. If this tape has already been
+      // used (i.e. the operations are already recorded) then we
+      // (optionally) load the tape and reuse this data.
+      const bool is_recording
+        = ad_helper.start_recording_operations(tape_index);
 
-      // Compute all values, gradients etc. based on sensitive
-      // AD degree-of-freedom values.
-      scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
-        local_dof_values_ad,
-        scratch.solution_grads_u_total);
+      // The steps that follow in the recording phase are required for
+      // tapeless methods as well.
+      if (is_recording == true)
+      {
+        // This is the "recording" phase of the operations.
+        // First, we set the values for all DoFs.
+        ad_helper.register_dof_values(scratch.solution_total, data.local_dof_indices);
+        // Then we get the complete set of degree of freedom values as
+        // represented by auto-differentiable numbers. The operations
+        // performed with these variables are tracked by the AD library
+        // from this point until stop_recording_operations() is called.
+        const std::vector<ADNumberType> &dof_values_ad
+          = ad_helper.get_sensitive_dof_values();
 
-      // Accumulate the residual value for each degree of freedom.
-      // Note: Its important that the vectors is initialised (zero'd) correctly.
-      std::vector<ADNumberType> residual_ad (dofs_per_cell, ADNumberType(0.0));
-      for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
+        // Then we do some problem specific tasks, the first being to
+        // compute all values, gradients, etc. based on sensitive AD DoF
+        // values. Here we are fetching the displacement gradients at each
+        // quadrature point.
+        std::vector<Tensor<2, dim, ADNumberType>> Grad_u(
+          n_q_points, Tensor<2, dim, ADNumberType>());
+        scratch.fe_values_ref[u_fe].get_function_gradients_from_local_dof_values(
+          dof_values_ad, Grad_u);
+
+        // This variable stores the cell residual vector contributions.
+        // IMPORTANT: Note that each entry is hand-initialized with a value
+        // of zero. This is a highly recommended practise, as some AD
+        // numbers appear not to safely initialize their internal data
+        // structures.
+        std::vector<ADNumberType> residual_ad (
+          n_dependent_variables, ADNumberType(0.0));
+        for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
         {
-          const Tensor<2,dim,ADNumberType> &grad_u = scratch.solution_grads_u_total[q_point];
-          const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(grad_u);
+          // Calculate the deformation gradient at this quadrature point
+          const Tensor<2,dim,ADNumberType> F = Physics::Elasticity::Kinematics::F(Grad_u[q_point]);
+          Assert(numbers::value_is_greater_than(determinant(F), 0.0),
+                 ExcMessage("Negative determinant of the deformation "
+                            "gradient detected!"));
           const ADNumberType               det_F = determinant(F);
           const Tensor<2,dim,ADNumberType> F_bar = Physics::Elasticity::Kinematics::F_iso(F);
           const SymmetricTensor<2,dim,ADNumberType> b_bar = Physics::Elasticity::Kinematics::b(F_bar);
-          const Tensor<2,dim,ADNumberType> F_inv = invert(F);
           Assert(det_F > ADNumberType(0.0), ExcInternalError());
+          const Tensor<2,dim,ADNumberType> F_inv = invert(F);
 
           for (unsigned int k = 0; k < dofs_per_cell; ++k)
-            {
-              const unsigned int k_group = fe.system_to_base_index(k).first.first;
+          {
+            const unsigned int k_group = fe.system_to_base_index(k).first.first;
 
-              if (k_group == u_dof)
-                {
-                  scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point) * F_inv;
-                  scratch.symm_grad_Nx[q_point][k] = symmetrize(scratch.grad_Nx[q_point][k]);
-                }
-              else
-                Assert(k_group <= u_dof, ExcInternalError());
+            if (k_group == u_dof)
+            {
+              scratch.grad_Nx[q_point][k] = scratch.fe_values_ref[u_fe].gradient(k, q_point) * F_inv;
+              scratch.symm_grad_Nx[q_point][k] = symmetrize(scratch.grad_Nx[q_point][k]);
             }
+            else
+              Assert(k_group <= u_dof, ExcInternalError());
+          }
 
           const SymmetricTensor<2,dim,ADNumberType> tau = lqph[q_point]->get_tau(det_F,b_bar);
 
@@ -1894,26 +1936,41 @@ namespace Cook_Membrane
           const double JxW = scratch.fe_values_ref.JxW(q_point);
 
           for (unsigned int i = 0; i < dofs_per_cell; ++i)
-            {
-              const unsigned int i_group     = fe.system_to_base_index(i).first.first;
+          {
+            const unsigned int i_group     = fe.system_to_base_index(i).first.first;
 
-              if (i_group == u_dof)
-                residual_ad[i] += (symm_grad_Nx[i] * tau) * JxW;
-              else
-                Assert(i_group <= u_dof, ExcInternalError());
-            }
+            if (i_group == u_dof)
+              residual_ad[i] += (symm_grad_Nx[i] * tau) * JxW;
+            else
+              Assert(i_group <= u_dof, ExcInternalError());
+          }
         }
 
-      for (unsigned int I=0; I<n_independent_variables; ++I)
-        {
-          const ADNumberType &residual_I = residual_ad[I];
-          data.cell_rhs(I) = -residual_I.val(); // RHS = - residual
-          for (unsigned int J=0; J<n_independent_variables; ++J)
-            {
-              // Compute the gradients of the residual entry [forward-mode]
-              data.cell_matrix(I,J) = residual_I.dx(J); // linearisation_IJ
-            }
-        }
+        // Register the definition of the cell residual
+        ad_helper.register_residual_vector(residual_ad);
+        // Indicate that we have completed tracing the operations onto
+        // the tape.
+        ad_helper.stop_recording_operations(false); // write_tapes_to_file
+      }
+      else
+      {
+        // This is the "tape reuse" phase of the operations.
+        // Here we will leverage the already traced operations that reside
+        // on a tape, and simply re-evaluate the tape at a different point
+        // to get the function values and their derivatives.
+        // Load the existing tape to be reused
+        ad_helper.activate_recorded_tape(tape_index);
+        // Set the new values of the independent variables where the
+        // recorded dependent functions are to be evaluated (and
+        // differentiated around).
+        ad_helper.set_dof_values(scratch.solution_total, data.local_dof_indices);
+      }
+
+      // Compute the residual values and their Jacobian at the
+      // evaluation point
+      ad_helper.compute_residual(data.cell_rhs);
+      data.cell_rhs *= -1.0; // RHS = - residual
+      ad_helper.compute_linearization(data.cell_matrix);
     }
 
   };
@@ -1924,7 +1981,6 @@ namespace Cook_Membrane
   {
     using ADHelper = AD::ADHelperEnergyFunctional<AD::NumberTypes::sacado_rad_dfad,double>;
     using ADNumberType = typename ADHelper::ad_type;
-    using ADDerivType = typename AD::ADNumberTraits<ADNumberType>::derivative_type;
 
     using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
     using typename Assembler_Base<dim,ADNumberType>::PerTaskData_ASM;
