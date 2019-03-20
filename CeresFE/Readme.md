@@ -64,8 +64,8 @@ Two more code packages are necessary to run CeresFE:
 1. config++: https://sourceforge.net/projects/config/
 2. Armadillo: http://arma.sourceforge.net
 
-To run code
------------
+To run the code
+---------------
 
 After running cmake and compiling, run the executable with one argument, 
 which is the config file:
