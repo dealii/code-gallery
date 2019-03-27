@@ -91,24 +91,24 @@ namespace ForwardSimulator
     void solve();
     void output_results(const Vector<double> &coefficients) const;
 
-    Triangulation<dim> triangulation;
-    FE_Q<dim>          fe;
-    DoFHandler<dim>    dof_handler;
+    Triangulation<dim>        triangulation;
+    FE_Q<dim>                 fe;
+    DoFHandler<dim>           dof_handler;
 
-    FullMatrix<double>                        cell_matrix;
-    Vector<double>                            cell_rhs;
-    std::map<types::global_dof_index, double> boundary_values;
+    FullMatrix<double>        cell_matrix;
+    Vector<double>            cell_rhs;
+    std::map<types::global_dof_index,double> boundary_values;
 
-    SparsityPattern      sparsity_pattern;
-    SparseMatrix<double> system_matrix;
+    SparsityPattern           sparsity_pattern;
+    SparseMatrix<double>      system_matrix;
 
-    Vector<double> solution;
-    Vector<double> system_rhs;
+    Vector<double>            solution;
+    Vector<double>            system_rhs;
 
-    std::vector<Point<dim>> measurement_points;
+    std::vector<Point<dim>>   measurement_points;
 
-    SparsityPattern      measurement_sparsity;
-    SparseMatrix<double> measurement_matrix;
+    SparsityPattern           measurement_sparsity;
+    SparseMatrix<double>      measurement_matrix;
 
     TimerOutput  timer;
     unsigned int nth_evaluation;
@@ -177,11 +177,6 @@ namespace ForwardSimulator
       const unsigned int n_points_per_direction = 13;
       const double       dx = 1. / (n_points_per_direction + 1);
 
-      Vector<double>     weights(dof_handler.n_dofs());
-      FullMatrix<double> full_measurement_matrix(n_points_per_direction *
-                                                   n_points_per_direction,
-                                                 dof_handler.n_dofs());
-
       for (unsigned int x = 1; x <= n_points_per_direction; ++x)
         for (unsigned int y = 1; y <= n_points_per_direction; ++y)
           measurement_points.emplace_back(x * dx, y * dx);
@@ -191,6 +186,11 @@ namespace ForwardSimulator
       // which entries are nonzero. Later, the `copy_from()` function
       // calls build a sparsity pattern and a sparse matrix from
       // the dense matrix.
+      Vector<double>     weights(dof_handler.n_dofs());
+      FullMatrix<double> full_measurement_matrix(n_points_per_direction *
+                                                   n_points_per_direction,
+                                                 dof_handler.n_dofs());
+
       for (unsigned int index = 0; index < measurement_points.size(); ++index)
         {
           VectorTools::create_point_source_vector(dof_handler,
@@ -271,27 +271,24 @@ namespace ForwardSimulator
 
     const unsigned int dofs_per_cell = fe.dofs_per_cell;
 
-    FullMatrix<double> this_cell_matrix(dofs_per_cell, dofs_per_cell);
-
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
     for (const auto &cell : dof_handler.active_cell_iterators())
       {
-        this_cell_matrix = cell_matrix;
-        this_cell_matrix *= coefficients(cell->user_index());
-
-        cell->get_dof_indices(local_dof_indices);
+        const double coefficient = coefficients(cell->user_index());
+        
+        cell->get_dof_indices(local_dof_indices);        
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
           {
             for (unsigned int j = 0; j < dofs_per_cell; ++j)
               system_matrix.add(local_dof_indices[i],
                                 local_dof_indices[j],
-                                this_cell_matrix(i, j));
+                                coefficient * cell_matrix(i, j));
 
             system_rhs(local_dof_indices[i]) += cell_rhs(i);
           }
       }
-
+    
     MatrixTools::apply_boundary_values(boundary_values,
                                        system_matrix,
                                        solution,
@@ -353,8 +350,8 @@ namespace ForwardSimulator
   // and creating output for each one of them is surely more data
   // than you ever want to see!
   //
-  // At the end of the function, we output some timing information for
-  // the computations once for every 10,000 samples.
+  // At the end of the function, we output some timing information
+  // every 10,000 samples.
   template <int dim>
   Vector<double>
   PoissonSolver<dim>::evaluate(const Vector<double> &coefficients)
@@ -397,7 +394,7 @@ namespace ForwardSimulator
 // of the `Gaussian` class and standard deviation $\sigma$.
 //
 // For reasons of numerical accuracy, it is useful to not return the
-// actual likelihood, but it's logarithm. This is because these
+// actual likelihood, but its logarithm. This is because these
 // values can be very small, occasionally on the order of $e^{-100}$,
 // for which it becomes very difficult to compute accurate
 // values.
