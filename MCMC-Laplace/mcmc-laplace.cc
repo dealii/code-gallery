@@ -225,7 +225,7 @@ namespace ForwardSimulator
       cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
       cell_rhs.reinit(dofs_per_cell);
 
-      const QGauss<dim>  quadrature_formula(2);
+      const QGauss<dim>  quadrature_formula(fe.degree+1);
       const unsigned int n_q_points = quadrature_formula.size();
 
       FEValues<dim> fe_values(fe,
