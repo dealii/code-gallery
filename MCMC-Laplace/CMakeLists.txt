@@ -1,5 +1,5 @@
 ##
-#  CMake script for the CeresFE program:
+#  CMake script for the MCMC-laplace program:
 ##
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
