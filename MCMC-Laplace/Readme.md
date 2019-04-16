@@ -223,3 +223,17 @@ representation of this random seed, so that it is safe to run the same
 program multiple times at the same time in the same directory, with
 each running program writing a different sequence of samples into
 separate files.
+
+The end result of the program is a file that contains the
+samples. Each line has 66 entries:
+- The first entry is the logarithm of the (non-normalized) posterior
+  probability of the sample; because the posterior is only known up to
+  a normalization constant, the absolute value is not relevant, but
+  the relative values of different samples are informative.
+- The second entry is the number of samples accepted up to this
+  point. By counting how many lines one is into a given file (i.e.,
+  counting the total number of samples up to this point), this number
+  is useful to compute the acceptance rate of the Metropolis-Hastings
+  algorithm.
+- The remaining 64 numbers are the entries of the current sample
+  vector.
