@@ -270,7 +270,6 @@ namespace Cook_Membrane
     {
       std::string type_lin;
       double      tol_lin;
-      double      max_iterations_lin;
       std::string preconditioner_type;
       double      preconditioner_relaxation;
 
@@ -293,10 +292,6 @@ namespace Cook_Membrane
                           Patterns::Double(0.0),
                           "Linear solver residual (scaled by residual norm)");
 
-        prm.declare_entry("Max iteration multiplier", "1",
-                          Patterns::Double(0.0),
-                          "Linear solver iterations (multiples of the system matrix size)");
-
         prm.declare_entry("Preconditioner type", "ssor",
                           Patterns::Selection("jacobi|ssor"),
                           "Type of preconditioner");
@@ -314,7 +309,6 @@ namespace Cook_Membrane
       {
         type_lin = prm.get("Solver type");
         tol_lin = prm.get_double("Residual");
-        max_iterations_lin = prm.get_double("Max iteration multiplier");
         preconditioner_type = prm.get("Preconditioner type");
         preconditioner_relaxation = prm.get_double("Preconditioner relaxation");
       }
@@ -2256,8 +2250,7 @@ namespace Cook_Membrane
       std::cout << " SLV " << std::flush;
       if (parameters.type_lin == "CG")
         {
-          const int solver_its = tangent_matrix.block(u_dof, u_dof).m()
-                                 * parameters.max_iterations_lin;
+          const int solver_its = tangent_matrix.block(u_dof, u_dof).m();
           const double tol_sol = parameters.tol_lin
                                  * system_rhs.block(u_dof).l2_norm();
 

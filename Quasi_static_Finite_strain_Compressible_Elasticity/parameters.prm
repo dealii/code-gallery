@@ -5,7 +5,7 @@ subsection Assembly method
   # Order = 0: Both the residual and linearisation are computed manually.
   # Order = 1: The residual is computed manually but the linearisation is performed using AD.
   # Order = 2: Both the residual and linearisation are computed using AD. 
-  set Automatic differentiation order = 2
+  set Automatic differentiation order = 1
   
   # The automatic differentiation library to be used in the assembly of the linear system.
   # Options: None ; ADOL-C ; Sacado
@@ -31,9 +31,6 @@ end
 
 
 subsection Linear solver
-  # Linear solver iterations (multiples of the system matrix size)
-  set Max iteration multiplier  = 1
-
   # Linear solver residual (scaled by residual norm)
   set Residual                  = 1e-6
 
