@@ -1807,7 +1807,7 @@ namespace Cook_Membrane
   template <int dim>
   struct Assembler<dim,Sacado::Fad::DFad<double> > : Assembler_Base<dim,Sacado::Fad::DFad<double> >
   {
-    using ADHelper = AD::ADHelperResidualLinearization<AD::NumberTypes::sacado_dfad,double>;
+    using ADHelper = AD::ResidualLinearization<AD::NumberTypes::sacado_dfad,double>;
     using ADNumberType = typename ADHelper::ad_type;
 
     using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
@@ -1973,7 +1973,7 @@ namespace Cook_Membrane
   template <int dim>
   struct Assembler<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > > : Assembler_Base<dim,Sacado::Rad::ADvar<Sacado::Fad::DFad<double> > >
   {
-    using ADHelper = AD::ADHelperEnergyFunctional<AD::NumberTypes::sacado_rad_dfad,double>;
+    using ADHelper = AD::EnergyFunctional<AD::NumberTypes::sacado_rad_dfad,double>;
     using ADNumberType = typename ADHelper::ad_type;
 
     using typename Assembler_Base<dim,ADNumberType>::ScratchData_ASM;
