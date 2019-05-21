@@ -186,7 +186,7 @@ namespace Step22
     std::vector<double> cell_viscosities; // This vector is only used for output, not FE computations
     std::vector<PointHistory<dim> > quadrature_point_history;
 
-    ConstraintMatrix constraints;
+    AffineConstraints<double> constraints;
 
     BlockSparsityPattern sparsity_pattern;
     BlockSparseMatrix<double> system_matrix;
