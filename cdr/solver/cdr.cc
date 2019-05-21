@@ -232,9 +232,12 @@ void CDRProblem<dim>::time_iterate()
 template<int dim>
 void CDRProblem<dim>::refine_mesh()
 {
+  using FunctionMap =
+    std::map<types::boundary_id, const Function<dim> *>;
+
   Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
   KellyErrorEstimator<dim>::estimate
-  (dof_handler, QGauss<dim - 1>(fe.degree + 1), typename FunctionMap<dim>::type(),
+  (dof_handler, QGauss<dim - 1>(fe.degree + 1), FunctionMap(),
    locally_relevant_solution, estimated_error_per_cell);
 
   // This solver uses a crude refinement strategy where cells with relatively
