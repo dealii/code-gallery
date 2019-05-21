@@ -10,7 +10,7 @@
 #include <deal.II/grid/manifold_lib.h>
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II/numerics/error_estimator.h>
 

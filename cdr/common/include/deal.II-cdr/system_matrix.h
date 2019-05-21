@@ -4,7 +4,7 @@
 
 #include <deal.II/dofs/dof_handler.h>
 
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II-cdr/parameters.h>
 
