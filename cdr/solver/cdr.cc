@@ -69,7 +69,7 @@ private:
   IndexSet locally_owned_dofs;
   IndexSet locally_relevant_dofs;
 
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
   bool first_run;
 
   // As is usual in parallel programs, I keep two copies of parts of the

@@ -30,7 +30,7 @@ namespace CDR
    const std::function<double(double, const Point<dim>)> &forcing_function,
    const CDR::Parameters                                 &parameters,
    const VectorType                                      &previous_solution,
-   const ConstraintMatrix                                &constraints,
+   const AffineConstraints<double>                       &constraints,
    const double                                           current_time,
    VectorType                                            &system_rhs)
   {

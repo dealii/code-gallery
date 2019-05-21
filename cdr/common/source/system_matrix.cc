@@ -38,7 +38,7 @@ namespace CDR
    const std::function<Tensor<1, 2>(const Point<2>)> &convection_function,
    const CDR::Parameters                             &parameters,
    const double                                       time_step,
-   const ConstraintMatrix                            &constraints,
+   const AffineConstraints<double>                   &constraints,
    SparseMatrix<double>                              &system_matrix);
 
   template
@@ -48,7 +48,7 @@ namespace CDR
    const std::function<Tensor<1, 3>(const Point<3>)> &convection_function,
    const CDR::Parameters                             &parameters,
    const double                                       time_step,
-   const ConstraintMatrix                            &constraints,
+   const AffineConstraints<double>                   &constraints,
    SparseMatrix<double>                              &system_matrix);
 
   template
@@ -76,7 +76,7 @@ namespace CDR
    const std::function<Tensor<1, 2>(const Point<2>)> &convection_function,
    const CDR::Parameters                             &parameters,
    const double                                       time_step,
-   const ConstraintMatrix                            &constraints,
+   const AffineConstraints<double>                   &constraints,
    TrilinosWrappers::SparseMatrix                    &system_matrix);
 
   template
@@ -86,6 +86,6 @@ namespace CDR
    const std::function<Tensor<1, 3>(const Point<3>)> &convection_function,
    const CDR::Parameters                             &parameters,
    const double                                       time_step,
-   const ConstraintMatrix                            &constraints,
+   const AffineConstraints<double>                   &constraints,
    TrilinosWrappers::SparseMatrix                    &system_matrix);
 }
