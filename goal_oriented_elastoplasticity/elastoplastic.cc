@@ -4900,9 +4900,11 @@ namespace ElastoPlastic
     estimated_error_per_cell.reinit (triangulation.n_active_cells());
     if (error_estimation_strategy == ErrorEstimationStrategy::kelly_error)
       {
+        using FunctionMap = std::map<types::boundary_id, const Function<dim> *>;
+
         KellyErrorEstimator<dim>::estimate(dof_handler,
                                            QGauss<dim - 1>(fe.degree + 2),
-                                           typename FunctionMap<dim>::type(),
+                                           FunctionMap(),
                                            tmp_solution,
                                            estimated_error_per_cell);
 
