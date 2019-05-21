@@ -42,7 +42,7 @@
 #include <deal.II/lac/block_sparsity_pattern.h>
 #include <deal.II/lac/solver_bicgstab.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/lac/trilinos_block_sparse_matrix.h>
 #include <deal.II/lac/trilinos_vector.h>
@@ -2394,27 +2394,27 @@ namespace ElastoPlastic
     void solve ();
     void output_results ();
 
-    const FESystem<dim>     &fe;
-    DoFHandler<dim>         dof_handler;
-    const Vector<double>    solution;
+    const FESystem<dim>       &fe;
+    DoFHandler<dim>           dof_handler;
+    const Vector<double>      solution;
 
-    const unsigned int      fe_degree;
+    const unsigned int        fe_degree;
 
 
-    const unsigned int      fe_degree_dual;
-    FESystem<dim>           fe_dual;
-    DoFHandler<dim>         dof_handler_dual;
+    const unsigned int        fe_degree_dual;
+    FESystem<dim>             fe_dual;
+    DoFHandler<dim>           dof_handler_dual;
 
-    const QGauss<dim>       quadrature_formula;
-    const QGauss<dim - 1>   face_quadrature_formula;
+    const QGauss<dim>         quadrature_formula;
+    const QGauss<dim - 1>     face_quadrature_formula;
 
-    ConstraintMatrix        constraints_hanging_nodes_dual;
-    ConstraintMatrix        constraints_dirichlet_and_hanging_nodes_dual;
+    AffineConstraints<double> constraints_hanging_nodes_dual;
+    AffineConstraints<double> constraints_dirichlet_and_hanging_nodes_dual;
 
-    SparsityPattern         sparsity_pattern_dual;
-    SparseMatrix<double>    system_matrix_dual;
-    Vector<double>          system_rhs_dual;
-    Vector<double>          solution_dual;
+    SparsityPattern           sparsity_pattern_dual;
+    SparseMatrix<double>      system_matrix_dual;
+    Vector<double>            system_rhs_dual;
+    Vector<double>            solution_dual;
 
     const ConstitutiveLaw<dim> constitutive_law;
 
@@ -2754,7 +2754,7 @@ namespace ElastoPlastic
                           constraints_dirichlet_and_hanging_nodes_dual,
                           primal_solution);
 
-    ConstraintMatrix constraints_hanging_nodes;
+    AffineConstraints<double> constraints_hanging_nodes;
     DoFTools::make_hanging_node_constraints (dof_handler,
                                              constraints_hanging_nodes);
     constraints_hanging_nodes.close();
@@ -3176,7 +3176,7 @@ namespace ElastoPlastic
   // for parallel distributed computing.
   // To deal with hanging nodes makes
   // life a bit more complicated since
-  // we need another ConstraintMatrix now.
+  // we need another AffineConstraints object now.
   // We create a Newton method for the
   // active set method for the contact
   // situation and to handle the nonlinear
@@ -3246,7 +3246,7 @@ namespace ElastoPlastic
     // also step-40 and the @ref distributed documentation module) as
     // well as a variety of constraints: those imposed by hanging nodes,
     // by Dirichlet boundary conditions, and by the active set of
-    // contact nodes. Of the three ConstraintMatrix variables defined
+    // contact nodes. Of the three AffineConstraints objects defined
     // here, the first only contains hanging node constraints, the
     // second also those associated with Dirichlet boundary conditions,
     // and the third these plus the contact constraints.
@@ -3274,8 +3274,8 @@ namespace ElastoPlastic
     IndexSet           locally_owned_dofs;
     IndexSet           locally_relevant_dofs;
 
-    ConstraintMatrix   constraints_hanging_nodes;
-    ConstraintMatrix   constraints_dirichlet_and_hanging_nodes;
+    AffineConstraints<double> constraints_hanging_nodes;
+    AffineConstraints<double> constraints_dirichlet_and_hanging_nodes;
 
     Vector<float>      fraction_of_plastic_q_points_per_cell;
 
@@ -4232,7 +4232,7 @@ namespace ElastoPlastic
   // right hand side and Newton matrix. It looks fairly innocent because the
   // heavy lifting happens in the call to
   // <code>ConstitutiveLaw::get_linearized_stress_strain_tensors()</code> and in
-  // particular in ConstraintMatrix::distribute_local_to_global(), using the
+  // particular in AffineConstraints<double>::distribute_local_to_global(), using the
   // constraints we have previously computed.
   template <int dim>
   void
@@ -4602,7 +4602,7 @@ namespace ElastoPlastic
   // mostly it is just setup then solve. Among the complications are:
   //
   // - For the hanging nodes we have to apply
-  //   the ConstraintMatrix::set_zero function to newton_rhs.
+  //   the AffineConstraints<double>::set_zero function to newton_rhs.
   //   This is necessary if a hanging node with solution value $x_0$
   //   has one neighbor with value $x_1$ which is in contact with the
   //   obstacle and one neighbor $x_2$ which is not in contact. Because
