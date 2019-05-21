@@ -763,10 +763,12 @@ namespace nsp
   template <int dim>
   void ElastoplasticTorsion<dim>::refine_mesh ()
   {
+    using FunctionMap = std::map<types::boundary_id, const Function<dim> *>;
+
     Vector<float> estimated_error_per_cell (triangulation.n_active_cells());
     KellyErrorEstimator<dim>::estimate (dof_handler,
                                         QGauss<dim-1>(3),
-                                        typename FunctionMap<dim>::type(),
+                                        FunctionMap(),
                                         present_solution,
                                         estimated_error_per_cell);
 
