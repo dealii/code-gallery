@@ -62,7 +62,7 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 
 #include <deal.II/grid/tria.h>
@@ -345,18 +345,18 @@ namespace nsp
 
 
     ParameterHandler &prm;
-    Triangulation<dim>   triangulation;
-    DoFHandler<dim>      dof_handler;
-    ConstraintMatrix     hanging_node_constraints;
-    SparsityPattern      sparsity_pattern;
+    Triangulation<dim> triangulation;
+    DoFHandler<dim> dof_handler;
+    AffineConstraints<double> hanging_node_constraints;
+    SparsityPattern sparsity_pattern;
     SparseMatrix<double> system_matrix;
     ConvergenceTable convergence_table;
     ConvergenceTable dual_convergence_table;
-    Vector<double>       present_solution;
-    Vector<double>       newton_update;
-    Vector<double>       system_rhs;
-    Vector<double>       grad_norm;
-    Vector<double>        lambda;
+    Vector<double> present_solution;
+    Vector<double> newton_update;
+    Vector<double> system_rhs;
+    Vector<double> grad_norm;
+    Vector<double> lambda;
 
 
     double step_length,phi_zero,phi_alpha,phip,phip_zero;
