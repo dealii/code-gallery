@@ -1995,12 +1995,13 @@ namespace Step22
   template<int dim>
   void StokesProblem<dim>::refine_mesh()
   {
+    using FunctionMap = std::map<types::boundary_id, const Function<dim> *>;
     Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
 
     std::vector<bool> component_mask(dim + 1, false);
     component_mask[dim] = true;
     KellyErrorEstimator<dim>::estimate(dof_handler, QGauss<dim - 1>(degree + 1),
-                                       typename FunctionMap<dim>::type(), solution,
+                                       FunctionMap(), solution,
                                        estimated_error_per_cell, component_mask);
 
     GridRefinement::refine_and_coarsen_fixed_number(triangulation,
