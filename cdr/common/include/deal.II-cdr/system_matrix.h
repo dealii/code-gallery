@@ -4,7 +4,7 @@
 
 #include <deal.II/dofs/dof_handler.h>
 
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II-cdr/parameters.h>
 
@@ -34,7 +34,7 @@ namespace CDR
    const std::function<Tensor<1, dim>(const Point<dim>)> &convection_function,
    const CDR::Parameters                                 &parameters,
    const double                                           time_step,
-   const ConstraintMatrix                                &constraints,
+   const AffineConstraints<double>                       &constraints,
    MatrixType                                            &system_matrix);
 }
 #endif

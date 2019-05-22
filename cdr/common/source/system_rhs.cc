@@ -19,7 +19,7 @@ namespace CDR
    const std::function<double(double, const Point<2>)> &forcing_function,
    const CDR::Parameters                               &parameters,
    const Vector<double>                                &previous_solution,
-   const ConstraintMatrix                              &constraints,
+   const AffineConstraints<double>                     &constraints,
    const double                                         current_time,
    Vector<double>                                      &system_rhs);
 
@@ -31,7 +31,7 @@ namespace CDR
    const std::function<double(double, const Point<3>)> &forcing_function,
    const CDR::Parameters                               &parameters,
    const Vector<double>                                &previous_solution,
-   const ConstraintMatrix                              &constraints,
+   const AffineConstraints<double>                     &constraints,
    const double                                         current_time,
    Vector<double>                                      &system_rhs);
 
@@ -43,7 +43,7 @@ namespace CDR
    const std::function<double(double, const Point<2>)> &forcing_function,
    const CDR::Parameters                               &parameters,
    const TrilinosWrappers::MPI::Vector                 &previous_solution,
-   const ConstraintMatrix                              &constraints,
+   const AffineConstraints<double>                     &constraints,
    const double                                         current_time,
    TrilinosWrappers::MPI::Vector                       &system_rhs);
 
@@ -55,7 +55,7 @@ namespace CDR
    const std::function<double(double, const Point<3>)> &forcing_function,
    const CDR::Parameters                               &parameters,
    const TrilinosWrappers::MPI::Vector                 &previous_solution,
-   const ConstraintMatrix                              &constraints,
+   const AffineConstraints<double>                     &constraints,
    const double                                         current_time,
    TrilinosWrappers::MPI::Vector                       &system_rhs);
 }

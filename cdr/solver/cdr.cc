@@ -10,7 +10,7 @@
 #include <deal.II/grid/manifold_lib.h>
 
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include <deal.II/numerics/error_estimator.h>
 
@@ -69,7 +69,7 @@ private:
   IndexSet locally_owned_dofs;
   IndexSet locally_relevant_dofs;
 
-  ConstraintMatrix constraints;
+  AffineConstraints<double> constraints;
   bool first_run;
 
   // As is usual in parallel programs, I keep two copies of parts of the
@@ -232,9 +232,12 @@ void CDRProblem<dim>::time_iterate()
 template<int dim>
 void CDRProblem<dim>::refine_mesh()
 {
+  using FunctionMap =
+    std::map<types::boundary_id, const Function<dim> *>;
+
   Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
   KellyErrorEstimator<dim>::estimate
-  (dof_handler, QGauss<dim - 1>(fe.degree + 1), typename FunctionMap<dim>::type(),
+  (dof_handler, QGauss<dim - 1>(fe.degree + 1), FunctionMap(),
    locally_relevant_solution, estimated_error_per_cell);
 
   // This solver uses a crude refinement strategy where cells with relatively
