@@ -137,7 +137,7 @@ private:
   FESystem<dim>                                   fe;
   DoFHandler<dim>                                 dof_handler;
 
-  ConstraintMatrix                                constraints;
+  AffineConstraints<double>                       constraints;
 
   SparsityPattern                                 sparsity_pattern;
 
