@@ -65,7 +65,7 @@
 #include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_selector.h>
-#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/lac/block_sparsity_pattern.h>
 
@@ -136,60 +136,63 @@ using namespace dealii;
 
 struct Parameters
 {
-	   // Geometry file
-	    static const std::string mesh_file;
+	// Formulation
+	static const bool use_3_Field = true;
 
-		// Boundary ids
-		static constexpr unsigned int boundary_id_bottom = 0;
-		static constexpr unsigned int boundary_id_top = 1;
-		static constexpr unsigned int boundary_id_inner_radius = 2;
-		static constexpr unsigned int boundary_id_outer_radius = 3;
-		static constexpr unsigned int boundary_id_cut_bottom = 4;
-		static constexpr unsigned int boundary_id_cut_left = 5;
-		static constexpr unsigned int boundary_id_frame = 6;
-		static constexpr unsigned int boundary_id_outlet_inner_radius = 7;
-		static constexpr unsigned int boundary_id_outlet_outer_radius = 8;
-		static constexpr unsigned int boundary_id_cut_outlet = 9;
+	// Geometry file
+	static const std::string mesh_file;
 
-		// Boundary conditions
-		static constexpr double Temperature_Difference = 0.0;
+	// Boundary ids
+	static constexpr unsigned int boundary_id_bottom = 0;
+	static constexpr unsigned int boundary_id_top = 1;
+	static constexpr unsigned int boundary_id_inner_radius = 2;
+	static constexpr unsigned int boundary_id_outer_radius = 3;
+	static constexpr unsigned int boundary_id_cut_bottom = 4;
+	static constexpr unsigned int boundary_id_cut_left = 5;
+	static constexpr unsigned int boundary_id_frame = 6;
+	static constexpr unsigned int boundary_id_outlet_inner_radius = 7;
+	static constexpr unsigned int boundary_id_outlet_outer_radius = 8;
+	static constexpr unsigned int boundary_id_cut_outlet = 9;
 
-		//    Potential difference in MV
-		static constexpr double potential_difference = 0.04; // 0.1
+	// Boundary conditions
+	static constexpr double Temperature_Difference = 0.0;
 
-		// Time
-		static constexpr double dt = 0.1;
-		static constexpr unsigned int n_timesteps = 10;
+	//    Potential difference in MV
+	static constexpr double potential_difference = 0.04; // 0.1
 
-		//J-Ps additions
+	// Time
+	static constexpr double dt = 0.1;
+	static constexpr unsigned int n_timesteps = 10;
 
-		static constexpr double time_end = 50.0e-3;
-		static constexpr double time_delta = time_end/(static_cast<double>(n_timesteps));
+	//J-Ps additions
 
-		// Refinement
-		static constexpr unsigned int n_global_refinements = 0;
-		static constexpr bool perform_AMR = false;
-		static constexpr unsigned int n_ts_per_refinement = 10;
-		static constexpr unsigned int max_grid_level = 5;
-		static constexpr double frac_refine = 0.3;
-		static constexpr double frac_coarsen = 0.03;
+	static constexpr double time_end = 50.0e-3;
+	static constexpr double time_delta = time_end/(static_cast<double>(n_timesteps));
 
-		// Finite element
-		static constexpr unsigned int poly_order = 1;
+	// Refinement
+	static constexpr unsigned int n_global_refinements = 0;
+	static constexpr bool perform_AMR = false;
+	static constexpr unsigned int n_ts_per_refinement = 10;
+	static constexpr unsigned int max_grid_level = 5;
+	static constexpr double frac_refine = 0.3;
+	static constexpr double frac_coarsen = 0.03;
 
-		// Nonlinear solver
-		static constexpr unsigned int max_newton_iterations = 20;
-		static constexpr double max_res_T_norm = 1e-6;
-		static constexpr double max_res_uV_norm = 1e-9;
-		static constexpr double max_res_abs = 1e-6;
+	// Finite element
+	static constexpr unsigned int poly_order = 1;
 
-		// Linear solver: Thermal
-		static const std::string solver_type_T;
-		static constexpr double tol_rel_T = 1e-6;
+	// Nonlinear solver
+	static constexpr unsigned int max_newton_iterations = 20;
+	static constexpr double max_res_T_norm = 1e-6;
+	static constexpr double max_res_uV_norm = 1e-9;
+	static constexpr double max_res_abs = 1e-6;
 
-		// Linear solver: Electro-mechanical
-		static const std::string solver_type_EM;
-		static constexpr double tol_rel_EM = 1e-6;
+	// Linear solver: Thermal
+	static const std::string solver_type_T;
+	static constexpr double tol_rel_T = 1e-6;
+
+	// Linear solver: Electro-mechanical
+	static const std::string solver_type_EM;
+	static constexpr double tol_rel_EM = 1e-6;
 };
 const std::string Parameters::mesh_file = "Pump_um_coarse.inp";
 const std::string Parameters::solver_type_T = "Direct";
@@ -241,7 +244,8 @@ struct Values_ad
 			const double theta,
 			const ad_type J_tilde,
 			const ad_type p,
-			const double alpha)
+			const double alpha,
+			const double c_2)
 	: F (F),
 	  E (E),
 	  Grad_T(Grad_T),
@@ -249,6 +253,7 @@ struct Values_ad
 	  J_tilde(J_tilde),
 	  p(p),
 	  alpha(alpha),
+	  c_2(c_2),
 
 	  C (symmetrize(transpose(F)*F)),
 	  C_inv (symmetrize(invert(static_cast<Tensor<2,dim,ad_type> >(C)))),
@@ -288,6 +293,7 @@ struct Values_ad
 	const ad_type J_tilde;
 	const ad_type p;
 	const double alpha;
+	const double c_2;
 
 	// Commonly used elastic quantities
 	const SymmetricTensor<2,dim,ad_type> C; // Right Cauchy-Green deformation tensor
@@ -332,6 +338,13 @@ struct Values_ad
 
 	SymmetricTensor<2,dim,ad_type>
 	dI1_bar_dC_bar () const
+	{
+		return unit_symmetric_tensor<dim,ad_type>();
+	}
+
+
+	SymmetricTensor<2,dim,ad_type>
+	dI1_EM_bar_dC_EM_bar () const
 	{
 		return unit_symmetric_tensor<dim,ad_type>();
 	}
@@ -434,8 +447,9 @@ struct CM_Base_ad
 			const double theta,
 			const ad_type J_tilde,
 			const ad_type p,
-			const double alpha)
-	: values_ad (F,E,Grad_T,theta,J_tilde,p,alpha)
+			const double alpha,
+			const double c_2)
+	: values_ad (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
 	{}
 
 	virtual ~CM_Base_ad () {}
@@ -448,24 +462,36 @@ struct CM_Base_ad
 
 	// Second Piola-Kirchhoff stress tensor
 	inline SymmetricTensor<2,dim,ad_type>
-	get_S () const
+	get_S_3Field () const
 	{
 		const double theta_ratio = values_ad.theta/293.0;
 		const ad_type &J_theta = this->values_ad.J_theta;
-		return ad_type(std::pow(J_theta ,-2.0/dim))*(get_S_iso()+2*theta_ratio*get_dPsi_p_dC_EM());
+		return ad_type(std::pow(J_theta ,-2.0/dim))*(get_S_iso_3Field()+2*theta_ratio*get_dPsi_p_dC_EM());
+	}
+
+	inline SymmetricTensor<2,dim,ad_type>
+	get_S_1Field () const
+	{
+		return (get_S_iso_1Field()+get_S_vol());
 	}
 
 
 	inline SymmetricTensor<2,dim,ad_type>
-	get_S_iso () const
+	get_S_iso_3Field () const
 	{
 		return 2.0*get_dPsi_iso_dC_EM();
 	}
 
 	inline SymmetricTensor<2,dim,ad_type>
+	get_S_iso_1Field () const
+	{
+		return 2.0*get_dPsi_iso_dC();
+	}
+
+	inline SymmetricTensor<2,dim,ad_type>
 	get_S_vol () const
 	{
-		return 2.0*get_dPsi_vol_dC_EM();
+		return 2.0*get_dPsi_vol_dC();
 	}
 
 	// Referential electric displacement vector
@@ -505,16 +531,36 @@ protected:
 	// \Psi_{\text{vol}}(\widetilde{J})}{\partial \widetilde{J}}$
 	ad_type
 	get_dW_vol_elastic_dJ (const double kappa,
-			const double /*g_0*/) const
+			const double g_0) const
 	{
 		const ad_type &J = values_ad.J;
 		return (0.5*(kappa)*(J-1/J));
 
 	}
 
+	// Derivative of the volumetric free energy with respect to
+	// $\widetilde{J}$ return $\frac{\partial
+	// \Psi_{\text{vol}}(\widetilde{J})}{\partial \widetilde{J}}$
+	ad_type
+	get_dW_J_dJ (const double kappa,
+			const double g_0) const
+	{
+		const ad_type &J = values_ad.J;
+		return (0.5*(kappa)*(J-1/J));
+
+	}
+
+	SymmetricTensor<2,dim,ad_type>
+	get_dW_J_dC (const double kappa,
+			const double g_0) const
+			{
+		// See Wriggers p46 eqs. 3.123, 3.124; Holzapfel p230
+		return get_dW_J_dJ(kappa, g_0)*this->values_ad.dJ_dC();
+			}
+
 	ad_type
 	get_dW_vol_elastic_dJ_EM (const double kappa,
-			const double /*g_0*/) const
+			const double g_0) const
 	{
 		const ad_type &J_EM = values_ad.J_EM;
 		return (0.5*(kappa)*(J_EM-1/J_EM));
@@ -578,23 +624,228 @@ protected:
 
 };
 
+//
+//template<int dim>
+//struct CM_Incompressible_Uncoupled_8Chain_ad : public CM_Base_ad<dim>
+//{
+//	typedef Sacado::Fad::DFad<double> ad_type;
+//	CM_Incompressible_Uncoupled_8Chain_ad  (const Tensor<2,dim,ad_type> & F,
+//			const Tensor<1,dim,ad_type> & E,
+//			const Tensor<1,dim> & Grad_T,
+//			const double theta,
+//			const ad_type J_tilde,
+//			const ad_type p,
+//			const double alpha,
+//			const double c_2)
+//	: CM_Base_ad<dim> (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
+//	  {}
+//
+//
+//	virtual ~CM_Incompressible_Uncoupled_8Chain_ad () {}
+//
+//protected:
+//
+//	virtual SymmetricTensor<2,dim,ad_type>
+//	get_dPsi_iso_dC () const
+//	{
+//
+//		double mu=Material::Coefficients::g_0;
+//		double N=Material::Coefficients::N;
+//		double c_2=this->values_ad.c_2;
+//
+//		return theta_ratio()*(get_dW_FE_iso_elastic_dC(mu,N,c_2));
+//	}
+//
+//	virtual SymmetricTensor<2,dim,ad_type>
+//	get_dPsi_iso_dC_EM () const
+//	{
+//
+//
+//		double mu=Material::Coefficients::g_0;
+//		double N=Material::Coefficients::N;
+//		double c_2=this->values_ad.c_2;
+//
+//		return theta_ratio()*(get_dW_FE_iso_elastic_dC_EM(mu,N,c_2));
+//	}
+//
+//
+//	virtual SymmetricTensor<2,dim,ad_type>
+//	get_dPsi_vol_dC () const
+//	{
+//		return theta_ratio()*this->get_dW_J_dC(Material::Coefficients::kappa, Material::Coefficients::mu)
+//				- theta_difference()*get_dM_J_dC(Coefficients::kappa,Coefficients::alpha); // Thermal dilatory response M = M(J);
+//	}
+//
+//	virtual SymmetricTensor<2,dim,ad_type>
+//	get_dPsi_vol_dC_EM () const
+//	{
+//		return unit_symmetric_tensor<dim,ad_type>();
+//	}
+//
+//	inline SymmetricTensor<2,dim,ad_type>
+//	get_dW_FE_iso_elastic_dC (const double g_0,
+//			const double N,
+//			const double c_2) const
+//			{
+//
+////		const ad_type &lambda=get_lambda();
+////
+////		return	ad_type((0.5*g_0/dim)*((dim*N-lambda*lambda)/(N-lambda*lambda)))*
+////				(unit_symmetric_tensor<dim,ad_type>());
+//		const SymmetricTensor<2,dim,ad_type> &C_inv = this->values_ad.C_inv;
+//		 return ad_type(g_0)*(unit_symmetric_tensor<dim,ad_type>()-C_inv);
+//
+//
+//			}
+//
+//	inline SymmetricTensor<2,dim,ad_type>
+//	get_dW_FE_iso_elastic_dC_EM (const double g_0,
+//			const double N,
+//			const double c_2) const
+//			{
+//
+//		const SymmetricTensor<4,dim,ad_type> P= get_Dev_P(this->values_ad.F_EM);//get_dC_bar_dC();
+//		const SymmetricTensor<2,dim,ad_type> dW_FE_dC_EM_bar=get_dW_FE_iso_elastic_dC_EM_bar(g_0,N,c_2);
+//
+//		return (dW_FE_dC_EM_bar*P);
+//
+//
+//			}
+//
+//	inline SymmetricTensor<2,dim,ad_type>
+//	get_dW_FE_iso_elastic_dC_bar (const double g_0,
+//			const double N,
+//			const double c_2) const
+//			{
+////		const ad_type &lambda_bar=get_lambda_bar();
+////
+////		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_bar*lambda_bar)/(N-lambda_bar*lambda_bar)))*
+////				(unit_symmetric_tensor<dim,ad_type>());
+//
+//		 return g_0 /2.0*this->values_ad.dI1_bar_dC_bar();
+//
+//			}
+//
+//	inline SymmetricTensor<2,dim,ad_type>
+//	get_dW_FE_iso_elastic_dC_EM_bar (const double g_0,
+//			const double N,
+//			const double c_2) const
+//			{
+////		const ad_type &lambda_bar=get_lambda_bar();
+////
+////		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_bar*lambda_bar)/(N-lambda_bar*lambda_bar)))*
+////				(unit_symmetric_tensor<dim,ad_type>());
+//
+//		 return g_0 /2.0*this->values_ad.dI1_EM_bar_dC_EM_bar();
+//
+//			}
+//
+//	inline ad_type
+//	get_dM_J_dJ (const double kappa, const double alpha) const
+//	{
+//		const ad_type &J = this->values_ad.J;
+//		return dim*kappa*alpha/J;
+//	}
+//
+//	SymmetricTensor<2,dim,ad_type>
+//	get_dM_J_dC (const double kappa,const double alpha) const
+//	{
+//		// See Wriggers p46 eqs. 3.123, 3.124; Holzapfel p230
+//		return get_dM_J_dJ(kappa, alpha)*this->values_ad.dJ_dC();
+//	}
+//
+//
+//	inline SymmetricTensor<4, dim, ad_type>
+//	get_Dev_P (const Tensor<2, dim, ad_type> &F) const
+//	{
+//		const ad_type det_F = determinant(F);
+//		Assert(det_F > ad_type(0.0),
+//				ExcMessage("Deformation gradient has a negative determinant."));
+//		const Tensor<2,dim,ad_type> C_ns = transpose(F)*F;
+//		const SymmetricTensor<2,dim,ad_type> C = symmetrize(C_ns);
+//		const SymmetricTensor<2,dim,ad_type> C_inv = symmetrize(invert(C_ns));
+//
+//		// See Wriggers p46 equ 3.125 (but transpose indices)
+//		SymmetricTensor<4,dim,ad_type> Dev_P = outer_product(C,C_inv);  // Dev_P = C_x_C_inv
+//		Dev_P /= -dim;                                                  // Dev_P = -[1/dim]C_x_C_inv
+//		Dev_P += Physics::Elasticity::StandardTensors< dim >::S;        // Dev_P = S - [1/dim]C_x_C_inv
+//		Dev_P *= ad_type(std::pow(det_F, -2.0/dim));                    // Dev_P = J^{-2/dim} [S - [1/dim]C_x_C_inv]
+//
+//		return Dev_P;
+//	}
+//
+//
+//	// --- Electric contributions ---
+//	virtual Tensor<1,dim,ad_type>
+//	get_dPsi_dE () const
+//	{
+//		double c_1=Material::Coefficients::c_1;
+//		double c_2=Material::Coefficients::c_2;
+//
+//
+//		return get_dW_iso_elastic_dE(c_1,c_2) ;
+//	}
+//
+//	inline Tensor<1,dim,ad_type>
+//	get_dW_iso_elastic_dE (const double c_1,
+//			const double c_2) const
+//			{
+//		return c_1*this->values_ad.dI4_dE();
+//			}
+//
+//	ad_type
+//	get_lambda() const
+//	{
+//		const ad_type &I1=this->values_ad.I1;
+//		return std::sqrt(I1/dim);
+//	}
+//
+//	ad_type
+//	get_lambda_bar() const
+//	{
+//		const ad_type &I1_bar=this->values_ad.I1_bar;
+//		return std::sqrt(I1_bar/dim);
+//	}
+//
+//	ad_type
+//	get_lambda_EM_bar() const
+//	{
+//		const ad_type &I1_EM_bar=this->values_ad.I1_EM_bar;
+//		return std::sqrt(I1_EM_bar/dim);
+//	}
+//
+//	double
+//	theta_ratio () const
+//	{
+//		return this->values_ad.theta/Material::Coefficients::theta_0;
+//	}
+//
+//	double
+//	theta_difference () const
+//	{
+//		return this->values_ad.theta - Material::Coefficients::theta_0;
+//	}
+//
+//};
+
 
 template<int dim>
-struct CM_Incompressible_Uncoupled_8Chain_ad : public CM_Base_ad<dim>
+struct CM_Coupled_NeoHooke_ad : public CM_Base_ad<dim>
 {
 	typedef Sacado::Fad::DFad<double> ad_type;
-	CM_Incompressible_Uncoupled_8Chain_ad  (const Tensor<2,dim,ad_type> & F,
+	CM_Coupled_NeoHooke_ad  (const Tensor<2,dim,ad_type> & F,
 			const Tensor<1,dim,ad_type> & E,
 			const Tensor<1,dim> & Grad_T,
 			const double theta,
 			const ad_type J_tilde,
 			const ad_type p,
-			const double alpha)
-	: CM_Base_ad<dim> (F,E,Grad_T,theta,J_tilde,p,alpha)
+			const double alpha,
+			const double c_2)
+	: CM_Base_ad<dim> (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
 	  {}
 
 
-	virtual ~CM_Incompressible_Uncoupled_8Chain_ad () {}
+	virtual ~CM_Coupled_NeoHooke_ad () {}
 
 protected:
 
@@ -604,9 +855,9 @@ protected:
 
 		double mu=Material::Coefficients::g_0;
 		double N=Material::Coefficients::N;
-		double c_2=Material::Coefficients::c_2;
+		double c_2=this->values_ad.c_2;
 
-		return (get_dW_FE_iso_elastic_dC(mu,N,c_2));
+		return theta_ratio()*(get_dW_FE_iso_elastic_dC(mu,N,c_2));
 	}
 
 	virtual SymmetricTensor<2,dim,ad_type>
@@ -616,7 +867,7 @@ protected:
 
 		double mu=Material::Coefficients::g_0;
 		double N=Material::Coefficients::N;
-		double c_2=Material::Coefficients::c_2;
+		double c_2=this->values_ad.c_2;
 
 
 		return theta_ratio()*(get_dW_FE_iso_elastic_dC_EM(mu,N,c_2));
@@ -626,7 +877,8 @@ protected:
 	virtual SymmetricTensor<2,dim,ad_type>
 	get_dPsi_vol_dC () const
 	{
-		return unit_symmetric_tensor<dim,ad_type>();
+		return theta_ratio()*this->get_dW_J_dC(Material::Coefficients::kappa, Material::Coefficients::mu)
+				- theta_difference()*get_dM_J_dC(Coefficients::kappa,Coefficients::alpha); // Thermal dilatory response M = M(J);
 	}
 
 	virtual SymmetricTensor<2,dim,ad_type>
@@ -641,11 +893,13 @@ protected:
 			const double c_2) const
 			{
 
-		const SymmetricTensor<4,dim,ad_type> P= get_Dev_P(this->values_ad.F);//get_dC_bar_dC();
-		const SymmetricTensor<2,dim,ad_type> dW_FE_dC_hat=get_dW_FE_iso_elastic_dC_bar(g_0,N,c_2);
-
-		return (dW_FE_dC_hat*P);
-
+		//		const ad_type &lambda=get_lambda();
+		//
+		//		return	ad_type((0.5*g_0/dim)*((dim*N-lambda*lambda)/(N-lambda*lambda)))*
+		//				(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_dC();
+		//
+		const SymmetricTensor<2,dim,ad_type> &C_inv = this->values_ad.C_inv;
+		return (g_0/2)*(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_dC();
 
 			}
 
@@ -666,26 +920,44 @@ protected:
 	inline SymmetricTensor<2,dim,ad_type>
 	get_dW_FE_iso_elastic_dC_bar (const double g_0,
 			const double N,
-			const double /*c_2*/) const
+			const double c_2) const
 			{
-		const ad_type &lambda_bar=get_lambda_bar();
+		//		const ad_type &lambda_bar=get_lambda_bar();
+		//
+		//		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_bar*lambda_bar)/(N-lambda_bar*lambda_bar)))*
+		//				(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_bar_dC_bar();
 
-		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_bar*lambda_bar)/(N-lambda_bar*lambda_bar)))*
-				(unit_symmetric_tensor<dim,ad_type>());
+		return (g_0 /2.0)*this->values_ad.dI1_bar_dC_bar()+ c_2*this->values_ad.dI5_bar_dC_bar();
 
 			}
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_dW_FE_iso_elastic_dC_EM_bar (const double g_0,
 			const double N,
-			const double /*c_2*/) const
+			const double c_2) const
 			{
-		const ad_type &lambda_EM_bar=get_lambda_EM_bar();
+		//		const ad_type &lambda_EM_bar=get_lambda_EM_bar();
+		//
+		//		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_EM_bar*lambda_EM_bar)/(N-lambda_EM_bar*lambda_EM_bar)))*
+		//				(unit_symmetric_tensor<dim,ad_type>()) + c_2*this->values_ad.dI5_EM_bar_dC_EM_bar();
 
-		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_EM_bar*lambda_EM_bar)/(N-lambda_EM_bar*lambda_EM_bar)))*
-				(unit_symmetric_tensor<dim,ad_type>());
+		return g_0 /2.0*this->values_ad.dI1_EM_bar_dC_EM_bar()+ c_2*this->values_ad.dI5_EM_bar_dC_EM_bar();
 
 			}
+
+	inline ad_type
+	get_dM_J_dJ (const double kappa, const double alpha) const
+	{
+		const ad_type &J = this->values_ad.J;
+		return dim*kappa*alpha/J;
+	}
+
+	SymmetricTensor<2,dim,ad_type>
+	get_dM_J_dC (const double kappa,const double alpha) const
+	{
+		// See Wriggers p46 eqs. 3.123, 3.124; Holzapfel p230
+		return get_dM_J_dJ(kappa, alpha)*this->values_ad.dJ_dC();
+	}
 
 
 	inline SymmetricTensor<4, dim, ad_type>
@@ -713,18 +985,24 @@ protected:
 	get_dPsi_dE () const
 	{
 		double c_1=Material::Coefficients::c_1;
-		double c_2=Material::Coefficients::c_2;
-
+		double c_2=this->values_ad.c_2;
 
 		return get_dW_iso_elastic_dE(c_1,c_2) ;
 	}
 
 	inline Tensor<1,dim,ad_type>
 	get_dW_iso_elastic_dE (const double c_1,
-			const double /*c_2*/) const
+			const double c_2) const
 			{
-		return c_1*this->values_ad.dI4_dE();
+		return c_1*this->values_ad.dI4_dE()+c_2*this->values_ad.dI5_dE();
 			}
+
+	ad_type
+	get_lambda() const
+	{
+		const ad_type &I1=this->values_ad.I1;
+		return std::sqrt(I1/dim);
+	}
 
 	ad_type
 	get_lambda_bar() const
@@ -746,177 +1024,13 @@ protected:
 		return this->values_ad.theta/Material::Coefficients::theta_0;
 	}
 
-};
-
-
-template<int dim>
-struct CM_Incompressible_Coupled_8Chain_ad : public CM_Base_ad<dim>
-{
-	typedef Sacado::Fad::DFad<double> ad_type;
-	CM_Incompressible_Coupled_8Chain_ad  (const Tensor<2,dim,ad_type> & F,
-			const Tensor<1,dim,ad_type> & E,
-			const Tensor<1,dim> & Grad_T,
-			const double theta,
-			const ad_type J_tilde,
-			const ad_type p,
-			const double alpha)
-	: CM_Base_ad<dim> (F,E,Grad_T,theta,J_tilde,p,alpha)
-	  {}
-
-
-	virtual ~CM_Incompressible_Coupled_8Chain_ad () {}
-
-protected:
-
-	virtual SymmetricTensor<2,dim,ad_type>
-	get_dPsi_iso_dC () const
-	{
-
-		double mu=Material::Coefficients::g_0;
-		double N=Material::Coefficients::N;
-		double c_2=Material::Coefficients::c_2;
-
-		return (get_dW_FE_iso_elastic_dC(mu,N,c_2));
-	}
-
-	virtual SymmetricTensor<2,dim,ad_type>
-	get_dPsi_iso_dC_EM () const
-	{
-
-		double mu=Material::Coefficients::g_0;
-		double N=Material::Coefficients::N;
-		double c_2=Material::Coefficients::c_2;
-
-
-		return theta_ratio()*(get_dW_FE_iso_elastic_dC_EM(mu,N,c_2));
-	}
-
-
-	virtual SymmetricTensor<2,dim,ad_type>
-	get_dPsi_vol_dC () const
-	{
-		return unit_symmetric_tensor<dim,ad_type>();
-	}
-
-	virtual SymmetricTensor<2,dim,ad_type>
-	get_dPsi_vol_dC_EM () const
-	{
-		return unit_symmetric_tensor<dim,ad_type>();
-	}
-
-	inline SymmetricTensor<2,dim,ad_type>
-	get_dW_FE_iso_elastic_dC (const double g_0,
-			const double N,
-			const double c_2) const
-			{
-
-		const SymmetricTensor<4,dim,ad_type> P= get_Dev_P(this->values_ad.F);//get_dC_bar_dC();
-		const SymmetricTensor<2,dim,ad_type> dW_FE_dC_hat=get_dW_FE_iso_elastic_dC_bar(g_0,N,c_2);
-
-		return (dW_FE_dC_hat*P);
-
-
-			}
-
-	inline SymmetricTensor<2,dim,ad_type>
-	get_dW_FE_iso_elastic_dC_EM (const double g_0,
-			const double N,
-			const double c_2) const
-			{
-
-		const SymmetricTensor<4,dim,ad_type> P= get_Dev_P(this->values_ad.F_EM);//get_dC_bar_dC();
-		const SymmetricTensor<2,dim,ad_type> dW_FE_dC_EM_bar=get_dW_FE_iso_elastic_dC_EM_bar(g_0,N,c_2);
-
-		return (dW_FE_dC_EM_bar*P);
-
-
-			}
-
-	inline SymmetricTensor<2,dim,ad_type>
-	get_dW_FE_iso_elastic_dC_bar (const double g_0,
-			const double N,
-			const double c_2) const
-			{
-		const ad_type &lambda_bar=get_lambda_bar();
-
-		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_bar*lambda_bar)/(N-lambda_bar*lambda_bar)))*
-				(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_bar_dC_bar();
-
-			}
-
-	inline SymmetricTensor<2,dim,ad_type>
-	get_dW_FE_iso_elastic_dC_EM_bar (const double g_0,
-			const double N,
-			const double c_2) const
-			{
-		const ad_type &lambda_EM_bar=get_lambda_EM_bar();
-
-		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_EM_bar*lambda_EM_bar)/(N-lambda_EM_bar*lambda_EM_bar)))*
-				(unit_symmetric_tensor<dim,ad_type>()) + c_2*this->values_ad.dI5_EM_bar_dC_EM_bar();
-
-			}
-
-
-	inline SymmetricTensor<4, dim, ad_type>
-	get_Dev_P (const Tensor<2, dim, ad_type> &F) const
-	{
-		const ad_type det_F = determinant(F);
-		Assert(det_F > ad_type(0.0),
-				ExcMessage("Deformation gradient has a negative determinant."));
-		const Tensor<2,dim,ad_type> C_ns = transpose(F)*F;
-		const SymmetricTensor<2,dim,ad_type> C = symmetrize(C_ns);
-		const SymmetricTensor<2,dim,ad_type> C_inv = symmetrize(invert(C_ns));
-
-		// See Wriggers p46 equ 3.125 (but transpose indices)
-		SymmetricTensor<4,dim,ad_type> Dev_P = outer_product(C,C_inv);  // Dev_P = C_x_C_inv
-		Dev_P /= -dim;                                                  // Dev_P = -[1/dim]C_x_C_inv
-		Dev_P += Physics::Elasticity::StandardTensors< dim >::S;        // Dev_P = S - [1/dim]C_x_C_inv
-		Dev_P *= ad_type(std::pow(det_F, -2.0/dim));                    // Dev_P = J^{-2/dim} [S - [1/dim]C_x_C_inv]
-
-		return Dev_P;
-	}
-
-
-	// --- Electric contributions ---
-	virtual Tensor<1,dim,ad_type>
-	get_dPsi_dE () const
-	{
-		double c_1=Material::Coefficients::c_1;
-		double c_2=Material::Coefficients::c_2;
-
-
-		return get_dW_iso_elastic_dE(c_1,c_2) ;
-	}
-
-	inline Tensor<1,dim,ad_type>
-	get_dW_iso_elastic_dE (const double c_1,
-			const double c_2) const
-			{
-		return c_1*this->values_ad.dI4_dE() + c_2*this->values_ad.dI5_EM_bar_dE();
-			}
-
-	ad_type
-	get_lambda_bar() const
-	{
-		const ad_type &I1_bar=this->values_ad.I1_bar;
-		return std::sqrt(I1_bar/dim);
-	}
-
-	ad_type
-	get_lambda_EM_bar() const
-	{
-		const ad_type &I1_EM_bar=this->values_ad.I1_EM_bar;
-		return std::sqrt(I1_EM_bar/dim);
-	}
-
 	double
-	theta_ratio () const
+	theta_difference () const
 	{
-		return this->values_ad.theta/Material::Coefficients::theta_0;
+		return this->values_ad.theta - Material::Coefficients::theta_0;
 	}
 
 };
-
 
 
 }
@@ -924,8 +1038,8 @@ protected:
 template<int dim>
 class CoupledProblem
 {
-	typedef Material::CM_Incompressible_Coupled_8Chain_ad<dim> Continuum_Point_8_Chain_coupled_ad;
-	typedef Material::CM_Incompressible_Uncoupled_8Chain_ad<dim> Continuum_Point_8_Chain_uncoupled_ad;
+	typedef Material::CM_Coupled_NeoHooke_ad<dim> Continuum_Point_Coupled_NeoHooke_ad;
+	//	typedef Material::CM_Incompressible_Uncoupled_8Chain_ad<dim> Continuum_Point_8_Chain_uncoupled_ad;
 
 public:
 	CoupledProblem ();
@@ -936,6 +1050,8 @@ public:
 private:
 	void
 	make_grid ();
+	void
+	set_active_fe_indices();
 	void
 	setup_system ();
 	void
@@ -985,8 +1101,9 @@ private:
 	};
 
 
-	static bool cell_is_in_matrix_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
-	static bool cell_is_in_inclusion_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
+
+	static bool cell_is_in_3Field_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
+	static bool cell_is_in_1Field_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
 
 	const FEValuesExtractors::Vector displacement;
 	const FEValuesExtractors::Scalar x_displacement;
@@ -1020,17 +1137,17 @@ private:
 	hp::QCollection<dim> q_collection;
 
 
-	FESystem<dim> fe_cell;
-	FESystem<dim> fe_face;
+	FESystem<dim> fe_cell_3Field;
+	FESystem<dim> fe_cell_1Field;
 
 
-	QGauss<dim> qf_cell;
-	QGauss<dim-1> qf_face;
+	QGauss<dim> qf_cell_3Field;
+	QGauss<dim> qf_cell_1Field;
 
-	AffineConstraints<double> hanging_node_constraints;
-	AffineConstraints<double> dirichlet_constraints;
-	AffineConstraints<double> periodicity_constraints;
-	AffineConstraints<double> all_constraints;
+	ConstraintMatrix hanging_node_constraints;
+	ConstraintMatrix dirichlet_constraints;
+	ConstraintMatrix periodicity_constraints;
+	ConstraintMatrix all_constraints;
 
 	LA::MPI::BlockSparseMatrix system_matrix;
 	LA::MPI::BlockVector       system_rhs;
@@ -1075,26 +1192,25 @@ computing_timer(mpi_communicator,
 		dof_handler(triangulation),
 
 		poly_order (Parameters::poly_order),
-		fe_cell(FE_Q<dim> (poly_order), dim,
+		fe_cell_3Field(FE_Q<dim> (poly_order), dim,
 				FE_Q<dim> (poly_order), 1, // Voltage
 				FE_DGPMonomial<dim>(poly_order - 1), 1,  // Dilatation
 				FE_DGPMonomial<dim>(poly_order - 1), 1,  // Pressure
 				FE_Q<dim> (poly_order), 1), // Temperature
+				fe_cell_1Field(FE_Q<dim> (poly_order), dim,
+						FE_Q<dim> (poly_order), 1, // Voltage
+						FE_Nothing<dim>(), 1,  // Dilatation
+						FE_Nothing<dim>(), 1, // Pressure
+						FE_Q<dim> (poly_order), 1), // Temperature
 
-
-
-								fe_face(FE_Q<dim> (poly_order), dim,
-										FE_Q<dim> (poly_order), 1, // Voltage
-										FE_DGPMonomial<dim>(poly_order - 1), 1,  // Dilatation
-										FE_DGPMonomial<dim>(poly_order - 1), 1,  // Pressure
-										FE_Q<dim> (poly_order), 1), // Temperature
-
-										qf_cell(poly_order+1),
-										qf_face(poly_order+1)
-										{
-	fe_collection.push_back(fe_cell);
-	q_collection.push_back(qf_cell);
-										}
+						qf_cell_3Field(poly_order+1),
+						qf_cell_1Field(poly_order+1)
+						{
+	fe_collection.push_back(fe_cell_3Field);
+	fe_collection.push_back(fe_cell_1Field);
+	q_collection.push_back(qf_cell_3Field);
+	q_collection.push_back(qf_cell_1Field);
+						}
 
 
 
@@ -1117,8 +1233,8 @@ CoupledProblem<dim>::make_grid () //Generate thick walled cylinder
 
 	grid_in.read_abaqus (input_file);
 
-//	static CylindricalManifold<dim> manifold_cylinder_X (0,1); // Manifold id 1
-//	static CylindricalManifold<dim> manifold_cylinder_Z (2,1); // Manifold id 2
+	//	static CylindricalManifold<dim> manifold_cylinder_X (0,1); // Manifold id 1
+	//	static CylindricalManifold<dim> manifold_cylinder_Z (2,1); // Manifold id 2
 
 	// Set boundary and manifold ID's for this tricky geometry.
 	// Note: X-aligned cylinder manifold > Z-aligned cylinder manifold > Straight/Planar manifold
@@ -1238,10 +1354,28 @@ CoupledProblem<dim>::make_grid () //Generate thick walled cylinder
 		}
 	}
 
-//	triangulation.set_manifold (1, manifold_cylinder_X);
-//	triangulation.set_manifold (2, manifold_cylinder_Z);
+	//	triangulation.set_manifold (1, manifold_cylinder_X);
+	//	triangulation.set_manifold (2, manifold_cylinder_Z);
 
 	triangulation.refine_global (Parameters::n_global_refinements);
+}
+
+template <int dim>
+void
+CoupledProblem<dim>::set_active_fe_indices()
+{
+	for (typename hp::DoFHandler<dim>::active_cell_iterator cell =
+			dof_handler.begin_active();
+			cell != dof_handler.end();
+			++cell)
+	{
+		if (Parameters::use_3_Field)
+			cell->set_active_fe_index(0);
+		else if (Parameters::use_3_Field==false)
+			cell->set_active_fe_index(1);
+		else
+			Assert(false, ExcNotImplemented());
+	}
 }
 
 template<int dim>
@@ -1250,7 +1384,7 @@ CoupledProblem<dim>::setup_system ()
 {
 	TimerOutput::Scope timer_scope (computing_timer, "System setup");
 	pcout << "Setting up the thermo-electro-mechanical system..." << std::endl;
-
+	set_active_fe_indices();
 	dof_handler.distribute_dofs(fe_collection);
 
 	std::vector<types::global_dof_index>  block_component(n_components, uV_block); // Displacement
@@ -1268,8 +1402,8 @@ CoupledProblem<dim>::setup_system ()
 	const types::global_dof_index &n_th = dofs_per_block[1];
 
 	all_locally_owned_dofs = DoFTools::locally_owned_dofs_per_subdomain (dof_handler);
-	const std::vector<IndexSet> all_locally_relevant_dofs	= DoFTools::locally_relevant_dofs_per_subdomain (dof_handler);
-	pcout << "all_locally_relevant_dofs.size(): " << all_locally_relevant_dofs.size() << std::endl;
+	std::vector<IndexSet> all_locally_relevant_dofs	= DoFTools::locally_relevant_dofs_per_subdomain (dof_handler);
+
 
 	pcout
 	<< "Number of active cells: "
@@ -1307,11 +1441,25 @@ CoupledProblem<dim>::setup_system ()
 		locally_relevant_partitioning.push_back(locally_relevant_dofs.get_view(idx_begin, idx_end));
 	}
 
+
 	hanging_node_constraints.clear();
 	hanging_node_constraints.reinit (locally_relevant_dofs);
 	DoFTools::make_hanging_node_constraints(dof_handler,
 			hanging_node_constraints);
 	hanging_node_constraints.close();
+
+	Table<2, DoFTools::Coupling> coupling(n_components, n_components);
+	for (unsigned int ii = 0; ii < n_components; ++ii)
+		for (unsigned int jj = 0; jj < n_components; ++jj)
+			if (((ii < p_component) && (jj == J_component))
+					|| ((ii == J_component) && (jj < p_component))
+					|| ((ii == p_component) && (jj == p_component)))
+				coupling[ii][jj] = DoFTools::none;
+			else if (((ii < T_component) && (jj == T_component))
+					|| ((ii == T_component) && (jj < T_component)))
+				coupling[ii][jj] = DoFTools::none;
+			else
+				coupling[ii][jj] = DoFTools::always;
 
 	TrilinosWrappers::BlockSparsityPattern sp (locally_owned_partitioning,
 			locally_owned_partitioning,
@@ -1362,7 +1510,7 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 
 		pcout << "  CST T" << std::flush;
 
-		//const double temperature_difference_per_ts = Parameters::Temperature_Difference/static_cast<double>(Parameters::n_timesteps);
+		const double temperature_difference_per_ts = Parameters::Temperature_Difference/static_cast<double>(Parameters::n_timesteps);
 		if (timestep==1)
 		{
 			// Prescribed temperature at inner radius
@@ -1370,42 +1518,42 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 					Parameters::boundary_id_inner_radius,
 					ConstantFunction<dim>(293+Parameters::Temperature_Difference,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at inner radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outlet_inner_radius,
 					ConstantFunction<dim>(293+Parameters::Temperature_Difference,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at top
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_top,
 					ConstantFunction<dim>(293+Parameters::Temperature_Difference,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at bottom
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_bottom,
 					ConstantFunction<dim>(293,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at outer radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outer_radius,
 					ConstantFunction<dim>(293,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at outer radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outlet_outer_radius,
 					ConstantFunction<dim>(293,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 		}
 		else
 		{
@@ -1414,42 +1562,42 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 					Parameters::boundary_id_top,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at bottom
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_bottom,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at inner radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_inner_radius,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at outer radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outer_radius,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at outer radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outlet_outer_radius,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at inner radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outlet_inner_radius,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(temperature));
+					fe_collection.component_mask(temperature));
 		}
 
 
@@ -1462,21 +1610,21 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 					Parameters::boundary_id_cut_bottom,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(y_displacement));
+					fe_collection.component_mask(y_displacement));
 
 			// X-Cut Surface
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_cut_left,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(x_displacement));
+					fe_collection.component_mask(x_displacement));
 
 			// Frame Cut Surface
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_frame,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(z_displacement));
+					fe_collection.component_mask(z_displacement));
 
 			// Frame Cut Surface
 			/*	VectorTools::interpolate_boundary_values(dof_handler,
@@ -1491,9 +1639,9 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 					Parameters::boundary_id_cut_outlet,
 					ZeroFunction<dim>(n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(x_displacement) |
-					fe_cell.component_mask(y_displacement) |
-					fe_cell.component_mask(z_displacement));
+					fe_collection.component_mask(x_displacement) |
+					fe_collection.component_mask(y_displacement) |
+					fe_collection.component_mask(z_displacement));
 
 			// Prescribed voltage at lower surface
 			VectorTools::interpolate_boundary_values(dof_handler,
@@ -1501,7 +1649,7 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 					//ZeroFunction<dim>(n_components),
 					ConstantFunction<dim>(+potential_difference_per_ts/2,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(voltage));
+					fe_collection.component_mask(voltage));
 
 			// Prescribed voltage at upper surface
 			VectorTools::interpolate_boundary_values(dof_handler,
@@ -1509,7 +1657,7 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 					//ZeroFunction<dim>(n_components),
 					ConstantFunction<dim>(-potential_difference_per_ts/2,n_components),
 					dirichlet_constraints,
-					fe_cell.component_mask(voltage));
+					fe_collection.component_mask(voltage));
 		}
 
 		dirichlet_constraints.close();
@@ -1529,7 +1677,7 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 	all_constraints.clear();
 	all_constraints.reinit (locally_relevant_dofs);
 	all_constraints.merge(hanging_node_constraints);
-	all_constraints.merge(dirichlet_constraints, AffineConstraints<double>::left_object_wins);
+	all_constraints.merge(dirichlet_constraints, ConstraintMatrix::left_object_wins);
 	all_constraints.close();
 }
 
@@ -1606,7 +1754,7 @@ CoupledProblem<dim>::assemble_system_thermo()
 
 			for (unsigned int i = 0; i < cell->get_fe().dofs_per_cell; ++i)
 			{
-				const unsigned int i_group     = fe_cell.system_to_base_index(i).first.first;
+				const unsigned int i_group     = fe_cell_3Field.system_to_base_index(i).first.first;
 
 				const Tensor<1,dim> &Grad_Nx_i_T = fe_values[temperature].gradient(i, q_point);
 
@@ -1614,7 +1762,7 @@ CoupledProblem<dim>::assemble_system_thermo()
 				for (unsigned int j = 0; j < cell->get_fe().dofs_per_cell; ++j)
 				{
 
-					const unsigned int j_group     = fe_cell.system_to_base_index(j).first.first;
+					const unsigned int j_group     = fe_cell_3Field.system_to_base_index(j).first.first;
 
 					const Tensor<1,dim> &Grad_Nx_j_T = fe_values[temperature].gradient(j, q_point);
 
@@ -1732,90 +1880,147 @@ CoupledProblem<dim>::assemble_system_mech ()
 				const double JxW = fe_values.JxW(q_point);
 
 				const double alpha = Material::Coefficients::alpha;
+				const double c_2 = Material::Coefficients::c_2;
 
-				if(mat_id==coupled_material_id)
+				if (Parameters::use_3_Field)
 				{
+					if(mat_id==coupled_material_id)
+					{
 
-					const Continuum_Point_8_Chain_uncoupled_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha);
-					S_ad=cp_ad.get_S();
-					D_ad=cp_ad.get_D();
-					dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
-					dPsi_dp= cp_ad.get_dPsi_dp();
+						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
+						S_ad=cp_ad.get_S_3Field();
+						D_ad=cp_ad.get_D();
+						dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
+						dPsi_dp= cp_ad.get_dPsi_dp();
+					}
+					else
+					{
+						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
+						S_ad=cp_ad.get_S_3Field();
+						D_ad=cp_ad.get_D();
+						dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
+						dPsi_dp= cp_ad.get_dPsi_dp();
+					}
+
+					for(unsigned int i = 0; i < cell->get_fe().dofs_per_cell; ++i)
+					{
+						const unsigned int i_group     = fe_cell_3Field.system_to_base_index(i).first.first;
+
+						if (i_group == u_dof)
+						{
+							const SymmetricTensor<2,dim,ad_type> dE_ad_I = symmetrize(transpose(F_ad)*fe_values[displacement].gradient(i, q_point));
+							cell_residual_ad[i] += (dE_ad_I*S_ad) * JxW; // residual
+
+						}
+						else if (i_group == V_dof)
+						{
+							const Tensor<1,dim> &Grad_Nx_i_V      = fe_values[voltage].gradient(i, q_point);
+							cell_residual_ad[i] -= (Grad_Nx_i_V*D_ad) * JxW;
+						}
+						else if (i_group == J_dof)
+						{
+							const double &NJ_i_value = fe_values[dilatation].value(i,q_point);
+							cell_residual_ad[i] -= NJ_i_value * dPsi_dJ_tilde  * JxW;
+						}
+						else if (i_group == p_dof)
+						{
+							const double &Np_i_value = fe_values[pressure].value(i,q_point);
+							cell_residual_ad[i] -= Np_i_value * dPsi_dp  * JxW;
+						}
+					}
 				}
 				else
 				{
-					const Continuum_Point_8_Chain_coupled_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha);
-					S_ad=cp_ad.get_S();
-					D_ad=cp_ad.get_D();
-					dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
-					dPsi_dp= cp_ad.get_dPsi_dp();
-				}
-
-
-				for(unsigned int i = 0; i < cell->get_fe().dofs_per_cell; ++i)
-				{
-					const unsigned int i_group     = fe_cell.system_to_base_index(i).first.first;
-
-					if (i_group == u_dof)
+					if(mat_id==coupled_material_id)
 					{
-						const SymmetricTensor<2,dim,ad_type> dE_ad_I = symmetrize(transpose(F_ad)*fe_values[displacement].gradient(i, q_point));
-						cell_residual_ad[i] += (dE_ad_I*S_ad) * JxW; // residual
-
+						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
+						S_ad=cp_ad.get_S_1Field();
+						D_ad=cp_ad.get_D();
 					}
-					else if (i_group == V_dof)
+					else
 					{
-						const Tensor<1,dim> &Grad_Nx_i_V      = fe_values[voltage].gradient(i, q_point);
-						cell_residual_ad[i] -= (Grad_Nx_i_V*D_ad) * JxW;
+						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
+						S_ad=cp_ad.get_S_1Field();
+						D_ad=cp_ad.get_D();
 					}
-					else if (i_group == J_dof)
+
+					for(unsigned int i = 0; i < cell->get_fe().dofs_per_cell; ++i)
 					{
-						const double &NJ_i_value = fe_values[dilatation].value(i,q_point);
-						cell_residual_ad[i] -= NJ_i_value * dPsi_dJ_tilde  * JxW;
-					}
-					else if (i_group == p_dof)
-					{
-						const double &Np_i_value = fe_values[pressure].value(i,q_point);
-						cell_residual_ad[i] -= Np_i_value * dPsi_dp  * JxW;
+						const unsigned int i_group     = fe_cell_1Field.system_to_base_index(i).first.first;
+
+						if (i_group == u_dof)
+						{
+							const SymmetricTensor<2,dim,ad_type> dE_ad_I = symmetrize(transpose(F_ad)*fe_values[displacement].gradient(i, q_point));
+							cell_residual_ad[i] += (dE_ad_I*S_ad) * JxW; // residual
+
+						}
+						else if (i_group == V_dof)
+						{
+							const Tensor<1,dim> &Grad_Nx_i_V      = fe_values[voltage].gradient(i, q_point);
+							cell_residual_ad[i] -= (Grad_Nx_i_V*D_ad) * JxW;
+						}
 					}
 				}
+
+
+
 
 			}
 
-
-			//			pcout<<cell_residual_ad[1]<<std::endl;
-
-
-			for (unsigned int I=0; I<n_independent_variables; ++I)
+			if (Parameters::use_3_Field)
 			{
-				//const unsigned int i_group     = fe_cell.system_to_base_index(I).first.first;
-
-				const ad_type &res_I = cell_residual_ad[I];
-				cell_rhs(I) = -res_I.val();
-				unsigned int mat_id;
-				mat_id = cell->material_id();
-
+				for (unsigned int I=0; I<n_independent_variables; ++I)
 				{
+					const unsigned int i_group     = fe_cell_3Field.system_to_base_index(I).first.first;
+
+					const ad_type &res_I = cell_residual_ad[I];
+					cell_rhs(I) = -res_I.val();
+					unsigned int mat_id;
+					mat_id = cell->material_id();
+
 					for (unsigned int J=0; J<n_independent_variables; ++J)
 					{
 						const double lin_IJ=res_I.dx(J);
-						//const unsigned int j_group  = fe_cell.system_to_base_index(J).first.first;
-
-						{
-							{
-								cell_matrix(I,J) += lin_IJ; // Tangent Matrix
-							}
-						}
+						const unsigned int j_group  = fe_cell_3Field.system_to_base_index(J).first.first;
+						cell_matrix(I,J) += lin_IJ; // Tangent Matrix
 
 					}
+
 				}
 			}
+			else
+			{
+				for (unsigned int I=0; I<n_independent_variables; ++I)
+				{
+					const unsigned int i_group     = fe_cell_1Field.system_to_base_index(I).first.first;
+
+					const ad_type &res_I = cell_residual_ad[I];
+					cell_rhs(I) = -res_I.val();
+					unsigned int mat_id;
+					mat_id = cell->material_id();
+
+
+					for (unsigned int J=0; J<n_independent_variables; ++J)
+					{
+						const double lin_IJ=res_I.dx(J);
+						const unsigned int j_group  = fe_cell_3Field.system_to_base_index(J).first.first;
+
+						if (i_group == u_dof||i_group == V_dof)
+						{
+							cell_matrix(I,J) += lin_IJ; // Tangent Matrix
+						}
+					}
+
+				}
+			}
+
 		}
 
 
 		all_constraints.distribute_local_to_global(cell_matrix, cell_rhs,
 				local_dof_indices,
 				system_matrix, system_rhs);
-//		throw;
+		//		throw;
 
 	}
 
@@ -1997,20 +2202,21 @@ CoupledProblem<dim>::output_results (const unsigned int timestep) const
 
 
 				const double alpha = Material::Coefficients::alpha;
+				const double c_2 = Material::Coefficients::c_2;
 
 				if(mat_id==coupled_material_id)
 				{
 
-					const Continuum_Point_8_Chain_coupled_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha);
-					S_ad=cp_ad.get_S();
+					const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
+					S_ad=cp_ad.get_S_3Field();
 					D_ad=cp_ad.get_D();
 					dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
 					dPsi_dp= cp_ad.get_dPsi_dp();
 				}
 				else
 				{
-					const Continuum_Point_8_Chain_uncoupled_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha);
-					S_ad=cp_ad.get_S();
+					const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
+					S_ad=cp_ad.get_S_3Field();
 					D_ad=cp_ad.get_D();
 					dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
 					dPsi_dp= cp_ad.get_dPsi_dp();
@@ -2190,7 +2396,7 @@ struct L2_norms
 
 	void
 	set (const LA::MPI::BlockVector & vector,
-			const AffineConstraints<double> & all_constraints)
+			const ConstraintMatrix & all_constraints)
 	{
 		LA::MPI::BlockVector vector_zeroed;
 		vector_zeroed.reinit (locally_owned_partitioning,
@@ -2243,7 +2449,7 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 			locally_relevant_partitioning,
 			mpi_communicator);
 
-//	locally_relevant_solution_t1 = locally_relevant_solution;
+	//	locally_relevant_solution_t1 = locally_relevant_solution;
 
 
 	L2_norms res_T_0(ex_T), update_T_0(ex_T);
@@ -2397,7 +2603,7 @@ CoupledProblem<dim>::run ()
 	setup_system();
 
 	{
-		AffineConstraints<double> constraints;
+		ConstraintMatrix constraints;
 		constraints.close();
 
 		const ComponentSelectFunction<dim> J_mask (J_component, n_components);
@@ -2405,7 +2611,7 @@ CoupledProblem<dim>::run ()
 		hp::QCollection<dim> q_collection;
 
 		{
-			q_collection.push_back(qf_cell);
+			q_collection.push_back(qf_cell_3Field);
 		}
 
 		VectorTools::project (dof_handler,
