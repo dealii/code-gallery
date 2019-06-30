@@ -24,11 +24,13 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/logstream.h>
+#include <deal.II/base/mpi.h>
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/quadrature_point_data.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/affine_constraints.h>
@@ -528,7 +530,7 @@ namespace LMM
     {}
 
   protected:
-    const double kappa_e; // buld modulus
+    const double kappa_e; // bulk modulus
     const double mu_e; // shear modulus
   };
 
@@ -659,19 +661,17 @@ namespace LMM
     void
     update_end_timestep() override
     {
-      // For the linear problem, it is easier to do the update
-      // between the previous and the current timestep in the
-      // call to update_internal_equilibrium(). For a nonlinear
-      // problem, it is more useful to employ this function to
-      // accept the accumulation of incremental values in the
-      // context of a Newton scheme.
+      // Record history of plastic variables
+      epsilon_p_t1 = epsilon_p_t;
+      alpha_p_t1 = alpha_p_t;
     }
 
     // --- Post-processing ---
 
-    // Plastic variables
+    // Plastic variables:
+    // Isotropic hardening variable
     double
-    get_alpha_p()
+    get_alpha_p() const
     {
       return alpha_p_t;
     }
@@ -769,6 +769,12 @@ namespace LMM
     {
       material->update_end_timestep();
     }
+    const Material_Base<dim> * const
+    get_material() const
+    {
+      Assert(material, ExcInternalError());
+      return &(*material);
+    }
   private:
     std::shared_ptr< Material_Base<dim> > material;
 };
@@ -786,12 +792,14 @@ namespace LMM
 
   private:
     void make_grid ();
+    void refine_grid ();
     void setup_system ();
     void setup_qph();
     void make_constraints ();
     void assemble_system ();
     void solve ();
     void output_results () const;
+    void update_end_timestep ();
 
     Parameters::AllParameters parameters;
 
@@ -814,7 +822,7 @@ namespace LMM
     Vector<double>       system_rhs;
 
     // Local data
-    CellDataStorage<typename Triangulation<dim>::cell_iterator,
+    CellDataStorage<typename Triangulation<dim>::active_cell_iterator,
     PointHistory<dim> > quadrature_point_history;
 
     const FEValuesExtractors::Vector u_fe;
@@ -1036,6 +1044,25 @@ namespace LMM
       }
   }
 
+  // @sect4{LinearElastoplasticProblem::refine_grid}
+
+  template <int dim>
+  void LinearElastoplasticProblem<dim>::refine_grid ()
+  {
+    Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
+    KellyErrorEstimator<dim>::estimate(
+      dof_handler,
+      QGauss<dim - 1>(fe.degree + 1),
+      std::map<types::boundary_id, const Function<dim> *>(),
+      solution,
+      estimated_error_per_cell);
+    GridRefinement::refine_and_coarsen_fixed_number(triangulation,
+                                                    estimated_error_per_cell,
+                                                    0.3,
+                                                    0.03);
+    triangulation.execute_coarsening_and_refinement();
+  }
+
   // @sect4{LinearElastoplasticProblem::setup_system}
 
   template <int dim>
@@ -1046,17 +1073,15 @@ namespace LMM
     DoFTools::make_hanging_node_constraints (dof_handler,
                                              hanging_node_constraints);
     hanging_node_constraints.close ();
-    sparsity_pattern.reinit (dof_handler.n_dofs(),
-                             dof_handler.n_dofs(),
-                             dof_handler.max_couplings_between_dofs());
-    DoFTools::make_sparsity_pattern (dof_handler, sparsity_pattern);
 
-    hanging_node_constraints.condense (sparsity_pattern);
-
-    sparsity_pattern.compress();
+    DynamicSparsityPattern dsp(dof_handler.n_dofs(), dof_handler.n_dofs());
+    DoFTools::make_sparsity_pattern(dof_handler,
+                                    dsp,
+                                    hanging_node_constraints,
+                                    /*keep_constrained_dofs = */ true);
+    sparsity_pattern.copy_from(dsp);
 
     system_matrix.reinit (sparsity_pattern);
-
     solution.reinit (dof_handler.n_dofs());
     system_rhs.reinit (dof_handler.n_dofs());
 
@@ -1308,47 +1333,118 @@ namespace LMM
   }
 
 
+  template <int dim>
+  void LinearElastoplasticProblem<dim>::update_end_timestep ()
+  {
+    const unsigned int n_q_points_cell = qf_cell.size();
+
+    for (typename DoFHandler<dim>::active_cell_iterator
+         cell = dof_handler.begin_active();
+         cell!=dof_handler.end(); ++cell)
+      {
+        const std::vector<std::shared_ptr< PointHistory<dim> > > lqph =
+            quadrature_point_history.get_data(cell);
+
+        for (unsigned int q_point_cell=0; q_point_cell<n_q_points_cell; ++q_point_cell)
+          lqph[q_point_cell]->update_end_timestep();
+      }
+  }
+
+
   // @sect4{LinearElastoplasticProblem::output_results}
 
   template <int dim>
-  class ComputeIntensity : public DataPostprocessorScalar<dim>
+  class PostProcessIsotropicHardening : public DataPostprocessorScalar<dim>
   {
   public:
-    ComputeIntensity();
-    virtual ~ComputeIntensity();
+    PostProcessIsotropicHardening(const CellDataStorage<typename Triangulation<dim>::active_cell_iterator,
+                                  PointHistory<dim> > &quadrature_point_history,
+                                  const QGauss<dim>   &qf_cell);
+    virtual ~PostProcessIsotropicHardening() = default;
     virtual void evaluate_vector_field(
       const DataPostprocessorInputs::Vector<dim> &inputs,
       std::vector<Vector<double>> &computed_quantities) const override;
+
+  private:
+    const CellDataStorage<typename Triangulation<dim>::active_cell_iterator,
+    PointHistory<dim> > &quadrature_point_history;
+
+    FullMatrix<double> projection_matrix_qpoint_to_support_point;
   };
 
   template <int dim>
-  ComputeIntensity<dim>::ComputeIntensity()
-    : DataPostprocessorScalar<dim>("Intensity", update_values)
-  {}
+  PostProcessIsotropicHardening<dim>::PostProcessIsotropicHardening(
+      const CellDataStorage<typename Triangulation<dim>::active_cell_iterator,
+      PointHistory<dim> > &quadrature_point_history,
+      const QGauss<dim>   &quadrature_cell)
+    : DataPostprocessorScalar<dim>("isotropic_hardening", update_values),
+      quadrature_point_history (quadrature_point_history)
+  {
+    const FE_Q<dim> fe_projection (1);
+    const QTrapez<dim> quadrature_projection;
+    projection_matrix_qpoint_to_support_point = FullMatrix<double> (
+        quadrature_projection.size(),
+        quadrature_cell.size());
+
+    FETools::compute_projection_from_quadrature_points_matrix
+              (fe_projection,
+               quadrature_projection,
+               quadrature_cell,
+               projection_matrix_qpoint_to_support_point);
+  }
 
   template <int dim>
-  ComputeIntensity<dim>::~ComputeIntensity()
-  {}
-
-  template <int dim>
-  void ComputeIntensity<dim>::evaluate_vector_field(
+  void PostProcessIsotropicHardening<dim>::evaluate_vector_field(
     const DataPostprocessorInputs::Vector<dim> &inputs,
     std::vector<Vector<double>> &               computed_quantities) const
   {
     Assert(computed_quantities.size() == inputs.solution_values.size(),
            ExcDimensionMismatch(computed_quantities.size(),
-                                inputs.solution_values.size()));
+               inputs.solution_values.size()));
 
-    for (unsigned int i = 0; i < computed_quantities.size(); i++)
-      {
-        Assert(computed_quantities[i].size() == 1,
-               ExcDimensionMismatch(computed_quantities[i].size(), 1));
-        Assert(inputs.solution_values[i].size() == 2,
-               ExcDimensionMismatch(inputs.solution_values[i].size(), 2));
-        computed_quantities[i](0) = std::sqrt(
-          inputs.solution_values[i](0) * inputs.solution_values[i](0) +
-          inputs.solution_values[i](1) * inputs.solution_values[i](1));
-      }
+    const typename DoFHandler<dim>::active_cell_iterator cell
+      = inputs.template get_cell<DoFHandler<dim>>();
+
+    // number of support points (nodes) to project to
+    const unsigned int n_support_points = projection_matrix_qpoint_to_support_point.n_rows();
+    // number of quadrature points to project from
+    const unsigned int n_quad_points = projection_matrix_qpoint_to_support_point.n_cols();
+
+    // component projected to the nodes
+    Vector<double> component_at_node(n_support_points);
+    // component at the quadrature point
+    Vector<double> component_at_qp(n_quad_points);
+
+    const std::vector<std::shared_ptr< const PointHistory<dim> > > lqph =
+    quadrature_point_history.get_data(cell);
+    Assert(lqph.size() == n_quad_points, ExcDimensionMismatch(lqph.size(), n_quad_points));
+
+    // populate the vector of components at the qps
+    for (unsigned int q_point = 0; q_point < n_quad_points; ++q_point)
+    {
+      const Material_Base<dim> * const material = lqph[q_point]->get_material();
+      if (const Material_Linear_Elastoplastic_Isotropic_Hardening<dim>* const material_ep
+          = dynamic_cast<const Material_Linear_Elastoplastic_Isotropic_Hardening<dim>* const>(material))
+        component_at_qp(q_point) = material_ep->get_alpha_p();
+      else
+        component_at_qp(q_point) = 0.0;
+    }
+
+    // project from the qps -> nodes
+    // component_at_node = projection_matrix_u * component_at_qp
+    projection_matrix_qpoint_to_support_point.vmult(component_at_node, component_at_qp);
+
+    Assert(computed_quantities.size() == n_support_points,
+           ExcDimensionMismatch(computed_quantities.size(),
+               n_support_points));
+    for (unsigned int i = 0; i < n_support_points; i++)
+    {
+      Assert(inputs.solution_values[i].size() == dim,
+          ExcDimensionMismatch(inputs.solution_values[i].size(), dim));
+      (void)inputs;
+
+      computed_quantities[i](0) = component_at_node(i);
+    }
   }
 
 
@@ -1361,7 +1457,7 @@ namespace LMM
     filename += ".vtk";
     std::ofstream output (filename.c_str());
 
-    ComputeIntensity<dim> intensities;
+    PostProcessIsotropicHardening<dim> pp_isotropic_hardening (quadrature_point_history, qf_cell);
     DataOut<dim> data_out;
     data_out.attach_dof_handler (dof_handler);
 
@@ -1373,8 +1469,12 @@ namespace LMM
     data_out.add_data_vector (solution, solution_name,
                               DataOut<dim>::type_dof_data,
                               data_component_interpretation);
-    data_out.add_data_vector(solution, intensities);
-    data_out.build_patches ();
+    data_out.add_data_vector(solution, pp_isotropic_hardening);
+
+    DataOutBase::VtkFlags flags;
+    flags.write_higher_order_cells = true;
+    data_out.set_flags (flags);
+    data_out.build_patches (StaticMappingQ1<dim>::mapping, fe.degree, DataOut<dim>::curved_inner_cells);
     data_out.write_vtk (output);
   }
 
@@ -1389,7 +1489,20 @@ namespace LMM
     setup_system ();
     output_results ();
 
+    update_end_timestep();
     time.increment();
+
+    auto solve_timestep = [&]()
+    {
+      // Next we assemble the system and enforce boundary
+      // conditions.
+      make_constraints();
+      assemble_system ();
+
+      // Then we solve the linear system
+      solve ();
+    };
+
     while (time.current() < time.end()+0.01*time.get_delta_t())
       {
         std::cout
@@ -1397,17 +1510,26 @@ namespace LMM
             << " @ time " << time.current()
             << std::endl;
 
-        // Next we assemble the system and enforce boundary
-        // conditions.
-        make_constraints();
-        assemble_system ();
+        // Compute the solution at the current timestep
+        solve_timestep();
 
-        // Then we solve the linear system
-        solve ();
+        // Perform local refinement
+        if (time.get_timestep() == 1)
+          for (unsigned int cycle = 0; cycle < parameters.n_local_refinement_steps; ++cycle)
+          {
+            std::cout
+              << "Executing refinement cycle " << cycle
+              << " of " << parameters.n_local_refinement_steps
+              << "..." << std::endl;
+            refine_grid();
+            setup_system();
+            solve_timestep();
+          }
 
         // Output some values to file
         output_results ();
 
+        update_end_timestep();
         time.increment();
       }
   }
@@ -1415,12 +1537,14 @@ namespace LMM
 
 // @sect3{The <code>main</code> function}
 
-int main ()
+int main (int argc, char *argv[])
 {
   try
     {
       dealii::deallog.depth_console (0);
       const unsigned int dim = 3;
+
+      dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
       LMM::LinearElastoplasticProblem<dim> elastoplastic_problem ("parameters.prm");
       elastoplastic_problem.run ();
