@@ -18,7 +18,7 @@ end
 subsection Geometry
   # Geometry to simulate
   # Options: Notched cylinder ; Tensile specimen ; Notched tensile specimen
-  set Geometry type = Tensile specimen
+  set Geometry type = Notched cylinder
 
   # Global grid scaling factor
   set Grid scale              = 1e-3
@@ -41,14 +41,13 @@ subsection Geometry
   
     # Overall radius of the notch in the specimen
     set Notch radius            = 9
-end
+  end
 end
 
 
 subsection Material properties
   # Type of material that composes the specimen
   # Options: Elastic ; Elastoplastic (isotropic hardening)
-  #set Type = Elastic
   set Type = Elastoplastic (isotropic hardening)
 
   # Shear modulus
