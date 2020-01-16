@@ -745,7 +745,7 @@ int main()
   MultithreadInfo::set_thread_limit(1);
 
   const unsigned int random_seed  = (testing ? 1U : std::random_device()());
-  const std::string  dataset_name = std::to_string(random_seed);
+  const std::string  dataset_name = Utilities::to_string(random_seed, 10);
 
   const Vector<double> exact_solution(
     {   0.06076511762259369, 0.09601910120848481, 
