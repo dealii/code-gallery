@@ -842,7 +842,7 @@ int main()
   LogLikelihood::Gaussian        log_likelihood(exact_solution, 0.05);
   LogPrior::LogGaussian          log_prior(0, 2);
   ProposalGenerator::LogGaussian proposal_generator(
-    random_seed, 0.0725); /* so that the acceptance ratio is ~0.3 */
+    random_seed, 0.09); /* so that the acceptance ratio is ~0.24 */
   Sampler::MetropolisHastings sampler(laplace_problem,
                                       log_likelihood,
                                       log_prior,
