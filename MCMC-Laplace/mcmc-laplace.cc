@@ -856,6 +856,6 @@ int main()
   sampler.sample(starting_coefficients,
                  (testing ? 250 * 40 /* takes 40 seconds */
                             :
-                            250 * 60 * 60 * 24 * 30 /* takes a month */
+                            100000000 /* takes 6 days */
                   ));
 }
