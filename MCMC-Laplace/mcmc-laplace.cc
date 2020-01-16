@@ -582,10 +582,7 @@ namespace ProposalGenerator
 // more stable by considering the exponential of the difference of
 // the log probabilities. The only other slight complication is that
 // we need to multiply this ratio by the ratio of proposal probabilities
-// since we use a non-symmetric proposal distribution. This makes the
-// formula for accepting a sample slightly more awkward, but if you
-// take exponentials on both sides of the comparison, the formula
-// should become obvious again.
+// since we use a non-symmetric proposal distribution.
 //
 // Finally, we note that the output is generated with 7 digits of
 // accuracy. (The C++ default is 6 digits.) We do this because,
@@ -672,14 +669,9 @@ namespace Sampler
           (likelihood.log_likelihood(simulator.evaluate(trial_sample)) +
            prior.log_prior(trial_sample));
 
-        if ((trial_log_posterior + std::log(perturbation_probability_ratio)
-             >=
-             current_log_posterior)
-            ||
-            (std::exp(trial_log_posterior - current_log_posterior)
-             * perturbation_probability_ratio
-             >=
-             uniform_distribution(random_number_generator)))
+        if (std::exp(trial_log_posterior - current_log_posterior) * perturbation_probability_ratio
+            >=
+            uniform_distribution(random_number_generator))
           {
             current_sample        = trial_sample;
             current_log_posterior = trial_log_posterior;
