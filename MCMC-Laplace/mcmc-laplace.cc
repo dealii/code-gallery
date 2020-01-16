@@ -571,7 +571,7 @@ namespace ProposalGenerator
 // The last main class is the Metropolis-Hastings sampler itself.
 // If you understand the algorithm behind this method, then
 // the following implementation should not be too difficult
-// to understand. The only thing of relevance is that descriptions
+// to read. The only thing of relevance is that descriptions
 // of the algorithm typically ask whether the *ratio* of two
 // probabilities (the "posterior" probabilities of the current
 // and the previous samples, where the "posterior" is the product of the
@@ -580,7 +580,12 @@ namespace ProposalGenerator
 // *logarithms* of these probabilities, we now need to take
 // the ratio of appropriate exponentials -- which is made numerically
 // more stable by considering the exponential of the difference of
-// the log probabilities.
+// the log probabilities. The only other slight complication is that
+// we need to multiply this ratio by the ratio of proposal probabilities
+// since we use a non-symmetric proposal distribution. This makes the
+// formula for accepting a sample slightly more awkward, but if you
+// take exponentials on both sides of the comparison, the formula
+// should become obvious again.
 namespace Sampler
 {
   class MetropolisHastings
