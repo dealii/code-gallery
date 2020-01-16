@@ -586,6 +586,13 @@ namespace ProposalGenerator
 // formula for accepting a sample slightly more awkward, but if you
 // take exponentials on both sides of the comparison, the formula
 // should become obvious again.
+//
+// Finally, we note that the output is generated with 7 digits of
+// accuracy. (The C++ default is 6 digits.) We do this because,
+// as shown in the paper, we can determine the mean value of the
+// probability distribution we are sampling here to at least six
+// digits of accuracy, and do not want to be limited by the precision
+// of the output.
 namespace Sampler
 {
   class MetropolisHastings
@@ -634,6 +641,8 @@ namespace Sampler
     , accepted_sample_number(0)
   {
     output_file.open("samples-" + dataset_name + ".txt");
+    output_file.precision(7);
+
     random_number_generator.seed(random_seed);
   }
 
