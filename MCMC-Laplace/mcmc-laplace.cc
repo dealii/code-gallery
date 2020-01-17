@@ -74,6 +74,8 @@ namespace ForwardSimulator
     virtual Vector<double> evaluate(const Vector<double> &coefficients) = 0;
   };
 
+
+
   template <int dim>
   class PoissonSolver : public Interface
   {
@@ -499,12 +501,26 @@ namespace LogPrior
 // to multiply the existing sample entries by are close to one. And
 // because the exponential of a number is always positive, we never
 // get negative samples this way.)
+//
+// But the Metropolis-Hastings sampler doesn't just need a perturbed
+// sample $y$ location given the current sample location $x$. It also
+// needs to know the ratio of the probability of reaching $y$ from
+// $x$, divided by the probability of reaching $x$ from $y$. If we
+// were to use a symmetric proposal distribution (e.g., a Gaussian
+// distribution centered at $x$ with a width independent of $x$), then
+// these two probabilities would be the same, and the ratio one. But
+// that's not the case for the Gaussian in log space. It's not
+// terribly difficult to verify that in that case, for a single
+// component the ratio of these probabilities is $y_i/x_i$, and
+// consequently for all components of the vector together, the
+// probability is the product of these ratios.
 namespace ProposalGenerator
 {
   class Interface
   {
   public:
-    virtual Vector<double>
+    virtual
+    std::pair<Vector<double>,double>
     perturb(const Vector<double> &current_sample) const = 0;
   };
 
@@ -514,12 +530,15 @@ namespace ProposalGenerator
   public:
     LogGaussian(const unsigned int random_seed, const double log_sigma);
 
-    virtual Vector<double> perturb(const Vector<double> &current_sample) const;
+    virtual
+    std::pair<Vector<double>,double>
+    perturb(const Vector<double> &current_sample) const;
 
   private:
     const double         log_sigma;
     mutable std::mt19937 random_number_generator;
   };
+
 
 
   LogGaussian::LogGaussian(const unsigned int random_seed,
@@ -529,15 +548,21 @@ namespace ProposalGenerator
     random_number_generator.seed(random_seed);
   }
 
-  Vector<double>
+
+  std::pair<Vector<double>,double>
   LogGaussian::perturb(const Vector<double> &current_sample) const
   {
     Vector<double> new_sample = current_sample;
+    double         product_of_ratios = 1;
     for (auto &x : new_sample)
-      x *= std::exp(
-        std::normal_distribution<>(0, log_sigma)(random_number_generator));
+      {
+        const double rnd = std::normal_distribution<>(0, log_sigma)(random_number_generator);
+        const double exp_rnd = std::exp(rnd);
+        x *= exp_rnd;
+        product_of_ratios *= exp_rnd;
+      }
 
-    return new_sample;
+    return {new_sample, product_of_ratios};
   }
 
 } // namespace ProposalGenerator
@@ -546,7 +571,7 @@ namespace ProposalGenerator
 // The last main class is the Metropolis-Hastings sampler itself.
 // If you understand the algorithm behind this method, then
 // the following implementation should not be too difficult
-// to understand. The only thing of relevance is that descriptions
+// to read. The only thing of relevance is that descriptions
 // of the algorithm typically ask whether the *ratio* of two
 // probabilities (the "posterior" probabilities of the current
 // and the previous samples, where the "posterior" is the product of the
@@ -555,7 +580,16 @@ namespace ProposalGenerator
 // *logarithms* of these probabilities, we now need to take
 // the ratio of appropriate exponentials -- which is made numerically
 // more stable by considering the exponential of the difference of
-// the log probabilities.
+// the log probabilities. The only other slight complication is that
+// we need to multiply this ratio by the ratio of proposal probabilities
+// since we use a non-symmetric proposal distribution.
+//
+// Finally, we note that the output is generated with 7 digits of
+// accuracy. (The C++ default is 6 digits.) We do this because,
+// as shown in the paper, we can determine the mean value of the
+// probability distribution we are sampling here to at least six
+// digits of accuracy, and do not want to be limited by the precision
+// of the output.
 namespace Sampler
 {
   class MetropolisHastings
@@ -604,6 +638,8 @@ namespace Sampler
     , accepted_sample_number(0)
   {
     output_file.open("samples-" + dataset_name + ".txt");
+    output_file.precision(7);
+
     random_number_generator.seed(random_seed);
   }
 
@@ -624,15 +660,18 @@ namespace Sampler
 
     for (unsigned int k = 1; k < n_samples; ++k, ++sample_number)
       {
-        const Vector<double> trial_sample =
-          proposal_generator.perturb(current_sample);
+        std::pair<Vector<double>,double>
+          perturbation = proposal_generator.perturb(current_sample);
+        const Vector<double> trial_sample                   = std::move (perturbation.first);
+        const double         perturbation_probability_ratio = perturbation.second;
+
         const double trial_log_posterior =
           (likelihood.log_likelihood(simulator.evaluate(trial_sample)) +
            prior.log_prior(trial_sample));
 
-        if ((trial_log_posterior > current_log_posterior) ||
-            (std::exp(trial_log_posterior - current_log_posterior) >=
-             uniform_distribution(random_number_generator)))
+        if (std::exp(trial_log_posterior - current_log_posterior) * perturbation_probability_ratio
+            >=
+            uniform_distribution(random_number_generator))
           {
             current_sample        = trial_sample;
             current_log_posterior = trial_log_posterior;
@@ -698,7 +737,7 @@ int main()
   MultithreadInfo::set_thread_limit(1);
 
   const unsigned int random_seed  = (testing ? 1U : std::random_device()());
-  const std::string  dataset_name = std::to_string(random_seed);
+  const std::string  dataset_name = Utilities::to_string(random_seed, 10);
 
   const Vector<double> exact_solution(
     {   0.06076511762259369, 0.09601910120848481, 
@@ -795,7 +834,7 @@ int main()
   LogLikelihood::Gaussian        log_likelihood(exact_solution, 0.05);
   LogPrior::LogGaussian          log_prior(0, 2);
   ProposalGenerator::LogGaussian proposal_generator(
-    random_seed, 0.0725); /* so that the acceptance ratio is ~0.3 */
+    random_seed, 0.09); /* so that the acceptance ratio is ~0.24 */
   Sampler::MetropolisHastings sampler(laplace_problem,
                                       log_likelihood,
                                       log_prior,
@@ -809,6 +848,6 @@ int main()
   sampler.sample(starting_coefficients,
                  (testing ? 250 * 40 /* takes 40 seconds */
                             :
-                            250 * 60 * 60 * 24 * 30 /* takes a month */
+                            100000000 /* takes 6 days */
                   ));
 }
