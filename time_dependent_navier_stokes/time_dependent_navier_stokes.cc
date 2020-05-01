@@ -296,13 +296,13 @@ namespace fluid
 
   bool Time::time_to_output() const
   {
-    unsigned int delta = output_interval / delta_t;
+    unsigned int delta = static_cast<unsigned int>(output_interval / delta_t);
     return (timestep >= delta && timestep % delta == 0);
   }
 
   bool Time::time_to_refine() const
   {
-    unsigned int delta = refinement_interval / delta_t;
+    unsigned int delta = static_cast<unsigned int>(refinement_interval / delta_t);
     return (timestep >= delta && timestep % delta == 0);
   }
 
