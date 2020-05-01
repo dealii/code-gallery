@@ -19,35 +19,38 @@
 
 
 
+#include <deal.II/base/function.h>
+#include <deal.II/base/logstream.h>
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/timer.h>
-#include <deal.II/grid/tria.h>
+
+#include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_values.h>
+
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
-#include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/fe/fe_values.h>
-#include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/function.h>
-#include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/matrix_tools.h>
-#include <deal.II/lac/vector.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/sparse_matrix.h>
+
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
+#include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
 #include <iostream>
 #include <random>
-
-#include <deal.II/base/logstream.h>
 
 using namespace dealii;
 
@@ -71,7 +74,8 @@ namespace ForwardSimulator
   class Interface
   {
   public:
-    virtual Vector<double> evaluate(const Vector<double> &coefficients) = 0;
+    virtual Vector<double>
+    evaluate(const Vector<double> &coefficients) = 0;
   };
 
 
@@ -87,30 +91,35 @@ namespace ForwardSimulator
     evaluate(const Vector<double> &coefficients) override;
 
   private:
-    void make_grid(const unsigned int global_refinements);
-    void setup_system();
-    void assemble_system(const Vector<double> &coefficients);
-    void solve();
-    void output_results(const Vector<double> &coefficients) const;
+    void
+    make_grid(const unsigned int global_refinements);
+    void
+    setup_system();
+    void
+    assemble_system(const Vector<double> &coefficients);
+    void
+    solve();
+    void
+    output_results(const Vector<double> &coefficients) const;
 
-    Triangulation<dim>        triangulation;
-    FE_Q<dim>                 fe;
-    DoFHandler<dim>           dof_handler;
+    Triangulation<dim> triangulation;
+    FE_Q<dim>          fe;
+    DoFHandler<dim>    dof_handler;
 
-    FullMatrix<double>        cell_matrix;
-    Vector<double>            cell_rhs;
-    std::map<types::global_dof_index,double> boundary_values;
+    FullMatrix<double>                        cell_matrix;
+    Vector<double>                            cell_rhs;
+    std::map<types::global_dof_index, double> boundary_values;
 
-    SparsityPattern           sparsity_pattern;
-    SparseMatrix<double>      system_matrix;
+    SparsityPattern      sparsity_pattern;
+    SparseMatrix<double> system_matrix;
 
-    Vector<double>            solution;
-    Vector<double>            system_rhs;
+    Vector<double> solution;
+    Vector<double> system_rhs;
 
-    std::vector<Point<dim>>   measurement_points;
+    std::vector<Point<dim>> measurement_points;
 
-    SparsityPattern           measurement_sparsity;
-    SparseMatrix<double>      measurement_matrix;
+    SparsityPattern      measurement_sparsity;
+    SparseMatrix<double> measurement_matrix;
 
     TimerOutput  timer;
     unsigned int nth_evaluation;
@@ -137,7 +146,8 @@ namespace ForwardSimulator
 
 
   template <int dim>
-  void PoissonSolver<dim>::make_grid(const unsigned int global_refinements)
+  void
+  PoissonSolver<dim>::make_grid(const unsigned int global_refinements)
   {
     Assert(global_refinements >= 3,
            ExcMessage("This program makes the assumption that the mesh for the "
@@ -153,7 +163,8 @@ namespace ForwardSimulator
 
 
   template <int dim>
-  void PoissonSolver<dim>::setup_system()
+  void
+  PoissonSolver<dim>::setup_system()
   {
     // First define the finite element space:
     dof_handler.distribute_dofs(fe);
@@ -227,7 +238,7 @@ namespace ForwardSimulator
       cell_matrix.reinit(dofs_per_cell, dofs_per_cell);
       cell_rhs.reinit(dofs_per_cell);
 
-      const QGauss<dim>  quadrature_formula(fe.degree+1);
+      const QGauss<dim>  quadrature_formula(fe.degree + 1);
       const unsigned int n_q_points = quadrature_formula.size();
 
       FEValues<dim> fe_values(fe,
@@ -264,7 +275,8 @@ namespace ForwardSimulator
   // for a (representative) cell, the function that assembles the matrix is
   // pretty short and straightforward:
   template <int dim>
-  void PoissonSolver<dim>::assemble_system(const Vector<double> &coefficients)
+  void
+  PoissonSolver<dim>::assemble_system(const Vector<double> &coefficients)
   {
     Assert(coefficients.size() == 64, ExcInternalError());
 
@@ -278,8 +290,8 @@ namespace ForwardSimulator
     for (const auto &cell : dof_handler.active_cell_iterators())
       {
         const double coefficient = coefficients(cell->user_index());
-        
-        cell->get_dof_indices(local_dof_indices);        
+
+        cell->get_dof_indices(local_dof_indices);
         for (unsigned int i = 0; i < dofs_per_cell; ++i)
           {
             for (unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -290,7 +302,7 @@ namespace ForwardSimulator
             system_rhs(local_dof_indices[i]) += cell_rhs(i);
           }
       }
-    
+
     MatrixTools::apply_boundary_values(boundary_values,
                                        system_matrix,
                                        solution,
@@ -300,7 +312,8 @@ namespace ForwardSimulator
 
   // The same is true for the function that solves the linear system:
   template <int dim>
-  void PoissonSolver<dim>::solve()
+  void
+  PoissonSolver<dim>::solve()
   {
     SparseDirectUMFPACK solver;
     solver.factorize(system_matrix);
@@ -405,7 +418,8 @@ namespace LogLikelihood
   class Interface
   {
   public:
-    virtual double log_likelihood(const Vector<double> &x) const = 0;
+    virtual double
+    log_likelihood(const Vector<double> &x) const = 0;
   };
 
 
@@ -414,7 +428,8 @@ namespace LogLikelihood
   public:
     Gaussian(const Vector<double> &mu, const double sigma);
 
-    virtual double log_likelihood(const Vector<double> &x) const override;
+    virtual double
+    log_likelihood(const Vector<double> &x) const override;
 
   private:
     const Vector<double> mu;
@@ -427,7 +442,8 @@ namespace LogLikelihood
   {}
 
 
-  double Gaussian::log_likelihood(const Vector<double> &x) const
+  double
+  Gaussian::log_likelihood(const Vector<double> &x) const
   {
     Vector<double> x_minus_mu = x;
     x_minus_mu -= mu;
@@ -453,7 +469,8 @@ namespace LogPrior
   class Interface
   {
   public:
-    virtual double log_prior(const Vector<double> &x) const = 0;
+    virtual double
+    log_prior(const Vector<double> &x) const = 0;
   };
 
 
@@ -462,7 +479,8 @@ namespace LogPrior
   public:
     LogGaussian(const double mu, const double sigma);
 
-    virtual double log_prior(const Vector<double> &x) const override;
+    virtual double
+    log_prior(const Vector<double> &x) const override;
 
   private:
     const double mu;
@@ -475,7 +493,8 @@ namespace LogPrior
   {}
 
 
-  double LogGaussian::log_prior(const Vector<double> &x) const
+  double
+  LogGaussian::log_prior(const Vector<double> &x) const
   {
     double log_of_product = 0;
 
@@ -519,8 +538,7 @@ namespace ProposalGenerator
   class Interface
   {
   public:
-    virtual
-    std::pair<Vector<double>,double>
+    virtual std::pair<Vector<double>, double>
     perturb(const Vector<double> &current_sample) const = 0;
   };
 
@@ -530,8 +548,7 @@ namespace ProposalGenerator
   public:
     LogGaussian(const unsigned int random_seed, const double log_sigma);
 
-    virtual
-    std::pair<Vector<double>,double>
+    virtual std::pair<Vector<double>, double>
     perturb(const Vector<double> &current_sample) const;
 
   private:
@@ -549,14 +566,15 @@ namespace ProposalGenerator
   }
 
 
-  std::pair<Vector<double>,double>
+  std::pair<Vector<double>, double>
   LogGaussian::perturb(const Vector<double> &current_sample) const
   {
-    Vector<double> new_sample = current_sample;
+    Vector<double> new_sample        = current_sample;
     double         product_of_ratios = 1;
     for (auto &x : new_sample)
       {
-        const double rnd = std::normal_distribution<>(0, log_sigma)(random_number_generator);
+        const double rnd =
+          std::normal_distribution<>(0, log_sigma)(random_number_generator);
         const double exp_rnd = std::exp(rnd);
         x *= exp_rnd;
         product_of_ratios *= exp_rnd;
@@ -602,8 +620,8 @@ namespace Sampler
                        const unsigned int                  random_seed,
                        const std::string &                 dataset_name);
 
-    void sample(const Vector<double> &starting_guess,
-                const unsigned int    n_samples);
+    void
+    sample(const Vector<double> &starting_guess, const unsigned int n_samples);
 
   private:
     ForwardSimulator::Interface &       simulator;
@@ -618,8 +636,9 @@ namespace Sampler
 
     std::ofstream output_file;
 
-    void write_sample(const Vector<double> &current_sample,
-                      const double          current_log_likelihood);
+    void
+    write_sample(const Vector<double> &current_sample,
+                 const double          current_log_likelihood);
   };
 
 
@@ -644,8 +663,9 @@ namespace Sampler
   }
 
 
-  void MetropolisHastings::sample(const Vector<double> &starting_guess,
-                                  const unsigned int    n_samples)
+  void
+  MetropolisHastings::sample(const Vector<double> &starting_guess,
+                             const unsigned int    n_samples)
   {
     std::uniform_real_distribution<> uniform_distribution(0, 1);
 
@@ -660,17 +680,17 @@ namespace Sampler
 
     for (unsigned int k = 1; k < n_samples; ++k, ++sample_number)
       {
-        std::pair<Vector<double>,double>
-          perturbation = proposal_generator.perturb(current_sample);
-        const Vector<double> trial_sample                   = std::move (perturbation.first);
-        const double         perturbation_probability_ratio = perturbation.second;
+        std::pair<Vector<double>, double> perturbation =
+          proposal_generator.perturb(current_sample);
+        const Vector<double> trial_sample = std::move(perturbation.first);
+        const double perturbation_probability_ratio = perturbation.second;
 
         const double trial_log_posterior =
           (likelihood.log_likelihood(simulator.evaluate(trial_sample)) +
            prior.log_prior(trial_sample));
 
-        if (std::exp(trial_log_posterior - current_log_posterior) * perturbation_probability_ratio
-            >=
+        if (std::exp(trial_log_posterior - current_log_posterior) *
+              perturbation_probability_ratio >=
             uniform_distribution(random_number_generator))
           {
             current_sample        = trial_sample;
@@ -685,8 +705,9 @@ namespace Sampler
 
 
 
-  void MetropolisHastings::write_sample(const Vector<double> &current_sample,
-                                        const double current_log_posterior)
+  void
+  MetropolisHastings::write_sample(const Vector<double> &current_sample,
+                                   const double          current_log_posterior)
   {
     output_file << current_log_posterior << '\t';
     output_file << accepted_sample_number << '\t';
@@ -726,7 +747,8 @@ namespace Sampler
 //                                       /* prefix = */ "exact")
 //      .evaluate(exact_coefficients);
 // @endcode
-int main()
+int
+main()
 {
   const bool testing = true;
 
@@ -740,91 +762,63 @@ int main()
   const std::string  dataset_name = Utilities::to_string(random_seed, 10);
 
   const Vector<double> exact_solution(
-    {   0.06076511762259369, 0.09601910120848481, 
-        0.1238852517838584,  0.1495184117375201, 
-        0.1841596127549784,  0.2174525028261122, 
-        0.2250996160898698,  0.2197954769002993, 
-        0.2074695698370926,  0.1889996477663016, 
-        0.1632722532153726,  0.1276782480038186, 
-        0.07711845915789312, 0.09601910120848552, 
-        0.2000589533367983,  0.3385592591951766, 
-        0.3934300024647806,  0.4040223892461541, 
-        0.4122329537843092,  0.4100480091545554, 
-        0.3949151637189968,  0.3697873264791232, 
-        0.33401826235924,    0.2850397806663382, 
-        0.2184260032478671,  0.1271121156350957, 
-        0.1238852517838611,  0.3385592591951819, 
-        0.7119285162766475,  0.8175712861756428, 
-        0.6836254116578105,  0.5779452419831157, 
-        0.5555615956136897,  0.5285181561736719, 
-        0.491439702849224,   0.4409367494853282, 
-        0.3730060082060772,  0.2821694983395214, 
-        0.1610176733857739,  0.1495184117375257, 
-        0.3934300024647929,  0.8175712861756562, 
-        0.9439154625527653,  0.8015904115095128, 
-        0.6859683749254024,  0.6561235366960599, 
-        0.6213197201867315,  0.5753611315000049, 
-        0.5140091754526823,  0.4325325506354165, 
-        0.3248315148915482,  0.1834600412730086, 
-        0.1841596127549917,  0.4040223892461832, 
-        0.6836254116578439,  0.8015904115095396, 
-        0.7870119561144977,  0.7373108331395808, 
-        0.7116558878070463,  0.6745179049094283, 
-        0.6235300574156917,  0.5559332704045935, 
-        0.4670304994474178,  0.3499809143811, 
-        0.19688263746294,    0.2174525028261253, 
-        0.4122329537843404,  0.5779452419831566, 
-        0.6859683749254372,  0.7373108331396063, 
-        0.7458811983178246,  0.7278968022406559, 
-        0.6904793535357751,  0.6369176452710288, 
-        0.5677443693743215,  0.4784738764865867, 
-        0.3602190632823262,  0.2031792054737325, 
-        0.2250996160898818,  0.4100480091545787, 
-        0.5555615956137137,  0.6561235366960938, 
-        0.7116558878070715,  0.727896802240657, 
-        0.7121928678670187,  0.6712187391428729, 
-        0.6139157775591492,  0.5478251665295381, 
-        0.4677122687599031,  0.3587654911000848, 
-        0.2050734291675918,  0.2197954769003094, 
-        0.3949151637190157,  0.5285181561736911, 
-        0.6213197201867471,  0.6745179049094407, 
-        0.690479353535786,   0.6712187391428787, 
-        0.6178408289359514,  0.5453605027237883, 
-        0.489575966490909,   0.4341716881061278, 
-        0.3534389974779456,  0.2083227496961347, 
-        0.207469569837099,   0.3697873264791366, 
-        0.4914397028492412,  0.5753611315000203, 
-        0.6235300574157017,  0.6369176452710497, 
-        0.6139157775591579,  0.5453605027237935, 
-        0.4336604929612851,  0.4109641743019312, 
-        0.3881864790111245,  0.3642640090182592, 
-        0.2179599909280145,  0.1889996477663011, 
-        0.3340182623592461,  0.4409367494853381, 
-        0.5140091754526943,  0.5559332704045969, 
-        0.5677443693743304,  0.5478251665295453, 
-        0.4895759664908982,  0.4109641743019171, 
-        0.395727260284338,   0.3778949322004734, 
-        0.3596268271857124,  0.2191250268948948, 
-        0.1632722532153683,  0.2850397806663325, 
-        0.373006008206081,   0.4325325506354207, 
-        0.4670304994474315,  0.4784738764866023, 
-        0.4677122687599041,  0.4341716881061055, 
-        0.388186479011099,   0.3778949322004602, 
-        0.3633362567187364,  0.3464457261905399, 
-        0.2096362321365655,  0.1276782480038148, 
-        0.2184260032478634,  0.2821694983395252, 
-        0.3248315148915535,  0.3499809143811097, 
-        0.3602190632823333,  0.3587654911000799, 
-        0.3534389974779268,  0.3642640090182283, 
-        0.35962682718569,    0.3464457261905295, 
-        0.3260728953424643,  0.180670595355394, 
-        0.07711845915789244, 0.1271121156350963, 
-        0.1610176733857757,  0.1834600412730144, 
-        0.1968826374629443,  0.2031792054737354, 
-        0.2050734291675885,  0.2083227496961245, 
-        0.2179599909279998,  0.2191250268948822, 
-        0.2096362321365551,  0.1806705953553887, 
-        0.1067965550010013                         });
+    {0.06076511762259369, 0.09601910120848481, 0.1238852517838584,
+     0.1495184117375201,  0.1841596127549784,  0.2174525028261122,
+     0.2250996160898698,  0.2197954769002993,  0.2074695698370926,
+     0.1889996477663016,  0.1632722532153726,  0.1276782480038186,
+     0.07711845915789312, 0.09601910120848552, 0.2000589533367983,
+     0.3385592591951766,  0.3934300024647806,  0.4040223892461541,
+     0.4122329537843092,  0.4100480091545554,  0.3949151637189968,
+     0.3697873264791232,  0.33401826235924,    0.2850397806663382,
+     0.2184260032478671,  0.1271121156350957,  0.1238852517838611,
+     0.3385592591951819,  0.7119285162766475,  0.8175712861756428,
+     0.6836254116578105,  0.5779452419831157,  0.5555615956136897,
+     0.5285181561736719,  0.491439702849224,   0.4409367494853282,
+     0.3730060082060772,  0.2821694983395214,  0.1610176733857739,
+     0.1495184117375257,  0.3934300024647929,  0.8175712861756562,
+     0.9439154625527653,  0.8015904115095128,  0.6859683749254024,
+     0.6561235366960599,  0.6213197201867315,  0.5753611315000049,
+     0.5140091754526823,  0.4325325506354165,  0.3248315148915482,
+     0.1834600412730086,  0.1841596127549917,  0.4040223892461832,
+     0.6836254116578439,  0.8015904115095396,  0.7870119561144977,
+     0.7373108331395808,  0.7116558878070463,  0.6745179049094283,
+     0.6235300574156917,  0.5559332704045935,  0.4670304994474178,
+     0.3499809143811,     0.19688263746294,    0.2174525028261253,
+     0.4122329537843404,  0.5779452419831566,  0.6859683749254372,
+     0.7373108331396063,  0.7458811983178246,  0.7278968022406559,
+     0.6904793535357751,  0.6369176452710288,  0.5677443693743215,
+     0.4784738764865867,  0.3602190632823262,  0.2031792054737325,
+     0.2250996160898818,  0.4100480091545787,  0.5555615956137137,
+     0.6561235366960938,  0.7116558878070715,  0.727896802240657,
+     0.7121928678670187,  0.6712187391428729,  0.6139157775591492,
+     0.5478251665295381,  0.4677122687599031,  0.3587654911000848,
+     0.2050734291675918,  0.2197954769003094,  0.3949151637190157,
+     0.5285181561736911,  0.6213197201867471,  0.6745179049094407,
+     0.690479353535786,   0.6712187391428787,  0.6178408289359514,
+     0.5453605027237883,  0.489575966490909,   0.4341716881061278,
+     0.3534389974779456,  0.2083227496961347,  0.207469569837099,
+     0.3697873264791366,  0.4914397028492412,  0.5753611315000203,
+     0.6235300574157017,  0.6369176452710497,  0.6139157775591579,
+     0.5453605027237935,  0.4336604929612851,  0.4109641743019312,
+     0.3881864790111245,  0.3642640090182592,  0.2179599909280145,
+     0.1889996477663011,  0.3340182623592461,  0.4409367494853381,
+     0.5140091754526943,  0.5559332704045969,  0.5677443693743304,
+     0.5478251665295453,  0.4895759664908982,  0.4109641743019171,
+     0.395727260284338,   0.3778949322004734,  0.3596268271857124,
+     0.2191250268948948,  0.1632722532153683,  0.2850397806663325,
+     0.373006008206081,   0.4325325506354207,  0.4670304994474315,
+     0.4784738764866023,  0.4677122687599041,  0.4341716881061055,
+     0.388186479011099,   0.3778949322004602,  0.3633362567187364,
+     0.3464457261905399,  0.2096362321365655,  0.1276782480038148,
+     0.2184260032478634,  0.2821694983395252,  0.3248315148915535,
+     0.3499809143811097,  0.3602190632823333,  0.3587654911000799,
+     0.3534389974779268,  0.3642640090182283,  0.35962682718569,
+     0.3464457261905295,  0.3260728953424643,  0.180670595355394,
+     0.07711845915789244, 0.1271121156350963,  0.1610176733857757,
+     0.1834600412730144,  0.1968826374629443,  0.2031792054737354,
+     0.2050734291675885,  0.2083227496961245,  0.2179599909279998,
+     0.2191250268948822,  0.2096362321365551,  0.1806705953553887,
+     0.1067965550010013});
 
   // Now run the forward simulator for samples:
   ForwardSimulator::PoissonSolver<2> laplace_problem(

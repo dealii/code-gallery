@@ -1,25 +1,24 @@
 // @sect3{LDGPoisson.cc}
 // The code begins as per usual with a long list of the the included
 // files from the deal.ii library.
-#include <deal.II/base/quadrature_lib.h>
-#include <deal.II/base/logstream.h>
 #include <deal.II/base/function.h>
+#include <deal.II/base/logstream.h>
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/timer.h>
 
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_renumbering.h>
+#include <deal.II/dofs/dof_tools.h>
 
-
-#include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
 
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_renumbering.h>
-#include <deal.II/dofs/dof_accessor.h>
-#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/sparse_matrix.h>
 
 #include <fstream>
 #include <iostream>
@@ -33,25 +32,27 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 
-#include <deal.II/numerics/vector_tools.h>
-#include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/vector_tools.h>
 
 
 // Now we have to load in the deal.ii files that will allow us to use
 // a distributed computing framework.
-#include <deal.II/base/utilities.h>
-#include <deal.II/base/index_set.h>
 #include <deal.II/base/conditional_ostream.h>
-#include <deal.II/lac/sparsity_tools.h>
+#include <deal.II/base/index_set.h>
+#include <deal.II/base/utilities.h>
+
 #include <deal.II/distributed/tria.h>
+
+#include <deal.II/lac/sparsity_tools.h>
 
 
 // Additionally we load the files that will allow us to interact with
 // the Trilinos library.
+#include <deal.II/lac/trilinos_solver.h>
 #include <deal.II/lac/trilinos_sparse_matrix.h>
 #include <deal.II/lac/trilinos_vector.h>
-#include <deal.II/lac/trilinos_solver.h>
 
 
 // The functions class contains all the defintions of the functions we
@@ -71,61 +72,70 @@ using namespace dealii;
 template <int dim>
 class LDGPoissonProblem
 {
-
 public:
-  LDGPoissonProblem(const unsigned int degree,
-                    const unsigned int n_refine);
+  LDGPoissonProblem(const unsigned int degree, const unsigned int n_refine);
 
   ~LDGPoissonProblem();
 
-  void run();
+  void
+  run();
 
 
 private:
-  void make_grid();
+  void
+  make_grid();
 
-  void make_dofs();
+  void
+  make_dofs();
 
-  void assemble_system();
+  void
+  assemble_system();
 
-  void assemble_cell_terms(const FEValues<dim>    &cell_fe,
-                           FullMatrix<double>     &cell_matrix,
-                           Vector<double>         &cell_vector);
+  void
+  assemble_cell_terms(const FEValues<dim> &cell_fe,
+                      FullMatrix<double> & cell_matrix,
+                      Vector<double> &     cell_vector);
 
-  void assemble_Neumann_boundary_terms(const FEFaceValues<dim>    &face_fe,
-                                       FullMatrix<double>         &local_matrix,
-                                       Vector<double>             &local_vector);
+  void
+  assemble_Neumann_boundary_terms(const FEFaceValues<dim> &face_fe,
+                                  FullMatrix<double> &     local_matrix,
+                                  Vector<double> &         local_vector);
 
-  void assemble_Dirichlet_boundary_terms(const FEFaceValues<dim>  &face_fe,
-                                         FullMatrix<double>       &local_matrix,
-                                         Vector<double>           &local_vector,
-                                         const double              &h);
+  void
+  assemble_Dirichlet_boundary_terms(const FEFaceValues<dim> &face_fe,
+                                    FullMatrix<double> &     local_matrix,
+                                    Vector<double> &         local_vector,
+                                    const double &           h);
 
-  void assemble_flux_terms(const FEFaceValuesBase<dim>  &fe_face_values,
-                           const FEFaceValuesBase<dim>  &fe_neighbor_face_values,
-                           FullMatrix<double>           &vi_ui_matrix,
-                           FullMatrix<double>           &vi_ue_matrix,
-                           FullMatrix<double>           &ve_ui_matrix,
-                           FullMatrix<double>           &ve_ue_matrix,
-                           const double                  &h);
+  void
+  assemble_flux_terms(const FEFaceValuesBase<dim> &fe_face_values,
+                      const FEFaceValuesBase<dim> &fe_neighbor_face_values,
+                      FullMatrix<double> &         vi_ui_matrix,
+                      FullMatrix<double> &         vi_ue_matrix,
+                      FullMatrix<double> &         ve_ui_matrix,
+                      FullMatrix<double> &         ve_ue_matrix,
+                      const double &               h);
 
-  void distribute_local_flux_to_global(
-    const FullMatrix<double> &vi_ui_matrix,
-    const FullMatrix<double> &vi_ue_matrix,
-    const FullMatrix<double> &ve_ui_matrix,
-    const FullMatrix<double> &ve_ue_matrix,
+  void
+  distribute_local_flux_to_global(
+    const FullMatrix<double> &                  vi_ui_matrix,
+    const FullMatrix<double> &                  vi_ue_matrix,
+    const FullMatrix<double> &                  ve_ui_matrix,
+    const FullMatrix<double> &                  ve_ue_matrix,
     const std::vector<types::global_dof_index> &local_dof_indices,
     const std::vector<types::global_dof_index> &local_neighbor_dof_indices);
 
-  void solve();
+  void
+  solve();
 
-  void output_results() const;
+  void
+  output_results() const;
 
   const unsigned int degree;
   const unsigned int n_refine;
-  double penalty;
-  double h_max;
-  double h_min;
+  double             penalty;
+  double             h_max;
+  double             h_min;
 
   enum
   {
@@ -133,27 +143,27 @@ private:
     Neumann
   };
 
-  parallel::distributed::Triangulation<dim>       triangulation;
-  FESystem<dim>                                   fe;
-  DoFHandler<dim>                                 dof_handler;
+  parallel::distributed::Triangulation<dim> triangulation;
+  FESystem<dim>                             fe;
+  DoFHandler<dim>                           dof_handler;
 
-  AffineConstraints<double>                       constraints;
+  AffineConstraints<double> constraints;
 
-  SparsityPattern                                 sparsity_pattern;
+  SparsityPattern sparsity_pattern;
 
-  TrilinosWrappers::SparseMatrix                  system_matrix;
-  TrilinosWrappers::MPI::Vector                   locally_relevant_solution;
-  TrilinosWrappers::MPI::Vector                   system_rhs;
+  TrilinosWrappers::SparseMatrix system_matrix;
+  TrilinosWrappers::MPI::Vector  locally_relevant_solution;
+  TrilinosWrappers::MPI::Vector  system_rhs;
 
-  ConditionalOStream                              pcout;
-  TimerOutput                                     computing_timer;
+  ConditionalOStream pcout;
+  TimerOutput        computing_timer;
 
-  SolverControl                                   solver_control;
-  TrilinosWrappers::SolverDirect                  solver;
+  SolverControl                  solver_control;
+  TrilinosWrappers::SolverDirect solver;
 
-  const RightHandSide<dim>              rhs_function;
-  const DirichletBoundaryValues<dim>    Dirichlet_bc_function;
-  const TrueSolution<dim>               true_solution;
+  const RightHandSide<dim>           rhs_function;
+  const DirichletBoundaryValues<dim> Dirichlet_bc_function;
+  const TrueSolution<dim>            true_solution;
 };
 
 
@@ -184,35 +194,29 @@ private:
 // The other difference bewteen our constructor and that of step-40 is that
 // we all instantiate our linear solver in the constructor definition.
 template <int dim>
-LDGPoissonProblem<dim>::
-LDGPoissonProblem(const unsigned int degree,
-                  const unsigned int n_refine)
-  :
-  degree(degree),
-  n_refine(n_refine),
-  triangulation(MPI_COMM_WORLD,
-                typename Triangulation<dim>::MeshSmoothing
-                (Triangulation<dim>::smoothing_on_refinement |
-                 Triangulation<dim>::smoothing_on_coarsening)),
-  fe( FESystem<dim>(FE_DGQ<dim>(degree), dim),        1,
-      FE_DGQ<dim>(degree),                             1),
-  dof_handler(triangulation),
-  pcout(std::cout,
-        Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-  computing_timer(MPI_COMM_WORLD,
-                  pcout,
-                  TimerOutput::summary,
-                  TimerOutput::wall_times),
-  solver_control(1),
-  solver(solver_control),
-  rhs_function(),
-  Dirichlet_bc_function()
-{
-}
+LDGPoissonProblem<dim>::LDGPoissonProblem(const unsigned int degree,
+                                          const unsigned int n_refine)
+  : degree(degree)
+  , n_refine(n_refine)
+  , triangulation(MPI_COMM_WORLD,
+                  typename Triangulation<dim>::MeshSmoothing(
+                    Triangulation<dim>::smoothing_on_refinement |
+                    Triangulation<dim>::smoothing_on_coarsening))
+  , fe(FESystem<dim>(FE_DGQ<dim>(degree), dim), 1, FE_DGQ<dim>(degree), 1)
+  , dof_handler(triangulation)
+  , pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  , computing_timer(MPI_COMM_WORLD,
+                    pcout,
+                    TimerOutput::summary,
+                    TimerOutput::wall_times)
+  , solver_control(1)
+  , solver(solver_control)
+  , rhs_function()
+  , Dirichlet_bc_function()
+{}
 
 template <int dim>
-LDGPoissonProblem<dim>::
-~LDGPoissonProblem()
+LDGPoissonProblem<dim>::~LDGPoissonProblem()
 {
   dof_handler.clear();
 }
@@ -223,18 +227,17 @@ LDGPoissonProblem<dim>::
 // using the defined enum.
 template <int dim>
 void
-LDGPoissonProblem<dim>::
-make_grid()
+LDGPoissonProblem<dim>::make_grid()
 {
   GridGenerator::hyper_cube(triangulation, 0, 1);
   triangulation.refine_global(n_refine);
 
   unsigned int local_refine = 2;
-  for (unsigned int i =0; i <local_refine; i++)
+  for (unsigned int i = 0; i < local_refine; i++)
     {
       typename Triangulation<dim>::active_cell_iterator
-      cell = triangulation.begin_active(),
-      endc = triangulation.end();
+        cell = triangulation.begin_active(),
+        endc = triangulation.end();
 
       // We loop over all the cells in the mesh
       // and mark the  appropriate cells for refinement.
@@ -248,9 +251,9 @@ make_grid()
       // documentation.
       for (; cell != endc; cell++)
         {
-          if ((cell->center()[1]) > 0.9 )
+          if ((cell->center()[1]) > 0.9)
             {
-              if ((cell->center()[0] > 0.9)  || (cell->center()[0] < 0.1))
+              if ((cell->center()[0] > 0.9) || (cell->center()[0] < 0.1))
                 cell->set_refine_flag();
             }
         }
@@ -270,16 +273,15 @@ make_grid()
   // We remark that one could easily set more complicated
   // conditions where there are both Dirichlet or
   // Neumann boundaries.
-  typename Triangulation<dim>::cell_iterator
-  cell = triangulation.begin(),
-  endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(),
+                                             endc = triangulation.end();
   for (; cell != endc; cell++)
     {
-      for (unsigned int face_no=0;
+      for (unsigned int face_no = 0;
            face_no < GeometryInfo<dim>::faces_per_cell;
            face_no++)
         {
-          if (cell->face(face_no)->at_boundary() )
+          if (cell->face(face_no)->at_boundary())
             cell->face(face_no)->set_boundary_id(Dirichlet);
         }
     }
@@ -295,8 +297,7 @@ make_grid()
 // variable and its gradient.
 template <int dim>
 void
-LDGPoissonProblem<dim>::
-make_dofs()
+LDGPoissonProblem<dim>::make_dofs()
 {
   TimerOutput::Scope t(computing_timer, "setup");
 
@@ -327,10 +328,9 @@ make_dofs()
   // need in order to do computations on our processor, but, that
   // we do not have the ability to write to.
   IndexSet locally_relevant_dofs;
-  DoFTools::extract_locally_relevant_dofs(dof_handler,
-                                          locally_relevant_dofs);
+  DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
-  std::vector<types::global_dof_index> dofs_per_component(dim+1);
+  std::vector<types::global_dof_index> dofs_per_component(dim + 1);
   DoFTools::count_dofs_per_component(dof_handler, dofs_per_component);
 
   // Discontinuous Galerkin methods are fantanistic methods in part because
@@ -356,13 +356,13 @@ make_dofs()
   // since we using a DG method and need to take into account the DG
   // fluxes in the sparsity pattern.
   DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_flux_sparsity_pattern(dof_handler,
-                                       dsp);
+  DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
 
-  SparsityTools::distribute_sparsity_pattern(dsp,
-                                             dof_handler.n_locally_owned_dofs_per_processor(),
-                                             MPI_COMM_WORLD,
-                                             locally_relevant_dofs);
+  SparsityTools::distribute_sparsity_pattern(
+    dsp,
+    dof_handler.n_locally_owned_dofs_per_processor(),
+    MPI_COMM_WORLD,
+    locally_relevant_dofs);
 
   // Here is one area that I had to learn the hard way. The local
   // discontinuous Galerkin method like the mixed method with the
@@ -391,8 +391,7 @@ make_dofs()
   // vector includes dofs that are locally relevant to our computations
   // while the <code>system_rhs</code> right hand side vector will only
   // include dofs that are locally owned by this processor.
-  locally_relevant_solution.reinit(locally_relevant_dofs,
-                                   MPI_COMM_WORLD);
+  locally_relevant_solution.reinit(locally_relevant_dofs, MPI_COMM_WORLD);
 
   system_rhs.reinit(locally_owned_dofs,
                     locally_relevant_dofs,
@@ -400,15 +399,12 @@ make_dofs()
                     true);
 
   const unsigned int n_vector_field = dim * dofs_per_component[0];
-  const unsigned int n_potential = dofs_per_component[dim];
+  const unsigned int n_potential    = dofs_per_component[dim];
 
-  pcout << "Number of active cells : "
-        << triangulation.n_global_active_cells()
+  pcout << "Number of active cells : " << triangulation.n_global_active_cells()
         << std::endl
-        << "Number of degrees of freedom: "
-        << dof_handler.n_dofs()
-        << " (" << n_vector_field << " + " << n_potential << ")"
-        << std::endl;
+        << "Number of degrees of freedom: " << dof_handler.n_dofs() << " ("
+        << n_vector_field << " + " << n_potential << ")" << std::endl;
 }
 
 //@sect4{assemble_system}
@@ -419,28 +415,24 @@ make_dofs()
 // dof indices for the cells we are working on in the global system.
 template <int dim>
 void
-LDGPoissonProblem<dim>::
-assemble_system()
+LDGPoissonProblem<dim>::assemble_system()
 {
   TimerOutput::Scope t(computing_timer, "assembly");
 
-  QGauss<dim>         quadrature_formula(fe.degree+1);
-  QGauss<dim-1>       face_quadrature_formula(fe.degree+1);
+  QGauss<dim>     quadrature_formula(fe.degree + 1);
+  QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
 
-  const UpdateFlags update_flags  = update_values
-                                    | update_gradients
-                                    | update_quadrature_points
-                                    | update_JxW_values;
+  const UpdateFlags update_flags = update_values | update_gradients |
+                                   update_quadrature_points | update_JxW_values;
 
-  const UpdateFlags face_update_flags =   update_values
-                                          | update_normal_vectors
-                                          | update_quadrature_points
-                                          | update_JxW_values;
+  const UpdateFlags face_update_flags = update_values | update_normal_vectors |
+                                        update_quadrature_points |
+                                        update_JxW_values;
 
-  const unsigned int dofs_per_cell = fe.dofs_per_cell;
+  const unsigned int                   dofs_per_cell = fe.dofs_per_cell;
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-  std::vector<types::global_dof_index>
-  local_neighbor_dof_indices(dofs_per_cell);
+  std::vector<types::global_dof_index> local_neighbor_dof_indices(
+    dofs_per_cell);
 
   // We first remark that we have the FEValues objects for
   // the values of our cell basis functions as was done in most
@@ -458,32 +450,34 @@ assemble_system()
   // a face that multiple refinement levels, we need to evaluate the
   // fluxes across all its childrens' faces; we'll explain this more when
   // the time comes.
-  FEValues<dim>           fe_values(fe, quadrature_formula, update_flags);
+  FEValues<dim> fe_values(fe, quadrature_formula, update_flags);
 
-  FEFaceValues<dim>       fe_face_values(fe,face_quadrature_formula,
-                                         face_update_flags);
+  FEFaceValues<dim> fe_face_values(fe,
+                                   face_quadrature_formula,
+                                   face_update_flags);
 
-  FEFaceValues<dim>       fe_neighbor_face_values(fe,
-                                                  face_quadrature_formula,
-                                                  face_update_flags);
-
-  FESubfaceValues<dim>    fe_subface_values(fe, face_quadrature_formula,
+  FEFaceValues<dim> fe_neighbor_face_values(fe,
+                                            face_quadrature_formula,
                                             face_update_flags);
+
+  FESubfaceValues<dim> fe_subface_values(fe,
+                                         face_quadrature_formula,
+                                         face_update_flags);
 
   // Here are the local (dense) matrix and right hand side vector for
   // the solid integrals as well as the integrals on the boundaries in the
   // local discontinuous Galerkin method.  These terms will be built for
   // each local element in the mesh and then distributed to the global
   // system matrix and right hand side vector.
-  FullMatrix<double>      local_matrix(dofs_per_cell,dofs_per_cell);
-  Vector<double>          local_vector(dofs_per_cell);
+  FullMatrix<double> local_matrix(dofs_per_cell, dofs_per_cell);
+  Vector<double>     local_vector(dofs_per_cell);
 
   // The next four matrices are used to incorporate the flux integrals across
   // interior faces of the mesh:
-  FullMatrix<double>      vi_ui_matrix(dofs_per_cell, dofs_per_cell);
-  FullMatrix<double>      vi_ue_matrix(dofs_per_cell, dofs_per_cell);
-  FullMatrix<double>      ve_ui_matrix(dofs_per_cell, dofs_per_cell);
-  FullMatrix<double>      ve_ue_matrix(dofs_per_cell, dofs_per_cell);
+  FullMatrix<double> vi_ui_matrix(dofs_per_cell, dofs_per_cell);
+  FullMatrix<double> vi_ue_matrix(dofs_per_cell, dofs_per_cell);
+  FullMatrix<double> ve_ui_matrix(dofs_per_cell, dofs_per_cell);
+  FullMatrix<double> ve_ue_matrix(dofs_per_cell, dofs_per_cell);
   // As explained in the section on the LDG method we take our test
   // function to be v and multiply it on the left side of our differential
   // equation that is on u and peform integration by parts as explained in the
@@ -510,11 +504,11 @@ assemble_system()
   // we loop over all the cells
   // and assemble the local system matrix and local right hand side vector
   // using the DoFHandler::active_cell_iterator,
-  typename DoFHandler<dim>::active_cell_iterator
-  cell = dof_handler.begin_active(),
-  endc = dof_handler.end();
+  typename DoFHandler<dim>::active_cell_iterator cell =
+                                                   dof_handler.begin_active(),
+                                                 endc = dof_handler.end();
 
-  for (; cell!=endc; cell++)
+  for (; cell != endc; cell++)
     {
       // Now, since we are working in a distributed setting,
       // we can only work on cells and write to dofs in the
@@ -536,9 +530,7 @@ assemble_system()
           local_vector = 0;
 
           fe_values.reinit(cell);
-          assemble_cell_terms(fe_values,
-                              local_matrix,
-                              local_vector);
+          assemble_cell_terms(fe_values, local_matrix, local_vector);
 
           // We remark that we need to get the local indices for the dofs to
           // to this cell before we begin to compute the contributions
@@ -567,14 +559,14 @@ assemble_system()
           // in the <code>local_matrix</code> as well as the boundary
           // condition that ends up
           // in the <code>local_vector</code>.
-          for (unsigned int face_no=0;
-               face_no< GeometryInfo<dim>::faces_per_cell;
+          for (unsigned int face_no = 0;
+               face_no < GeometryInfo<dim>::faces_per_cell;
                face_no++)
             {
-              typename DoFHandler<dim>::face_iterator  face =
+              typename DoFHandler<dim>::face_iterator face =
                 cell->face(face_no);
 
-              if (face->at_boundary() )
+              if (face->at_boundary())
                 {
                   fe_face_values.reinit(cell, face_no);
 
@@ -599,7 +591,7 @@ assemble_system()
                                                       local_vector);
                     }
                   else
-                    Assert(false, ExcNotImplemented() );
+                    Assert(false, ExcNotImplemented());
                 }
               else
                 {
@@ -611,7 +603,7 @@ assemble_system()
                   // the meighbor cell that shares this cell's face.
                   //
                   Assert(cell->neighbor(face_no).state() ==
-                         IteratorState::valid,
+                           IteratorState::valid,
                          ExcInternalError());
 
                   typename DoFHandler<dim>::cell_iterator neighbor =
@@ -640,7 +632,7 @@ assemble_system()
                       // subfaces (children faces) of our cell's face and
                       // compute the interior fluxes across the children faces
                       // and the neighbor's face.
-                      for (unsigned int subface_no=0;
+                      for (unsigned int subface_no = 0;
                            subface_no < face->number_of_children();
                            ++subface_no)
                         {
@@ -652,9 +644,10 @@ assemble_system()
                           // because the deal.ii library does not allow
                           // neighboring cells to have refinement levels
                           // that are more than one level in difference.
-                          typename DoFHandler<dim>::cell_iterator neighbor_child =
-                            cell->neighbor_child_on_subface(face_no,
-                                                            subface_no);
+                          typename DoFHandler<dim>::cell_iterator
+                            neighbor_child =
+                              cell->neighbor_child_on_subface(face_no,
+                                                              subface_no);
 
                           Assert(!neighbor_child->has_children(),
                                  ExcInternalError());
@@ -696,7 +689,8 @@ assemble_system()
                           // Now all that is left to be done before distribuing
                           // the local flux matrices to the global system
                           // is get the neighbor child faces dof indices.
-                          neighbor_child->get_dof_indices(local_neighbor_dof_indices);
+                          neighbor_child->get_dof_indices(
+                            local_neighbor_dof_indices);
 
                           // Once we have this cells dof indices and the
                           // neighboring cell's dof indices we can use the
@@ -724,12 +718,12 @@ assemble_system()
                       // not compute the same contribution twice. This would
                       // happen because we are looping over all the faces of
                       // all the cells in the mesh
-                      // and assembling the interior flux matrices for each face.
-                      // To avoid doing assembling the interior flux matrices
-                      // twice we only compute the
-                      // interior fluxes once for each face by restricting that
-                      // the following computation only occur on the on
-                      // the cell face with the lower CellId.
+                      // and assembling the interior flux matrices for each
+                      // face. To avoid doing assembling the interior flux
+                      // matrices twice we only compute the interior fluxes once
+                      // for each face by restricting that the following
+                      // computation only occur on the on the cell face with the
+                      // lower CellId.
                       if (neighbor->level() == cell->level() &&
                           cell->id() < neighbor->id())
                         {
@@ -753,8 +747,8 @@ assemble_system()
                           fe_neighbor_face_values.reinit(neighbor,
                                                          neighbor_face_no);
 
-                          double h = std::min(cell->diameter(),
-                                              neighbor->diameter());
+                          double h =
+                            std::min(cell->diameter(), neighbor->diameter());
 
                           // Just as before we assemble the interior fluxes
                           //  using the
@@ -782,8 +776,6 @@ assemble_system()
                             ve_ue_matrix,
                             local_dof_indices,
                             local_neighbor_dof_indices);
-
-
                         }
                     }
                 }
@@ -814,7 +806,6 @@ assemble_system()
           constraints.distribute_local_to_global(local_vector,
                                                  local_dof_indices,
                                                  system_rhs);
-
         }
     }
 
@@ -832,13 +823,11 @@ assemble_system()
 // This function deals with constructing the local matrix due to
 // the solid integrals over each element and is very similar to the
 // the other examples in the deal.ii tutorials.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-assemble_cell_terms(
-  const FEValues<dim>     &cell_fe,
-  FullMatrix<double>      &cell_matrix,
-  Vector<double>          &cell_vector)
+LDGPoissonProblem<dim>::assemble_cell_terms(const FEValues<dim> &cell_fe,
+                                            FullMatrix<double> & cell_matrix,
+                                            Vector<double> &     cell_vector)
 {
   const unsigned int dofs_per_cell = cell_fe.dofs_per_cell;
   const unsigned int n_q_points    = cell_fe.n_quadrature_points;
@@ -846,29 +835,30 @@ assemble_cell_terms(
   const FEValuesExtractors::Vector VectorField(0);
   const FEValuesExtractors::Scalar Potential(dim);
 
-  std::vector<double>              rhs_values(n_q_points);
+  std::vector<double> rhs_values(n_q_points);
 
   // We first get the value of the right hand side function
   // evaluated at the quadrature points in the cell.
-  rhs_function.value_list(cell_fe.get_quadrature_points(),
-                          rhs_values);
+  rhs_function.value_list(cell_fe.get_quadrature_points(), rhs_values);
 
   // Now, we loop over the quadrature points in the
   // cell and then loop over the degrees of freedom and perform
   // quadrature to approximate the integrals.
-  for (unsigned int q=0; q<n_q_points; q++)
+  for (unsigned int q = 0; q < n_q_points; q++)
     {
-      for (unsigned int i=0; i<dofs_per_cell; i++)
+      for (unsigned int i = 0; i < dofs_per_cell; i++)
         {
-          const Tensor<1, dim> psi_i_field          = cell_fe[VectorField].value(i,q);
-          const double         div_psi_i_field      = cell_fe[VectorField].divergence(i,q);
-          const double         psi_i_potential      = cell_fe[Potential].value(i,q);
-          const Tensor<1, dim> grad_psi_i_potential = cell_fe[Potential].gradient(i,q);
+          const Tensor<1, dim> psi_i_field = cell_fe[VectorField].value(i, q);
+          const double div_psi_i_field = cell_fe[VectorField].divergence(i, q);
+          const double psi_i_potential = cell_fe[Potential].value(i, q);
+          const Tensor<1, dim> grad_psi_i_potential =
+            cell_fe[Potential].gradient(i, q);
 
-          for (unsigned int j=0; j<dofs_per_cell; j++)
+          for (unsigned int j = 0; j < dofs_per_cell; j++)
             {
-              const Tensor<1, dim> psi_j_field        = cell_fe[VectorField].value(j,q);
-              const double         psi_j_potential    = cell_fe[Potential].value(j,q);
+              const Tensor<1, dim> psi_j_field =
+                cell_fe[VectorField].value(j, q);
+              const double psi_j_potential = cell_fe[Potential].value(j, q);
 
               // This computation corresponds to assembling the local system
               // matrix for the integral over an element,
@@ -877,21 +867,17 @@ assemble_cell_terms(
               //              - \nabla \cdot \textbf{w} u
               //              - \nabla w \cdot \textbf{q}
               //              \right) dx $
-              cell_matrix(i,j)  += ( (psi_i_field * psi_j_field)
-                                     -
-                                     (div_psi_i_field * psi_j_potential)
-                                     -
-                                     (grad_psi_i_potential * psi_j_field)
-                                   ) * cell_fe.JxW(q);
+              cell_matrix(i, j) += ((psi_i_field * psi_j_field) -
+                                    (div_psi_i_field * psi_j_potential) -
+                                    (grad_psi_i_potential * psi_j_field)) *
+                                   cell_fe.JxW(q);
             }
 
           // And this local right hand vector corresponds to the integral
           // over the element cell,
           //
           // $ \int_{\Omega_{e}} w \,  f(\textbf{x}) \, dx $
-          cell_vector(i) += psi_i_potential *
-                            rhs_values[q] *
-                            cell_fe.JxW(q);
+          cell_vector(i) += psi_i_potential * rhs_values[q] * cell_fe.JxW(q);
         }
     }
 }
@@ -901,22 +887,21 @@ assemble_cell_terms(
 // contribution
 // and local right hand side vector, <code>local_vector</code>
 // for the Dirichlet boundary condtions.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-assemble_Dirichlet_boundary_terms(
-  const FEFaceValues<dim>     &face_fe,
-  FullMatrix<double>          &local_matrix,
-  Vector<double>              &local_vector,
-  const double                 &h)
+LDGPoissonProblem<dim>::assemble_Dirichlet_boundary_terms(
+  const FEFaceValues<dim> &face_fe,
+  FullMatrix<double> &     local_matrix,
+  Vector<double> &         local_vector,
+  const double &           h)
 {
-  const unsigned int dofs_per_cell     = face_fe.dofs_per_cell;
-  const unsigned int n_q_points        = face_fe.n_quadrature_points;
+  const unsigned int dofs_per_cell = face_fe.dofs_per_cell;
+  const unsigned int n_q_points    = face_fe.n_quadrature_points;
 
   const FEValuesExtractors::Vector VectorField(0);
   const FEValuesExtractors::Scalar Potential(dim);
 
-  std::vector<double>     Dirichlet_bc_values(n_q_points);
+  std::vector<double> Dirichlet_bc_values(n_q_points);
 
   // In order to evaluate the flux on the Dirichlet boundary face we
   // first get the value of the Dirichlet boundary function on the quadrature
@@ -926,31 +911,28 @@ assemble_Dirichlet_boundary_terms(
   Dirichlet_bc_function.value_list(face_fe.get_quadrature_points(),
                                    Dirichlet_bc_values);
 
-  for (unsigned int q=0; q<n_q_points; q++)
+  for (unsigned int q = 0; q < n_q_points; q++)
     {
-      for (unsigned int i=0; i<dofs_per_cell; i++)
+      for (unsigned int i = 0; i < dofs_per_cell; i++)
         {
-          const Tensor<1, dim> psi_i_field     = face_fe[VectorField].value(i,q);
-          const double         psi_i_potential = face_fe[Potential].value(i,q);
+          const Tensor<1, dim> psi_i_field = face_fe[VectorField].value(i, q);
+          const double         psi_i_potential = face_fe[Potential].value(i, q);
 
-          for (unsigned int j=0; j<dofs_per_cell; j++)
+          for (unsigned int j = 0; j < dofs_per_cell; j++)
             {
-              const Tensor<1, dim> psi_j_field    = face_fe[VectorField].value(j,q);
-              const double         psi_j_potential = face_fe[Potential].value(j,q);
+              const Tensor<1, dim> psi_j_field =
+                face_fe[VectorField].value(j, q);
+              const double psi_j_potential = face_fe[Potential].value(j, q);
 
               // We compute contribution for the flux $\widehat{q}$ on
               // the Dirichlet boundary which enters our system matrix as,
               //
               // $ \int_{\text{face}} w \, ( \textbf{n} \cdot \textbf{q}
               //                        + \sigma u)  ds $
-              local_matrix(i,j) += psi_i_potential * (
-                                     face_fe.normal_vector(q) *
-                                     psi_j_field
-                                     +
-                                     (penalty/h) *
-                                     psi_j_potential) *
-                                   face_fe.JxW(q);
-
+              local_matrix(i, j) += psi_i_potential *
+                                    (face_fe.normal_vector(q) * psi_j_field +
+                                     (penalty / h) * psi_j_potential) *
+                                    face_fe.JxW(q);
             }
 
           // We also compute the contribution for the flux for $\widehat{u}$
@@ -959,13 +941,9 @@ assemble_Dirichlet_boundary_terms(
           //
           // $\int_{\text{face}} (-\textbf{w} \cdot \textbf{n}
           //                      + \sigma w) \, u_{D} ds $
-          local_vector(i) += (-1.0 * psi_i_field *
-                              face_fe.normal_vector(q)
-                              +
-                              (penalty/h) *
-                              psi_i_potential) *
-                             Dirichlet_bc_values[q] *
-                             face_fe.JxW(q);
+          local_vector(i) += (-1.0 * psi_i_field * face_fe.normal_vector(q) +
+                              (penalty / h) * psi_i_potential) *
+                             Dirichlet_bc_values[q] * face_fe.JxW(q);
         }
     }
 }
@@ -973,13 +951,12 @@ assemble_Dirichlet_boundary_terms(
 // @sect4{assemble_Neumann_boundary_terms}
 // Here we have the function that builds the <code>local_matrix</code>
 // and <code>local_vector</code> for the Neumann boundary condtions.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-assemble_Neumann_boundary_terms(
-  const FEFaceValues<dim>     &face_fe,
-  FullMatrix<double>          &local_matrix,
-  Vector<double>              &local_vector)
+LDGPoissonProblem<dim>::assemble_Neumann_boundary_terms(
+  const FEFaceValues<dim> &face_fe,
+  FullMatrix<double> &     local_matrix,
+  Vector<double> &         local_vector)
 {
   const unsigned int dofs_per_cell = face_fe.dofs_per_cell;
   const unsigned int n_q_points    = face_fe.n_quadrature_points;
@@ -992,29 +969,25 @@ assemble_Neumann_boundary_terms(
   // points of the face.  Then we loop over all the quadrature points and
   // degrees of freedom and approximate the integrals on the Neumann boundary
   // element faces.
-  std::vector<double >    Neumann_bc_values(n_q_points);
+  std::vector<double> Neumann_bc_values(n_q_points);
 
-  for (unsigned int q=0; q<n_q_points; q++)
+  for (unsigned int q = 0; q < n_q_points; q++)
     {
-      for (unsigned int i=0; i<dofs_per_cell; i++)
+      for (unsigned int i = 0; i < dofs_per_cell; i++)
         {
-          const Tensor<1, dim> psi_i_field     = face_fe[VectorField].value(i,q);
-          const double         psi_i_potential = face_fe[Potential].value(i,q);
+          const Tensor<1, dim> psi_i_field = face_fe[VectorField].value(i, q);
+          const double         psi_i_potential = face_fe[Potential].value(i, q);
 
-          for (unsigned int j=0; j<dofs_per_cell; j++)
+          for (unsigned int j = 0; j < dofs_per_cell; j++)
             {
-
-              const double    psi_j_potential = face_fe[Potential].value(j,q);
+              const double psi_j_potential = face_fe[Potential].value(j, q);
 
               // We compute contribution for the flux $\widehat{u}$ on the
               // Neumann boundary which enters our system matrix as,
               //
               // $\int_{\text{face}} \textbf{w}  \cdot \textbf{n} \, u \, ds $
-              local_matrix(i,j) += psi_i_field *
-                                   face_fe.normal_vector(q) *
-                                   psi_j_potential *
-                                   face_fe.JxW(q);
-
+              local_matrix(i, j) += psi_i_field * face_fe.normal_vector(q) *
+                                    psi_j_potential * face_fe.JxW(q);
             }
 
           // We also compute the contribution for the flux for
@@ -1023,9 +996,8 @@ assemble_Neumann_boundary_terms(
           // hand side vector as
           //
           // $\int_{\text{face}} -w \, g_{N} \, ds$
-          local_vector(i) +=  -psi_i_potential *
-                              Neumann_bc_values[q] *
-                              face_fe.JxW(q);
+          local_vector(i) +=
+            -psi_i_potential * Neumann_bc_values[q] * face_fe.JxW(q);
         }
     }
 }
@@ -1034,17 +1006,16 @@ assemble_Neumann_boundary_terms(
 // Now we finally get to the function which builds the interior fluxes.
 // This is a rather long function
 // and we will describe what is going on in detail.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-assemble_flux_terms(
-  const FEFaceValuesBase<dim>     &fe_face_values,
-  const FEFaceValuesBase<dim>     &fe_neighbor_face_values,
-  FullMatrix<double>              &vi_ui_matrix,
-  FullMatrix<double>              &vi_ue_matrix,
-  FullMatrix<double>              &ve_ui_matrix,
-  FullMatrix<double>              &ve_ue_matrix,
-  const double                     &h)
+LDGPoissonProblem<dim>::assemble_flux_terms(
+  const FEFaceValuesBase<dim> &fe_face_values,
+  const FEFaceValuesBase<dim> &fe_neighbor_face_values,
+  FullMatrix<double> &         vi_ui_matrix,
+  FullMatrix<double> &         vi_ue_matrix,
+  FullMatrix<double> &         ve_ui_matrix,
+  FullMatrix<double> &         ve_ue_matrix,
+  const double &               h)
 {
   const unsigned int n_face_points      = fe_face_values.n_quadrature_points;
   const unsigned int dofs_this_cell     = fe_face_values.dofs_per_cell;
@@ -1057,28 +1028,28 @@ assemble_flux_terms(
   // the unit vector $\boldsymbol \beta$ that is used in defining
   // the LDG/ALternating fluxes.
   Point<dim> beta;
-  for (int i=0; i<dim; i++)
+  for (int i = 0; i < dim; i++)
     beta(i) = 1.0;
-  beta /= sqrt(beta.square() );
+  beta /= sqrt(beta.square());
 
   // Now we loop over all the quadrature points on the element face
   // and loop over all the degrees of freedom and approximate
   // the following flux integrals.
-  for (unsigned int q=0; q<n_face_points; q++)
+  for (unsigned int q = 0; q < n_face_points; q++)
     {
-      for (unsigned int i=0; i<dofs_this_cell; i++)
+      for (unsigned int i = 0; i < dofs_this_cell; i++)
         {
-          const Tensor<1,dim>  psi_i_field_minus  =
-            fe_face_values[VectorField].value(i,q);
-          const double psi_i_potential_minus  =
-            fe_face_values[Potential].value(i,q);
+          const Tensor<1, dim> psi_i_field_minus =
+            fe_face_values[VectorField].value(i, q);
+          const double psi_i_potential_minus =
+            fe_face_values[Potential].value(i, q);
 
-          for (unsigned int j=0; j<dofs_this_cell; j++)
+          for (unsigned int j = 0; j < dofs_this_cell; j++)
             {
-              const Tensor<1,dim> psi_j_field_minus   =
-                fe_face_values[VectorField].value(j,q);
-              const double psi_j_potential_minus  =
-                fe_face_values[Potential].value(j,q);
+              const Tensor<1, dim> psi_j_field_minus =
+                fe_face_values[VectorField].value(j, q);
+              const double psi_j_potential_minus =
+                fe_face_values[Potential].value(j, q);
 
               // We compute the flux matrix where the test function's
               // as well as the solution function's values are taken from
@@ -1091,36 +1062,24 @@ assemble_flux_terms(
               //            + \boldsymbol \beta \cdot \textbf{w}^{-} u^{-}
               //            - w^{-} \boldsymbol \beta \cdot \textbf{q}^{-}
               //            + \sigma w^{-} \, u^{-} \right) ds$
-              vi_ui_matrix(i,j)   += (0.5 * (
-                                        psi_i_field_minus *
-                                        fe_face_values.normal_vector(q) *
-                                        psi_j_potential_minus
-                                        +
-                                        psi_i_potential_minus *
-                                        fe_face_values.normal_vector(q) *
-                                        psi_j_field_minus )
-                                      +
-                                      beta *
-                                      psi_i_field_minus *
-                                      psi_j_potential_minus
-                                      -
-                                      beta *
-                                      psi_i_potential_minus *
-                                      psi_j_field_minus
-                                      +
-                                      (penalty/h) *
-                                      psi_i_potential_minus *
-                                      psi_j_potential_minus
-                                     ) *
-                                     fe_face_values.JxW(q);
+              vi_ui_matrix(i, j) +=
+                (0.5 * (psi_i_field_minus * fe_face_values.normal_vector(q) *
+                          psi_j_potential_minus +
+                        psi_i_potential_minus *
+                          fe_face_values.normal_vector(q) * psi_j_field_minus) +
+                 beta * psi_i_field_minus * psi_j_potential_minus -
+                 beta * psi_i_potential_minus * psi_j_field_minus +
+                 (penalty / h) * psi_i_potential_minus *
+                   psi_j_potential_minus) *
+                fe_face_values.JxW(q);
             }
 
-          for (unsigned int j=0; j<dofs_neighbor_cell; j++)
+          for (unsigned int j = 0; j < dofs_neighbor_cell; j++)
             {
-              const Tensor<1,dim> psi_j_field_plus    =
-                fe_neighbor_face_values[VectorField].value(j,q);
-              const double            psi_j_potential_plus        =
-                fe_neighbor_face_values[Potential].value(j,q);
+              const Tensor<1, dim> psi_j_field_plus =
+                fe_neighbor_face_values[VectorField].value(j, q);
+              const double psi_j_potential_plus =
+                fe_neighbor_face_values[Potential].value(j, q);
 
               // We compute the flux matrix where the test function is
               // from the interior of this elements face and solution
@@ -1134,44 +1093,31 @@ assemble_flux_terms(
               //             - \boldsymbol \beta \cdot \textbf{w}^{-} u^{+}
               //             + w^{-} \boldsymbol \beta \cdot  \textbf{q}^{+}
               //             - \sigma w^{-} \, u^{+} \right) ds $
-              vi_ue_matrix(i,j) += ( 0.5 * (
-                                       psi_i_field_minus *
-                                       fe_face_values.normal_vector(q) *
-                                       psi_j_potential_plus
-                                       +
-                                       psi_i_potential_minus *
-                                       fe_face_values.normal_vector(q) *
-                                       psi_j_field_plus )
-                                     -
-                                     beta *
-                                     psi_i_field_minus *
-                                     psi_j_potential_plus
-                                     +
-                                     beta *
-                                     psi_i_potential_minus *
-                                     psi_j_field_plus
-                                     -
-                                     (penalty/h) *
-                                     psi_i_potential_minus *
-                                     psi_j_potential_plus
-                                   ) *
-                                   fe_face_values.JxW(q);
+              vi_ue_matrix(i, j) +=
+                (0.5 * (psi_i_field_minus * fe_face_values.normal_vector(q) *
+                          psi_j_potential_plus +
+                        psi_i_potential_minus *
+                          fe_face_values.normal_vector(q) * psi_j_field_plus) -
+                 beta * psi_i_field_minus * psi_j_potential_plus +
+                 beta * psi_i_potential_minus * psi_j_field_plus -
+                 (penalty / h) * psi_i_potential_minus * psi_j_potential_plus) *
+                fe_face_values.JxW(q);
             }
         }
 
-      for (unsigned int i=0; i<dofs_neighbor_cell; i++)
+      for (unsigned int i = 0; i < dofs_neighbor_cell; i++)
         {
-          const Tensor<1,dim>  psi_i_field_plus =
-            fe_neighbor_face_values[VectorField].value(i,q);
-          const double         psi_i_potential_plus =
-            fe_neighbor_face_values[Potential].value(i,q);
+          const Tensor<1, dim> psi_i_field_plus =
+            fe_neighbor_face_values[VectorField].value(i, q);
+          const double psi_i_potential_plus =
+            fe_neighbor_face_values[Potential].value(i, q);
 
-          for (unsigned int j=0; j<dofs_this_cell; j++)
+          for (unsigned int j = 0; j < dofs_this_cell; j++)
             {
-              const Tensor<1,dim> psi_j_field_minus               =
-                fe_face_values[VectorField].value(j,q);
-              const double        psi_j_potential_minus       =
-                fe_face_values[Potential].value(j,q);
+              const Tensor<1, dim> psi_j_field_minus =
+                fe_face_values[VectorField].value(j, q);
+              const double psi_j_potential_minus =
+                fe_face_values[Potential].value(j, q);
 
 
               // We compute the flux matrix where the test function is
@@ -1186,36 +1132,24 @@ assemble_flux_terms(
               //              - \boldsymbol \beta \cdot \textbf{w}^{+} u^{-}
               //              +  w^{+} \boldsymbol \beta \cdot \textbf{q}^{-}
               //              - \sigma w^{+} u^{-} \right) ds $
-              ve_ui_matrix(i,j) +=  (-0.5 * (
-                                       psi_i_field_plus *
-                                       fe_face_values.normal_vector(q) *
-                                       psi_j_potential_minus
-                                       +
-                                       psi_i_potential_plus *
-                                       fe_face_values.normal_vector(q) *
-                                       psi_j_field_minus)
-                                     -
-                                     beta *
-                                     psi_i_field_plus *
-                                     psi_j_potential_minus
-                                     +
-                                     beta *
-                                     psi_i_potential_plus *
-                                     psi_j_field_minus
-                                     -
-                                     (penalty/h) *
-                                     psi_i_potential_plus *
-                                     psi_j_potential_minus
-                                    ) *
-                                    fe_face_values.JxW(q);
+              ve_ui_matrix(i, j) +=
+                (-0.5 *
+                   (psi_i_field_plus * fe_face_values.normal_vector(q) *
+                      psi_j_potential_minus +
+                    psi_i_potential_plus * fe_face_values.normal_vector(q) *
+                      psi_j_field_minus) -
+                 beta * psi_i_field_plus * psi_j_potential_minus +
+                 beta * psi_i_potential_plus * psi_j_field_minus -
+                 (penalty / h) * psi_i_potential_plus * psi_j_potential_minus) *
+                fe_face_values.JxW(q);
             }
 
-          for (unsigned int j=0; j<dofs_neighbor_cell; j++)
+          for (unsigned int j = 0; j < dofs_neighbor_cell; j++)
             {
-              const Tensor<1,dim> psi_j_field_plus =
-                fe_neighbor_face_values[VectorField].value(j,q);
-              const double        psi_j_potential_plus =
-                fe_neighbor_face_values[Potential].value(j,q);
+              const Tensor<1, dim> psi_j_field_plus =
+                fe_neighbor_face_values[VectorField].value(j, q);
+              const double psi_j_potential_plus =
+                fe_neighbor_face_values[Potential].value(j, q);
 
               // And lastly we compute the flux matrix where the test
               // function and solution function are taken from the exterior
@@ -1228,30 +1162,16 @@ assemble_flux_terms(
               //             + \boldsymbol \beta \cdot \textbf{w}^{+} u^{+}
               //             -  w^{+} \boldsymbol \beta \cdot \textbf{q}^{+}
               //             + \sigma w^{+} u^{+} \right) ds $
-              ve_ue_matrix(i,j) +=    (-0.5 * (
-                                         psi_i_field_plus *
-                                         fe_face_values.normal_vector(q) *
-                                         psi_j_potential_plus
-                                         +
-                                         psi_i_potential_plus *
-                                         fe_face_values.normal_vector(q) *
-                                         psi_j_field_plus )
-                                       +
-                                       beta *
-                                       psi_i_field_plus *
-                                       psi_j_potential_plus
-                                       -
-                                       beta *
-                                       psi_i_potential_plus *
-                                       psi_j_field_plus
-                                       +
-                                       (penalty/h) *
-                                       psi_i_potential_plus *
-                                       psi_j_potential_plus
-                                      ) *
-                                      fe_face_values.JxW(q);
+              ve_ue_matrix(i, j) +=
+                (-0.5 * (psi_i_field_plus * fe_face_values.normal_vector(q) *
+                           psi_j_potential_plus +
+                         psi_i_potential_plus *
+                           fe_face_values.normal_vector(q) * psi_j_field_plus) +
+                 beta * psi_i_field_plus * psi_j_potential_plus -
+                 beta * psi_i_potential_plus * psi_j_field_plus +
+                 (penalty / h) * psi_i_potential_plus * psi_j_potential_plus) *
+                fe_face_values.JxW(q);
             }
-
         }
     }
 }
@@ -1283,14 +1203,13 @@ assemble_flux_terms(
 // matrices is paramount to constructing our global system
 // matrix properly.  The ordering of the last two matrices
 // follow the same logic as the first two we discussed.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-distribute_local_flux_to_global(
-  const FullMatrix<double> &vi_ui_matrix,
-  const FullMatrix<double> &vi_ue_matrix,
-  const FullMatrix<double> &ve_ui_matrix,
-  const FullMatrix<double> &ve_ue_matrix,
+LDGPoissonProblem<dim>::distribute_local_flux_to_global(
+  const FullMatrix<double> &                  vi_ui_matrix,
+  const FullMatrix<double> &                  vi_ue_matrix,
+  const FullMatrix<double> &                  ve_ui_matrix,
+  const FullMatrix<double> &                  ve_ue_matrix,
   const std::vector<types::global_dof_index> &local_dof_indices,
   const std::vector<types::global_dof_index> &local_neighbor_dof_indices)
 {
@@ -1333,10 +1252,9 @@ distribute_local_flux_to_global(
 // Trilinos one can accomplish fully distributed computations
 // and not much about the following function calls will
 // change.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-solve()
+LDGPoissonProblem<dim>::solve()
 {
   TimerOutput::Scope t(computing_timer, "solve");
 
@@ -1347,15 +1265,12 @@ solve()
   // vector using
   // the copy constructor on the global system right hand
   // side vector which itself is completely distributed vector.
-  TrilinosWrappers::MPI::Vector
-  completely_distributed_solution(system_rhs);
+  TrilinosWrappers::MPI::Vector completely_distributed_solution(system_rhs);
 
   // Now we can preform the solve on the completeley distributed
   // right hand side vector, system matrix and the completely
   // distributed solution.
-  solver.solve(system_matrix,
-               completely_distributed_solution,
-               system_rhs);
+  solver.solve(system_matrix, completely_distributed_solution, system_rhs);
 
   // We now distribute the constraints of our system onto the
   // completely solution vector, but in our case with the LDG
@@ -1383,66 +1298,63 @@ solve()
 // is in the <code>solution_names</code> vector where we have to add
 // the gradient dimensions.  Everything else is taken care
 // of by the deal.ii library!
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-output_results()    const
+LDGPoissonProblem<dim>::output_results() const
 {
   std::vector<std::string> solution_names;
   switch (dim)
     {
-    case 1:
-      solution_names.push_back("u");
-      solution_names.push_back("du/dx");
-      break;
+      case 1:
+        solution_names.push_back("u");
+        solution_names.push_back("du/dx");
+        break;
 
-    case 2:
-      solution_names.push_back("grad(u)_x");
-      solution_names.push_back("grad(u)_y");
-      solution_names.push_back("u");
-      break;
+      case 2:
+        solution_names.push_back("grad(u)_x");
+        solution_names.push_back("grad(u)_y");
+        solution_names.push_back("u");
+        break;
 
-    case 3:
-      solution_names.push_back("grad(u)_x");
-      solution_names.push_back("grad(u)_y");
-      solution_names.push_back("grad(u)_z");
-      solution_names.push_back("u");
-      break;
+      case 3:
+        solution_names.push_back("grad(u)_x");
+        solution_names.push_back("grad(u)_y");
+        solution_names.push_back("grad(u)_z");
+        solution_names.push_back("u");
+        break;
 
-    default:
-      Assert(false, ExcNotImplemented() );
+      default:
+        Assert(false, ExcNotImplemented());
     }
 
-  DataOut<dim>    data_out;
+  DataOut<dim> data_out;
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(locally_relevant_solution,
-                           solution_names);
+  data_out.add_data_vector(locally_relevant_solution, solution_names);
 
-  Vector<float>   subdomain(triangulation.n_active_cells());
+  Vector<float> subdomain(triangulation.n_active_cells());
 
-  for (unsigned int i=0; i<subdomain.size(); i++)
+  for (unsigned int i = 0; i < subdomain.size(); i++)
     subdomain(i) = triangulation.locally_owned_subdomain();
 
-  data_out.add_data_vector(subdomain,"subdomain");
+  data_out.add_data_vector(subdomain, "subdomain");
 
   data_out.build_patches();
 
-  const std::string filename = ("solution."   +
-                                Utilities::int_to_string(
-                                  triangulation.locally_owned_subdomain(),4));
+  const std::string filename =
+    ("solution." +
+     Utilities::int_to_string(triangulation.locally_owned_subdomain(), 4));
 
   std::ofstream output((filename + ".vtu").c_str());
   data_out.write_vtu(output);
 
-  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0 )
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      std::vector<std::string>    filenames;
-      for (unsigned int i=0;
+      std::vector<std::string> filenames;
+      for (unsigned int i = 0;
            i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
            i++)
         {
-          filenames.push_back("solution." +
-                              Utilities::int_to_string(i,4) +
+          filenames.push_back("solution." + Utilities::int_to_string(i, 4) +
                               ".vtu");
         }
       std::ofstream master_output("solution.pvtu");
@@ -1455,10 +1367,9 @@ output_results()    const
 // The only public function of this class is pretty much exactly
 // the same as all the other deal.ii examples except I setting
 // the constant in the DG penalty ($\tilde{\sigma}$) to be 1.
-template<int dim>
+template <int dim>
 void
-LDGPoissonProblem<dim>::
-run()
+LDGPoissonProblem<dim>::run()
 {
   penalty = 1.0;
   make_grid();
@@ -1473,27 +1384,27 @@ run()
 // Here it the main class of our program, since it is nearly exactly
 // the same as step-40 and many of the other examples I won't
 // elaborate on it.
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
-
   try
     {
       using namespace dealii;
 
       deallog.depth_console(0);
 
-      Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
-                                                          numbers::invalid_unsigned_int);
+      Utilities::MPI::MPI_InitFinalize mpi_initialization(
+        argc, argv, numbers::invalid_unsigned_int);
 
-      unsigned int degree = 1;
-      unsigned int n_refine = 6;
-      LDGPoissonProblem<2>    Poisson(degree, n_refine);
+      unsigned int         degree   = 1;
+      unsigned int         n_refine = 6;
+      LDGPoissonProblem<2> Poisson(degree, n_refine);
       Poisson.run();
-
     }
   catch (std::exception &exc)
     {
-      std::cerr << std::endl << std::endl
+      std::cerr << std::endl
+                << std::endl
                 << "----------------------------------------------------"
                 << std::endl;
       std::cerr << "Exception on processing: " << std::endl
@@ -1506,7 +1417,8 @@ int main(int argc, char *argv[])
     }
   catch (...)
     {
-      std::cerr << std::endl << std::endl
+      std::cerr << std::endl
+                << std::endl
                 << "----------------------------------------------------"
                 << std::endl;
       std::cerr << "Unknown exception!" << std::endl

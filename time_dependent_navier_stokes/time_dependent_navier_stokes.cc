@@ -6,30 +6,9 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/base/utilities.h>
 
-#include <deal.II/lac/block_sparse_matrix.h>
-#include <deal.II/lac/block_vector.h>
-#include <deal.II/lac/constraint_matrix.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/solver_gmres.h>
-#include <deal.II/lac/sparse_direct.h>
-#include <deal.II/lac/sparsity_tools.h>
-
-#include <deal.II/lac/petsc_parallel_block_sparse_matrix.h>
-#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
-#include <deal.II/lac/petsc_parallel_vector.h>
-#include <deal.II/lac/petsc_precondition.h>
-#include <deal.II/lac/petsc_solver.h>
-
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_refinement.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/grid/manifold_lib.h>
-#include <deal.II/grid/tria.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
+#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/distributed/solution_transfer.h>
+#include <deal.II/distributed/tria.h>
 
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/dofs/dof_handler.h>
@@ -40,14 +19,34 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_refinement.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/tria.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+
+#include <deal.II/lac/block_sparse_matrix.h>
+#include <deal.II/lac/block_vector.h>
+#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/dynamic_sparsity_pattern.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/petsc_parallel_block_sparse_matrix.h>
+#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
+#include <deal.II/lac/petsc_parallel_vector.h>
+#include <deal.II/lac/petsc_precondition.h>
+#include <deal.II/lac/petsc_solver.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/sparsity_tools.h>
+
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
-
-#include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
-#include <deal.II/distributed/tria.h>
 
 #include <fstream>
 #include <iostream>
@@ -65,22 +64,22 @@ namespace fluid
   //
   // @sect4{Helper function}
   void create_triangulation_2d(Triangulation<2> &tria,
-                               bool compute_in_2d = true)
+                               bool              compute_in_2d = true)
   {
     SphericalManifold<2> boundary(Point<2>(0.5, 0.2));
-    Triangulation<2> left, middle, right, tmp, tmp2;
-    GridGenerator::subdivided_hyper_rectangle(
-      left,
-      std::vector<unsigned int>({3U, 4U}),
-      Point<2>(),
-      Point<2>(0.3, 0.41),
-      false);
-    GridGenerator::subdivided_hyper_rectangle(
-      right,
-      std::vector<unsigned int>({18U, 4U}),
-      Point<2>(0.7, 0),
-      Point<2>(2.5, 0.41),
-      false);
+    Triangulation<2>     left, middle, right, tmp, tmp2;
+    GridGenerator::subdivided_hyper_rectangle(left,
+                                              std::vector<unsigned int>(
+                                                {3U, 4U}),
+                                              Point<2>(),
+                                              Point<2>(0.3, 0.41),
+                                              false);
+    GridGenerator::subdivided_hyper_rectangle(right,
+                                              std::vector<unsigned int>(
+                                                {18U, 4U}),
+                                              Point<2>(0.7, 0),
+                                              Point<2>(2.5, 0.41),
+                                              false);
 
     // Create middle part first as a hyper shell.
     GridGenerator::hyper_shell(middle, Point<2>(0.5, 0.2), 0.05, 0.2, 4, true);
@@ -217,8 +216,8 @@ namespace fluid
     Triangulation<2> tria_2d;
     create_triangulation_2d(tria_2d, false);
     GridGenerator::extrude_triangulation(tria_2d, 5, 0.41, tria);
-    // Set the ids of the boundaries in x direction to 0 and 1; y direction to 2 and 3;
-    // z direction to 4 and 5; the cylindrical surface 6.
+    // Set the ids of the boundaries in x direction to 0 and 1; y direction to 2
+    // and 3; z direction to 4 and 5; the cylindrical surface 6.
     for (Triangulation<3>::active_cell_iterator cell = tria.begin();
          cell != tria.end();
          ++cell)
@@ -269,44 +268,66 @@ namespace fluid
          const double delta_t,
          const double output_interval,
          const double refinement_interval)
-      : timestep(0),
-        time_current(0.0),
-        time_end(time_end),
-        delta_t(delta_t),
-        output_interval(output_interval),
-        refinement_interval(refinement_interval)
+      : timestep(0)
+      , time_current(0.0)
+      , time_end(time_end)
+      , delta_t(delta_t)
+      , output_interval(output_interval)
+      , refinement_interval(refinement_interval)
+    {}
+    double
+    current() const
     {
+      return time_current;
     }
-    double current() const { return time_current; }
-    double end() const { return time_end; }
-    double get_delta_t() const { return delta_t; }
-    unsigned int get_timestep() const { return timestep; }
-    bool time_to_output() const;
-    bool time_to_refine() const;
-    void increment();
+    double
+    end() const
+    {
+      return time_end;
+    }
+    double
+    get_delta_t() const
+    {
+      return delta_t;
+    }
+    unsigned int
+    get_timestep() const
+    {
+      return timestep;
+    }
+    bool
+    time_to_output() const;
+    bool
+    time_to_refine() const;
+    void
+    increment();
 
   private:
     unsigned int timestep;
-    double time_current;
+    double       time_current;
     const double time_end;
     const double delta_t;
     const double output_interval;
     const double refinement_interval;
   };
 
-  bool Time::time_to_output() const
+  bool
+  Time::time_to_output() const
   {
     unsigned int delta = static_cast<unsigned int>(output_interval / delta_t);
     return (timestep >= delta && timestep % delta == 0);
   }
 
-  bool Time::time_to_refine() const
+  bool
+  Time::time_to_refine() const
   {
-    unsigned int delta = static_cast<unsigned int>(refinement_interval / delta_t);
+    unsigned int delta =
+      static_cast<unsigned int>(refinement_interval / delta_t);
     return (timestep >= delta && timestep % delta == 0);
   }
 
-  void Time::increment()
+  void
+  Time::increment()
   {
     time_current += delta_t;
     ++timestep;
@@ -318,17 +339,20 @@ namespace fluid
   class BoundaryValues : public Function<dim>
   {
   public:
-    BoundaryValues() : Function<dim>(dim + 1) {}
-    virtual double value(const Point<dim> &p,
-                         const unsigned int component) const;
+    BoundaryValues()
+      : Function<dim>(dim + 1)
+    {}
+    virtual double
+    value(const Point<dim> &p, const unsigned int component) const;
 
-    virtual void vector_value(const Point<dim> &p,
-                              Vector<double> &values) const;
+    virtual void
+    vector_value(const Point<dim> &p, Vector<double> &values) const;
   };
 
   template <int dim>
-  double BoundaryValues<dim>::value(const Point<dim> &p,
-                                    const unsigned int component) const
+  double
+  BoundaryValues<dim>::value(const Point<dim> & p,
+                             const unsigned int component) const
   {
     Assert(component < this->n_components,
            ExcIndexRange(component, 0, this->n_components));
@@ -339,8 +363,8 @@ namespace fluid
         // U_\mathrm{max}$
         // in 2D, and $U_\mathrm{avg} = 4/9 U_\mathrm{max}$ in 3D.
         // If $\nu = 0.001$, $D = 0.1$, then $Re = 100 U_\mathrm{avg}$.
-        double Uavg = 1.0;
-        double Umax = (dim == 2 ? 3 * Uavg / 2 : 9 * Uavg / 4);
+        double Uavg  = 1.0;
+        double Umax  = (dim == 2 ? 3 * Uavg / 2 : 9 * Uavg / 4);
         double value = 4 * Umax * p[1] * (0.41 - p[1]) / (0.41 * 0.41);
         if (dim == 3)
           {
@@ -352,8 +376,9 @@ namespace fluid
   }
 
   template <int dim>
-  void BoundaryValues<dim>::vector_value(const Point<dim> &p,
-                                         Vector<double> &values) const
+  void
+  BoundaryValues<dim>::vector_value(const Point<dim> &p,
+                                    Vector<double> &  values) const
   {
     for (unsigned int c = 0; c < this->n_components; ++c)
       values(c) = BoundaryValues<dim>::value(p, c);
@@ -393,17 +418,18 @@ namespace fluid
   {
   public:
     BlockSchurPreconditioner(
-      TimerOutput &timer,
-      double gamma,
-      double viscosity,
-      double dt,
-      const std::vector<IndexSet> &owned_partitioning,
+      TimerOutput &                                timer,
+      double                                       gamma,
+      double                                       viscosity,
+      double                                       dt,
+      const std::vector<IndexSet> &                owned_partitioning,
       const PETScWrappers::MPI::BlockSparseMatrix &system,
       const PETScWrappers::MPI::BlockSparseMatrix &mass,
-      PETScWrappers::MPI::BlockSparseMatrix &schur);
+      PETScWrappers::MPI::BlockSparseMatrix &      schur);
 
-    void vmult(PETScWrappers::MPI::BlockVector &dst,
-               const PETScWrappers::MPI::BlockVector &src) const;
+    void
+    vmult(PETScWrappers::MPI::BlockVector &      dst,
+          const PETScWrappers::MPI::BlockVector &src) const;
 
   private:
     TimerOutput &timer;
@@ -412,7 +438,7 @@ namespace fluid
     const double dt;
 
     const SmartPointer<const PETScWrappers::MPI::BlockSparseMatrix>
-      system_matrix;
+                                                                    system_matrix;
     const SmartPointer<const PETScWrappers::MPI::BlockSparseMatrix> mass_matrix;
     // As discussed, ${[B(diag(M_u))^{-1}B^T]}$ and its inverse
     // need to be computed.
@@ -431,21 +457,21 @@ namespace fluid
   // partitioning information into this class because we need to create some
   // temporary block vectors inside.
   BlockSchurPreconditioner::BlockSchurPreconditioner(
-    TimerOutput &timer,
-    double gamma,
-    double viscosity,
-    double dt,
-    const std::vector<IndexSet> &owned_partitioning,
+    TimerOutput &                                timer,
+    double                                       gamma,
+    double                                       viscosity,
+    double                                       dt,
+    const std::vector<IndexSet> &                owned_partitioning,
     const PETScWrappers::MPI::BlockSparseMatrix &system,
     const PETScWrappers::MPI::BlockSparseMatrix &mass,
-    PETScWrappers::MPI::BlockSparseMatrix &schur)
-    : timer(timer),
-      gamma(gamma),
-      viscosity(viscosity),
-      dt(dt),
-      system_matrix(&system),
-      mass_matrix(&mass),
-      mass_schur(&schur)
+    PETScWrappers::MPI::BlockSparseMatrix &      schur)
+    : timer(timer)
+    , gamma(gamma)
+    , viscosity(viscosity)
+    , dt(dt)
+    , system_matrix(&system)
+    , mass_matrix(&mass)
+    , mass_schur(&schur)
   {
     TimerOutput::Scope timer_section(timer, "CG for Sm");
     // The schur complemete of mass matrix is actually being computed here.
@@ -458,8 +484,9 @@ namespace fluid
     // this is exactly what we want to compute.
     PETScWrappers::PreconditionJacobi jacobi(mass_matrix->block(0, 0));
     jacobi.vmult(tmp2.block(0), tmp1.block(0));
-    system_matrix->block(1, 0).mmult(
-      mass_schur->block(1, 1), system_matrix->block(0, 1), tmp2.block(0));
+    system_matrix->block(1, 0).mmult(mass_schur->block(1, 1),
+                                     system_matrix->block(0, 1),
+                                     tmp2.block(0));
   }
 
   // @sect4{BlockSchurPreconditioner::vmult}
@@ -467,8 +494,9 @@ namespace fluid
   // The vmult operation strictly follows the definition of
   // BlockSchurPreconditioner
   // introduced above. Conceptually it computes $u = P^{-1}v$.
-  void BlockSchurPreconditioner::vmult(
-    PETScWrappers::MPI::BlockVector &dst,
+  void
+  BlockSchurPreconditioner::vmult(
+    PETScWrappers::MPI::BlockVector &      dst,
     const PETScWrappers::MPI::BlockVector &src) const
   {
     // Temporary vectors
@@ -478,22 +506,24 @@ namespace fluid
     // This block computes $u_1 = \tilde{S}^{-1} v_1$,
     // where CG solvers are used for $M_p^{-1}$ and $S_m^{-1}$.
     {
-      TimerOutput::Scope timer_section(timer, "CG for Mp");
-      SolverControl mp_control(src.block(1).size(),
+      TimerOutput::Scope      timer_section(timer, "CG for Mp");
+      SolverControl           mp_control(src.block(1).size(),
                                1e-6 * src.block(1).l2_norm());
       PETScWrappers::SolverCG cg_mp(mp_control,
                                     mass_schur->get_mpi_communicator());
       // $-(\nu + \gamma)M_p^{-1}v_1$
       PETScWrappers::PreconditionBlockJacobi Mp_preconditioner;
       Mp_preconditioner.initialize(mass_matrix->block(1, 1));
-      cg_mp.solve(
-        mass_matrix->block(1, 1), tmp, src.block(1), Mp_preconditioner);
+      cg_mp.solve(mass_matrix->block(1, 1),
+                  tmp,
+                  src.block(1),
+                  Mp_preconditioner);
       tmp *= -(viscosity + gamma);
     }
     // $-\frac{1}{dt}S_m^{-1}v_1$
     {
-      TimerOutput::Scope timer_section(timer, "CG for Sm");
-      SolverControl sm_control(src.block(1).size(),
+      TimerOutput::Scope      timer_section(timer, "CG for Sm");
+      SolverControl           sm_control(src.block(1).size(),
                                1e-6 * src.block(1).l2_norm());
       PETScWrappers::SolverCG cg_sm(sm_control,
                                     mass_schur->get_mpi_communicator());
@@ -503,8 +533,10 @@ namespace fluid
       // from being used.
       PETScWrappers::PreconditionNone Sm_preconditioner;
       Sm_preconditioner.initialize(mass_schur->block(1, 1));
-      cg_sm.solve(
-        mass_schur->block(1, 1), dst.block(1), src.block(1), Sm_preconditioner);
+      cg_sm.solve(mass_schur->block(1, 1),
+                  dst.block(1),
+                  src.block(1),
+                  Sm_preconditioner);
       dst.block(1) *= -1 / dt;
     }
     // Adding up these two, we get $\tilde{S}^{-1}v_1$.
@@ -516,8 +548,8 @@ namespace fluid
     // Finally, compute the product of $\tilde{A}^{-1}$ and utmp
     // using another CG solver.
     {
-      TimerOutput::Scope timer_section(timer, "CG for A");
-      SolverControl a_control(src.block(0).size(),
+      TimerOutput::Scope      timer_section(timer, "CG for A");
+      SolverControl           a_control(src.block(0).size(),
                               1e-6 * src.block(0).l2_norm());
       PETScWrappers::SolverCG cg_a(a_control,
                                    mass_schur->get_mpi_communicator());
@@ -528,8 +560,10 @@ namespace fluid
       // none.
       PETScWrappers::PreconditionNone A_preconditioner;
       A_preconditioner.initialize(system_matrix->block(0, 0));
-      cg_a.solve(
-        system_matrix->block(0, 0), dst.block(0), utmp, A_preconditioner);
+      cg_a.solve(system_matrix->block(0, 0),
+                 dst.block(0),
+                 utmp,
+                 A_preconditioner);
     }
   }
 
@@ -549,28 +583,38 @@ namespace fluid
   {
   public:
     InsIMEX(parallel::distributed::Triangulation<dim> &);
-    void run();
-    ~InsIMEX() { timer.print_summary(); }
+    void
+    run();
+    ~InsIMEX()
+    {
+      timer.print_summary();
+    }
 
   private:
-    void setup_dofs();
-    void make_constraints();
-    void initialize_system();
-    void assemble(bool use_nonzero_constraints, bool assemble_system);
-    std::pair<unsigned int, double> solve(bool use_nonzero_constraints,
-                                          bool assemble_system);
-    void refine_mesh(const unsigned int, const unsigned int);
-    void output_results(const unsigned int) const;
-    double viscosity;
-    double gamma;
-    const unsigned int degree;
+    void
+    setup_dofs();
+    void
+    make_constraints();
+    void
+    initialize_system();
+    void
+    assemble(bool use_nonzero_constraints, bool assemble_system);
+    std::pair<unsigned int, double>
+    solve(bool use_nonzero_constraints, bool assemble_system);
+    void
+    refine_mesh(const unsigned int, const unsigned int);
+    void
+                                         output_results(const unsigned int) const;
+    double                               viscosity;
+    double                               gamma;
+    const unsigned int                   degree;
     std::vector<types::global_dof_index> dofs_per_block;
 
     parallel::distributed::Triangulation<dim> &triangulation;
-    FESystem<dim> fe;
-    DoFHandler<dim> dof_handler;
-    QGauss<dim> volume_quad_formula;
-    QGauss<dim - 1> face_quad_formula;
+    FESystem<dim>                              fe;
+    DoFHandler<dim>                            dof_handler;
+    QGauss<dim>                                volume_quad_formula;
+    QGauss<dim - 1>                            face_quad_formula;
 
     ConstraintMatrix zero_constraints;
     ConstraintMatrix nonzero_constraints;
@@ -609,32 +653,34 @@ namespace fluid
     // The BlockSchurPreconditioner for the entire system.
     std::shared_ptr<BlockSchurPreconditioner> preconditioner;
 
-    Time time;
+    Time                time;
     mutable TimerOutput timer;
   };
 
   // @sect4{InsIMEX::InsIMEX}
   template <int dim>
   InsIMEX<dim>::InsIMEX(parallel::distributed::Triangulation<dim> &tria)
-    : viscosity(0.001),
-      gamma(0.1),
-      degree(1),
-      triangulation(tria),
-      fe(FE_Q<dim>(degree + 1), dim, FE_Q<dim>(degree), 1),
-      dof_handler(triangulation),
-      volume_quad_formula(degree + 2),
-      face_quad_formula(degree + 2),
-      mpi_communicator(MPI_COMM_WORLD),
-      pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_communicator) == 0),
-      time(1e0, 1e-3, 1e-2, 1e-2),
-      timer(
-        mpi_communicator, pcout, TimerOutput::never, TimerOutput::wall_times)
-  {
-  }
+    : viscosity(0.001)
+    , gamma(0.1)
+    , degree(1)
+    , triangulation(tria)
+    , fe(FE_Q<dim>(degree + 1), dim, FE_Q<dim>(degree), 1)
+    , dof_handler(triangulation)
+    , volume_quad_formula(degree + 2)
+    , face_quad_formula(degree + 2)
+    , mpi_communicator(MPI_COMM_WORLD)
+    , pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_communicator) == 0)
+    , time(1e0, 1e-3, 1e-2, 1e-2)
+    , timer(mpi_communicator,
+            pcout,
+            TimerOutput::never,
+            TimerOutput::wall_times)
+  {}
 
   // @sect4{InsIMEX::setup_dofs}
   template <int dim>
-  void InsIMEX<dim>::setup_dofs()
+  void
+  InsIMEX<dim>::setup_dofs()
   {
     // The first step is to associate DoFs with a given mesh.
     dof_handler.distribute_dofs(fe);
@@ -646,8 +692,9 @@ namespace fluid
     block_component[dim] = 1;
     DoFRenumbering::component_wise(dof_handler, block_component);
     dofs_per_block.resize(2);
-    DoFTools::count_dofs_per_block(
-      dof_handler, dofs_per_block, block_component);
+    DoFTools::count_dofs_per_block(dof_handler,
+                                   dofs_per_block,
+                                   block_component);
     // Partitioning.
     unsigned int dof_u = dofs_per_block[0];
     unsigned int dof_p = dofs_per_block[1];
@@ -668,7 +715,8 @@ namespace fluid
 
   // @sect4{InsIMEX::make_constraints}
   template <int dim>
-  void InsIMEX<dim>::make_constraints()
+  void
+  InsIMEX<dim>::make_constraints()
   {
     // Because the equation is written in incremental form, two constraints
     // are needed: nonzero constraint and zero constraint.
@@ -695,12 +743,12 @@ namespace fluid
                                                  BoundaryValues<dim>(),
                                                  nonzero_constraints,
                                                  fe.component_mask(velocities));
-        VectorTools::interpolate_boundary_values(
-          dof_handler,
-          id,
-          Functions::ZeroFunction<dim>(dim + 1),
-          zero_constraints,
-          fe.component_mask(velocities));
+        VectorTools::interpolate_boundary_values(dof_handler,
+                                                 id,
+                                                 Functions::ZeroFunction<dim>(
+                                                   dim + 1),
+                                                 zero_constraints,
+                                                 fe.component_mask(velocities));
       }
     nonzero_constraints.close();
     zero_constraints.close();
@@ -708,7 +756,8 @@ namespace fluid
 
   // @sect4{InsIMEX::initialize_system}
   template <int dim>
-  void InsIMEX<dim>::initialize_system()
+  void
+  InsIMEX<dim>::initialize_system()
   {
     preconditioner.reset();
     system_matrix.clear();
@@ -737,8 +786,9 @@ namespace fluid
 
     // present_solution is ghosted because it is used in the
     // output and mesh refinement functions.
-    present_solution.reinit(
-      owned_partitioning, relevant_partitioning, mpi_communicator);
+    present_solution.reinit(owned_partitioning,
+                            relevant_partitioning,
+                            mpi_communicator);
     // solution_increment is non-ghosted because the linear solver needs
     // a completely distributed vector.
     solution_increment.reinit(owned_partitioning, mpi_communicator);
@@ -758,19 +808,19 @@ namespace fluid
   // and once for zero constraint. But we must assemble the RHS at every time
   // step.
   template <int dim>
-  void InsIMEX<dim>::assemble(bool use_nonzero_constraints,
-                              bool assemble_system)
+  void
+  InsIMEX<dim>::assemble(bool use_nonzero_constraints, bool assemble_system)
   {
     TimerOutput::Scope timer_section(timer, "Assemble system");
 
     if (assemble_system)
       {
         system_matrix = 0;
-        mass_matrix = 0;
+        mass_matrix   = 0;
       }
     system_rhs = 0;
 
-    FEValues<dim> fe_values(fe,
+    FEValues<dim>     fe_values(fe,
                             volume_quad_formula,
                             update_values | update_quadrature_points |
                               update_JxW_values | update_gradients);
@@ -781,26 +831,26 @@ namespace fluid
                                        update_JxW_values);
 
     const unsigned int dofs_per_cell = fe.dofs_per_cell;
-    const unsigned int n_q_points = volume_quad_formula.size();
+    const unsigned int n_q_points    = volume_quad_formula.size();
 
     const FEValuesExtractors::Vector velocities(0);
     const FEValuesExtractors::Scalar pressure(dim);
 
     FullMatrix<double> local_matrix(dofs_per_cell, dofs_per_cell);
     FullMatrix<double> local_mass_matrix(dofs_per_cell, dofs_per_cell);
-    Vector<double> local_rhs(dofs_per_cell);
+    Vector<double>     local_rhs(dofs_per_cell);
 
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
     std::vector<Tensor<1, dim>> current_velocity_values(n_q_points);
     std::vector<Tensor<2, dim>> current_velocity_gradients(n_q_points);
-    std::vector<double> current_velocity_divergences(n_q_points);
-    std::vector<double> current_pressure_values(n_q_points);
+    std::vector<double>         current_velocity_divergences(n_q_points);
+    std::vector<double>         current_pressure_values(n_q_points);
 
-    std::vector<double> div_phi_u(dofs_per_cell);
+    std::vector<double>         div_phi_u(dofs_per_cell);
     std::vector<Tensor<1, dim>> phi_u(dofs_per_cell);
     std::vector<Tensor<2, dim>> grad_phi_u(dofs_per_cell);
-    std::vector<double> phi_p(dofs_per_cell);
+    std::vector<double>         phi_p(dofs_per_cell);
 
     for (auto cell = dof_handler.begin_active(); cell != dof_handler.end();
          ++cell)
@@ -811,7 +861,7 @@ namespace fluid
 
             if (assemble_system)
               {
-                local_matrix = 0;
+                local_matrix      = 0;
                 local_mass_matrix = 0;
               }
             local_rhs = 0;
@@ -834,10 +884,10 @@ namespace fluid
               {
                 for (unsigned int k = 0; k < dofs_per_cell; ++k)
                   {
-                    div_phi_u[k] = fe_values[velocities].divergence(k, q);
+                    div_phi_u[k]  = fe_values[velocities].divergence(k, q);
                     grad_phi_u[k] = fe_values[velocities].gradient(k, q);
-                    phi_u[k] = fe_values[velocities].value(k, q);
-                    phi_p[k] = fe_values[pressure].value(k, q);
+                    phi_u[k]      = fe_values[velocities].value(k, q);
+                    phi_p[k]      = fe_values[pressure].value(k, q);
                   }
 
                 for (unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -882,13 +932,15 @@ namespace fluid
                                                             local_dof_indices,
                                                             system_matrix,
                                                             system_rhs);
-                constraints_used.distribute_local_to_global(
-                  local_mass_matrix, local_dof_indices, mass_matrix);
+                constraints_used.distribute_local_to_global(local_mass_matrix,
+                                                            local_dof_indices,
+                                                            mass_matrix);
               }
             else
               {
-                constraints_used.distribute_local_to_global(
-                  local_rhs, local_dof_indices, system_rhs);
+                constraints_used.distribute_local_to_global(local_rhs,
+                                                            local_dof_indices,
+                                                            system_rhs);
               }
           }
       }
@@ -923,13 +975,14 @@ namespace fluid
                                                           mass_schur));
       }
 
-    SolverControl solver_control(
-      system_matrix.m(), 1e-8 * system_rhs.l2_norm(), true);
+    SolverControl solver_control(system_matrix.m(),
+                                 1e-8 * system_rhs.l2_norm(),
+                                 true);
     // Because PETScWrappers::SolverGMRES only accepts preconditioner
     // derived from PETScWrappers::PreconditionBase,
     // we use dealii SolverFGMRES.
     GrowingVectorMemory<PETScWrappers::MPI::BlockVector> vector_memory;
-    SolverFGMRES<PETScWrappers::MPI::BlockVector> gmres(solver_control,
+    SolverFGMRES<PETScWrappers::MPI::BlockVector>        gmres(solver_control,
                                                         vector_memory);
 
     // The solution vector must be non-ghosted
@@ -944,7 +997,8 @@ namespace fluid
 
   // @sect4{InsIMEX::run}
   template <int dim>
-  void InsIMEX<dim>::run()
+  void
+  InsIMEX<dim>::run()
   {
     pcout << "Running with PETSc on "
           << Utilities::MPI::n_mpi_processes(mpi_communicator)
@@ -977,7 +1031,7 @@ namespace fluid
         // once using nonzero_constraints, once using zero_constraints,
         // as well as the steps imediately after mesh refinement.
         bool assemble_system = (time.get_timestep() < 3 || refined);
-        refined = false;
+        refined              = false;
         assemble(apply_nonzero_constraints, assemble_system);
         auto state = solve(apply_nonzero_constraints, assemble_system);
         // Note we have to use a non-ghosted vector to do the addition.
@@ -1004,7 +1058,8 @@ namespace fluid
   // @sect4{InsIMEX::output_result}
   //
   template <int dim>
-  void InsIMEX<dim>::output_results(const unsigned int output_index) const
+  void
+  InsIMEX<dim>::output_results(const unsigned int output_index) const
   {
     TimerOutput::Scope timer_section(timer, "Output results");
     pcout << "Writing results..." << std::endl;
@@ -1064,8 +1119,9 @@ namespace fluid
   // @sect4{InsIMEX::refine_mesh}
   //
   template <int dim>
-  void InsIMEX<dim>::refine_mesh(const unsigned int min_grid_level,
-                                 const unsigned int max_grid_level)
+  void
+  InsIMEX<dim>::refine_mesh(const unsigned int min_grid_level,
+                            const unsigned int max_grid_level)
   {
     TimerOutput::Scope timer_section(timer, "Refine mesh");
     pcout << "Refining mesh..." << std::endl;
@@ -1120,18 +1176,19 @@ namespace fluid
     trans.interpolate(tmp);
     present_solution = tmp;
   }
-}
+} // namespace fluid
 
 // @sect3{main function}
 //
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
   try
     {
       using namespace dealii;
       using namespace fluid;
 
-      Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+      Utilities::MPI::MPI_InitFinalize        mpi_initialization(argc, argv, 1);
       parallel::distributed::Triangulation<2> tria(MPI_COMM_WORLD);
       create_triangulation(tria);
       InsIMEX<2> flow(tria);
