@@ -313,8 +313,8 @@ namespace nsp
 
     for (unsigned int q = 0; q < n_quadrature_points; ++q)
       {
-        long double sqrGrad = duh[q] * duh[q]; // squared norm of the gradient
-        long double exponent      = (p - 2.0) / 2 * std::log(sqrGrad);
+        long double sqrGrad  = duh[q] * duh[q]; // squared norm of the gradient
+        long double exponent = (p - 2.0) / 2 * std::log(sqrGrad);
         computed_quantities[q](0) = std::sqrt(sqrGrad); // norm of the gradient
         computed_quantities[q](1) = std::exp(exponent); // multiplier
       }
@@ -1272,7 +1272,7 @@ namespace nsp
     old_phi_zero = phi_zero;
     phi_zero     = phi(0); // phi(0)=J(u)
     old_phip     = phip;
-    phip         = -1.0 * (newton_update * system_rhs); // phi'(0)=J'(u) *w, rhs=-J'(u).
+    phip = -1.0 * (newton_update * system_rhs); // phi'(0)=J'(u) *w, rhs=-J'(u).
     if (inner_it == 0)
       phip_zero = phip;
 

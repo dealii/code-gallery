@@ -1370,8 +1370,7 @@ namespace Cook_Membrane
   }
 
 
-  // @sect4{Solid::print_conv_header, Solid::print_conv_footer and
-  // Solid::print_vertical_tip_displacement}
+  // @sect4{Solid::print_conv_header, Solid::print_conv_footer and Solid::print_vertical_tip_displacement}
 
   // This program prints out data in a nice table that is updated
   // on a per-iteration basis. The next two functions set up the table

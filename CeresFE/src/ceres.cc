@@ -467,7 +467,7 @@ namespace Step22
     DoFRenumbering::component_wise(dof_handler, block_component);
 
     //========================================Apply Boundary
-    //Conditions=====================================
+    // Conditions=====================================
     {
       constraints.clear();
       std::vector<bool> component_maskP(dim + 1, false);
@@ -1197,7 +1197,7 @@ namespace Step22
   }
 
   //====================== FIND AND WRITE TO FILE THE STRESS TENSOR; IMPLEMENT
-  //PLASTICITY ======================
+  // PLASTICITY ======================
 
   template <int dim>
   void
@@ -1977,7 +1977,7 @@ namespace Step22
   }
 
   //====================== APPEND LINE TO PHYSICAL_TIMES.TXT FILE WITH STEP
-  //NUMBER, PHYSICAL TIME, AND # PLASTIC ITERATIONS ======================
+  // NUMBER, PHYSICAL TIME, AND # PLASTIC ITERATIONS ======================
 
   template <int dim>
   void

@@ -405,8 +405,7 @@ namespace MFMFE
   }
 
 
-  // @sect4{Cell-wise assembly and creation of the local, nodal-based data
-  // structures}
+  // @sect4{Cell-wise assembly and creation of the local, nodal-based data structures}
 
   // First, the function that copies local cell contributions to the
   // corresponding nodal matrices and vectors is defined. It places the values
