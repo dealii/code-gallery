@@ -838,7 +838,7 @@ namespace nsp
 
 
   /****************************************************************************************/
-//  COMPUTE \phi(\alpha)=J_p(u_h+\alpha w)
+//  COMPUTE $\phi(\alpha)=J_p(u_h+\alpha w)$
   template <int dim>
   double ElastoplasticTorsion<dim>::phi (const double alpha) const
   {
