@@ -6,7 +6,7 @@ Time-dependent Navier-Stokes
 We solve the time-dependent Navier-Stokes equations with implicit-explicit (IMEX) scheme.
 Here is the equations we want to solve:
 @f{eqnarray*}
-{\bold{u}}_{,t} - \nu {\nabla}^2\bold{u} + (\bold{u}\cdot\nabla)\bold{u} + \nabla p = \bold{f}
+{\mathbf{u}}_{,t} - \nu {\nabla}^2\mathbf{u} + (\mathbf{u}\cdot\nabla)\mathbf{u} + \nabla p = \mathbf{f}
 @f}
 
 The idea is as follows: we use backward Euler time for time discretization. The diffusion term
