@@ -75,7 +75,7 @@ private:
   // As is usual in parallel programs, I keep two copies of parts of the
   // complete solution: <code>locally_relevant_solution</code> contains both
   // the locally calculated solution as well as the layer of cells at its
-  // boundary (the @ref GlossGhostCells "ghost cells") while
+  // boundary (the @ref GlossGhostCell "ghost cells") while
   // <code>completely_distributed_solution</code> only contains the parts of
   // the solution computed on the current @ref GlossMPIProcess "MPI process".
   TrilinosWrappers::MPI::Vector locally_relevant_solution;
