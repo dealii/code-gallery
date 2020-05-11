@@ -1,0 +1,197 @@
+#
+# Listing of Parameters
+# ---------------------
+
+
+subsection Finite element system
+  # Displacement system polynomial order
+  set Polynomial degree displ = 2
+
+  # Pore pressure system polynomial order
+  set Polynomial degree pore  = 1
+
+  # Gauss quadrature order (should be at least an order higher than the polynomial order)
+  set Quadrature order        = 3
+end
+
+
+subsection Geometry
+  # Type of geometry:  Ehlers_tube_step_load | Ehlers_tube_increase_load | Ehlers_cube_consolidation
+  #                  | Franceschini_consolidation
+  #                  | Budday_cube_tension_compression | Budday_cube_tension_compression_fully_fixed
+  #                  | Budday_cube_shear_fully_fixed
+  set Geometry type       = Franceschini_consolidation
+
+  # Global refinement level (higher value means finer mesh)
+  set Global refinement   = 2
+
+  # Global grid scaling factor (scales geometry size)
+  set Grid scale          = 30.0
+
+  #  Type of loading: pressure | displacement | none
+  set Load type           = pressure
+
+  # Value of loading [Pa] for pressure and [mm] for displacements
+  set Load value          = -4.24e3
+
+  # Number of times each set of 3 cycles is repeated, only for "Budday_cube_tension_compression": 1 or 2
+  # (Load value is doubled in second set, load rate is kept constant. Final time indicates end of second cycle set.)
+  set Number of cycle sets = 1
+
+  # Value of the prescribed fluid flow [mm/s], Q* = w*·N should include + or - sign.
+  set Fluid flow value    = 0
+
+  # Increase of pressure at drained boundary [Pa] w.r.t. atmospheric pressure
+  set Drained pressure    = 0
+end
+
+
+subsection Material properties
+
+  # ------------------------ SOLID ----------------------------------
+
+  # Type of material:  Neo-Hooke, Ogden or visco-Ogden
+  set material        = Ogden
+
+  # First Lame parameter [Pa] (for extension function related to compactation point)
+  set lambda          = 3.34e5
+
+  # ===== Neo-Hooke only =====
+
+  # Shear modulus [Pa] (Second Lame parameter)  -- Neo-Hooke
+  set shear modulus  =  6.825e3
+
+  # ===== Ogden  + Visco-Ogden only =====
+
+  # Type of eigen solver for Ogden models: QL Implicit Shifts | Jacobi
+  set eigen solver    = QL Implicit Shifts
+
+  # Shear modulus mu1  [Pa]
+  set mu1             = 1044
+
+  # Shear modulus mu2  [Pa]
+  set mu2             = 1183
+
+  # Shear modulus mu3  [Pa]
+  set mu3             =  0.0
+
+  # Stiffening parameter alpha 1  [-]
+  set alpha1          = 4.309
+
+  # Stiffening parameter alpha 2  [-]
+  set alpha2          = 7.736
+
+  # Stiffening parameter alpha 3  [-]
+  set alpha3          =  1.0
+
+  # ===== Visco-Ogden only =====
+
+  # Shear modulus mu1  [Pa]
+  set mu1_1           = 0.0
+
+  # Shear modulus mu2  [Pa]
+  set mu2_1             =  0.0
+
+  # Shear modulus mu3  [Pa]
+  set mu3_1             =  0.0
+
+  # Stiffening parameter alpha 1  [-]
+  set alpha1_1          = 1.0
+
+  # Stiffening parameter alpha 2  [-]
+  set alpha2_1          =  1.0
+
+  # Stiffening parameter alpha 3  [-]
+  set alpha3_1          =  1.0
+
+  # Deformation-independent viscosity parameter [Pa·s]
+  set viscosity_1         = 10
+
+  # ------------------------ FLUID ----------------------------------
+
+  # Choose between Markert formulation of deformation-dependent intrinsic permeability (Markert)
+  # and Ehlers formulation of deformation-dependent Darcy flow coefficient (Ehlers)
+  # to define the seepage velocity
+  set seepage definition = Markert
+
+  # Initial porosity (solid volume fraction)
+  set initial solid volume fraction    = 0.80
+
+  # Deformation-dependency control parameter for specific permeability [kappa >= 0]
+  set kappa                            = 40
+
+  # ===== Markert only =====
+
+  # Initial intrinsic permeability parameter of the solid (isotropic permeability) [mm²]
+  # To be used with Markert formulation of deformation-dependent intrinsic permeability
+  set initial intrinsic permeability   = 8.0e-11
+
+  # Effective shear viscosity parameter of the fluid [Pa·s = 1e-6·N·s/mm³]
+  # To be used with Markert formulation of deformation-dependent intrinsic permeability
+  set fluid viscosity                  = 0.89e-3
+
+  # ===== Ehlers only =====
+
+  # Initial Darcy flow coefficient [mm/s]
+  # To be used with Ehlers formulation of deformation-dependent Darcy flow coefficient
+  set initial Darcy coefficient   = 2.42e-7
+
+  # Effective weight of fluid [1e-6·N/mm³]
+  # To be used with Ehlers formulation of deformation-dependent Darcy flow coefficient
+  set fluid weight                = 9.777
+
+  # ------------------------ GRAVITY ----------------------------------
+
+  # Gravity term considered (true) or neglected (false)
+  set gravity term      = true
+
+  # ===== gravity true only =====
+
+  # If gravity term is considered, define the (real or effective) density of the fluid [g/mm³]
+  set fluid density     = 0.997e-3
+
+  # If gravity term is considered, define the (real or effective) density of the solid [g/mm³]
+  set solid density     = 0.997e-3
+
+  # If gravity term is considered, define the direction of gravity (unit vector 0 for x, 1 for y, 2 for z)
+  set gravity direction = 2
+
+  # If gravity term is considered, define the value of gravity ("minus" indicates negative sense of direction) [mm/s²]
+  set gravity value     = -9810
+end
+
+subsection Nonlinear solver
+  # Number of Newton-Raphson iterations allowed
+  set Max iterations Newton-Raphson = 15
+
+  # Force residual tolerance
+  set Tolerance force               = 1.0e-6
+
+  # Displacement error tolerance
+  set Tolerance displacement        = 1.0e-6
+
+  # Pore pressure error tolerance
+  set Tolerance pore pressure       = 1.0e-6
+
+end
+
+
+subsection Time
+  # End time [s]
+  set End time            = 18000
+
+  # Time step size [s]
+  set Time step size      = 2.0
+end
+
+
+subsection Output parameters
+  # Generate Paraview output files: true | false
+  set Output files               = true
+
+  # Output data every given time step number for Paraview output files
+  set Time step number output    = 3
+
+  # For "solution" file output data associated with integration point values averaged on:  elements | nodes
+  set Averaged results           = nodes
+end

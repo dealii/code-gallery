@@ -1,0 +1,1 @@
+A parallelized biphasic nonlinear poro-viscoelastic formulation based on Ogden hyperelasticity, using automatic differentiation and MPI from the Trilinos package.

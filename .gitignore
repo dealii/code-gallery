@@ -27,10 +27,13 @@
 *.out
 *.app
 
-# Build folders
-**/build/*
+* macOS hidden files
+*.DS_Store
 
 # IDE related files
 .project
 .cproject
 .vscode
+
+# Build folders
+**/build/*
