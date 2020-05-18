@@ -385,7 +385,7 @@ namespace ForwardSimulator
     if (nth_evaluation % 10000 == 0)
       timer.print_summary();
 
-    return std::move(measurements);
+    return measurements;
   }
 } // namespace ForwardSimulator
 
