@@ -29,13 +29,14 @@
 #include <deal.II/lac/petsc_parallel_vector.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/timer.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/base/parameter_handler.h>
-#include <fstream>
-#include <iostream>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/fe/fe_system.h>
+
+#include <fstream>
+#include <iostream>
+#include <memory>
 
 using namespace dealii;
 
@@ -152,7 +153,7 @@ private:
 
   // MASS MATRIX
   PETScWrappers::MPI::SparseMatrix matrix_MC, matrix_MC_tnm1;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_MC;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_MC;
 
 };
 
