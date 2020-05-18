@@ -36,7 +36,6 @@
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/fe/fe_dgp_monomial.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
@@ -2055,8 +2054,7 @@ namespace ViscoElasStripHole
     virtual typename DataOut<dim, DH>::cell_iterator
     first_cell ()
     {
-      typename DataOut<dim, DH>::active_cell_iterator
-      cell = this->dofs->begin_active();
+      auto cell = this->dofs->begin_active();
       while ((cell != this->dofs->end()) &&
              (cell->subdomain_id() != subdomain_id))
         ++cell;
@@ -2071,7 +2069,7 @@ namespace ViscoElasStripHole
           const IteratorFilters::SubdomainEqualTo predicate(subdomain_id);
           return
             ++(FilteredIterator
-               <typename DataOut<dim, DH>::active_cell_iterator>
+               <typename DataOut<dim, DH>::cell_iterator>
                (predicate,old_cell));
         }
       else

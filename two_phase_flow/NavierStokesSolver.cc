@@ -28,13 +28,13 @@
 #include <deal.II/lac/petsc_parallel_vector.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/timer.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/base/parameter_handler.h>
-#include <fstream>
-#include <iostream>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/base/std_cxx1x/shared_ptr.h>
+
+#include <fstream>
+#include <iostream>
+#include <memory>
 
 using namespace dealii;
 
@@ -121,11 +121,11 @@ private:
   void assemble_system_dpsi_q();
   // SOLVERS //
   void solve_U(const ConstraintMatrix &constraints, PETScWrappers::MPI::SparseMatrix &Matrix,
-               std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
+               std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                PETScWrappers::MPI::Vector &completely_distributed_solution,
                const PETScWrappers::MPI::Vector &rhs);
   void solve_P(const ConstraintMatrix &constraints, PETScWrappers::MPI::SparseMatrix &Matrix,
-               std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
+               std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                PETScWrappers::MPI::Vector &completely_distributed_solution,
                const PETScWrappers::MPI::Vector &rhs);
   // GET DIFFERENT FIELDS //
@@ -196,13 +196,13 @@ private:
   PETScWrappers::MPI::SparseMatrix system_Matrix_v;
   PETScWrappers::MPI::SparseMatrix system_Matrix_w;
   bool rebuild_Matrix_U;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_Matrix_u;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_Matrix_v;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_Matrix_w;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_Matrix_u;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_Matrix_v;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_Matrix_w;
   PETScWrappers::MPI::SparseMatrix system_S;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_S;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_S;
   PETScWrappers::MPI::SparseMatrix system_M;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_M;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner_M;
   bool rebuild_S_M;
   bool rebuild_Matrix_U_preconditioners;
   bool rebuild_S_M_preconditioners;
@@ -986,7 +986,7 @@ void NavierStokesSolver<dim>::assemble_system_dpsi_q()
 template<int dim>
 void NavierStokesSolver<dim>::solve_U(const ConstraintMatrix &constraints,
                                       PETScWrappers::MPI::SparseMatrix &Matrix,
-                                      std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
+                                      std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                                       PETScWrappers::MPI::Vector &completely_distributed_solution,
                                       const PETScWrappers::MPI::Vector &rhs)
 {
@@ -1007,7 +1007,7 @@ void NavierStokesSolver<dim>::solve_U(const ConstraintMatrix &constraints,
 template<int dim>
 void NavierStokesSolver<dim>::solve_P(const ConstraintMatrix &constraints,
                                       PETScWrappers::MPI::SparseMatrix &Matrix,
-                                      std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
+                                      std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                                       PETScWrappers::MPI::Vector &completely_distributed_solution,
                                       const PETScWrappers::MPI::Vector &rhs)
 {
