@@ -661,7 +661,7 @@ namespace ElastoPlastic
       {
         static const double rotation[3][3]
         = {{ 1, 0, 0}, { 0, 1, 0 }, { 0, 0, 1 } };
-        static const Tensor<2,3> rot(rotation);
+        const Tensor<2,3> rot(rotation);
         return rot;
       }
 
