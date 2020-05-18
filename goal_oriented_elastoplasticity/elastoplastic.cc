@@ -2394,37 +2394,37 @@ namespace ElastoPlastic
     void output_results ();
 
     const FESystem<dim>       &fe;
-    DoFHandler<dim>           dof_handler;
-    const Vector<double>      solution;
+    DoFHandler<dim>            dof_handler;
+    const Vector<double>       solution;
 
-    const unsigned int        fe_degree;
+    const unsigned int         fe_degree;
 
 
-    const unsigned int        fe_degree_dual;
-    FESystem<dim>             fe_dual;
-    DoFHandler<dim>           dof_handler_dual;
+    const unsigned int         fe_degree_dual;
+    FESystem<dim>              fe_dual;
+    DoFHandler<dim>            dof_handler_dual;
 
-    const QGauss<dim>         quadrature_formula;
-    const QGauss<dim - 1>     face_quadrature_formula;
+    const QGauss<dim>          quadrature_formula;
+    const QGauss<dim - 1>      face_quadrature_formula;
 
-    AffineConstraints<double> constraints_hanging_nodes_dual;
-    AffineConstraints<double> constraints_dirichlet_and_hanging_nodes_dual;
+    AffineConstraints<double>  constraints_hanging_nodes_dual;
+    AffineConstraints<double>  constraints_dirichlet_and_hanging_nodes_dual;
 
-    SparsityPattern           sparsity_pattern_dual;
-    SparseMatrix<double>      system_matrix_dual;
-    Vector<double>            system_rhs_dual;
-    Vector<double>            solution_dual;
+    SparsityPattern            sparsity_pattern_dual;
+    SparseMatrix<double>       system_matrix_dual;
+    Vector<double>             system_rhs_dual;
+    Vector<double>             solution_dual;
 
     const ConstitutiveLaw<dim> constitutive_law;
 
     const SmartPointer<const Triangulation<dim> > triangulation;
     const SmartPointer<const DualFunctional::DualFunctionalBase<dim> > dual_functional;
 
-    unsigned int            timestep_no;
-    std::string             output_dir;
-    const std::string       base_mesh;
-    double                  present_time;
-    double                  end_time;
+    unsigned int               timestep_no;
+    std::string                output_dir;
+    const std::string          base_mesh;
+    double                     present_time;
+    double                     end_time;
   };
 
 
@@ -4903,7 +4903,7 @@ namespace ElastoPlastic
 
         KellyErrorEstimator<dim>::estimate(dof_handler,
                                            QGauss<dim - 1>(fe.degree + 2),
-                                           FunctionMap(),
+                                           std::map<types::boundary_id, const Function<dim> *>(),
                                            tmp_solution,
                                            estimated_error_per_cell);
 
