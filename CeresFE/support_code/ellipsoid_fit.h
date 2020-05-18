@@ -26,7 +26,6 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/base/point.h>
 #include <deal.II/grid/grid_generator.h>
 

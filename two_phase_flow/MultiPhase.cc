@@ -27,7 +27,6 @@
 #include <deal.II/distributed/grid_refinement.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/timer.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/base/parameter_handler.h>
 #include <fstream>
 #include <iostream>

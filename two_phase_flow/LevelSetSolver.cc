@@ -29,13 +29,15 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/timer.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/base/parameter_handler.h>
-#include <fstream>
-#include <iostream>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/fe/mapping_q.h>
+
 #include <mpi.h>
+
+#include <fstream>
+#include <iostream>
+#include <memory>
 
 using namespace dealii;
 
@@ -160,7 +162,7 @@ private:
   void get_map_from_Q1_to_Q2();
   void solve(const ConstraintMatrix &constraints,
              PETScWrappers::MPI::SparseMatrix &Matrix,
-             std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
+             std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
              PETScWrappers::MPI::Vector &completely_distributed_solution,
              const PETScWrappers::MPI::Vector &rhs);
   void save_old_solution();
@@ -199,7 +201,7 @@ private:
 
   // MASS MATRIX
   PETScWrappers::MPI::SparseMatrix MC_matrix;
-  std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> MC_preconditioner;
+  std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> MC_preconditioner;
 
   // BOUNDARIES
   std::vector<types::global_dof_index> boundary_values_id_u;
@@ -1532,7 +1534,7 @@ void LevelSetSolver<dim>::get_map_from_Q1_to_Q2()
 template <int dim>
 void LevelSetSolver<dim>::solve(const ConstraintMatrix &constraints,
                                 PETScWrappers::MPI::SparseMatrix &Matrix,
-                                std_cxx1x::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
+                                std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                                 PETScWrappers::MPI::Vector &completely_distributed_solution,
                                 const PETScWrappers::MPI::Vector &rhs)
 {
