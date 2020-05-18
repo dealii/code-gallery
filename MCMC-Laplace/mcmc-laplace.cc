@@ -72,6 +72,8 @@ namespace ForwardSimulator
   {
   public:
     virtual Vector<double> evaluate(const Vector<double> &coefficients) = 0;
+
+    virtual ~Interface() = default;
   };
 
 
@@ -406,6 +408,8 @@ namespace LogLikelihood
   {
   public:
     virtual double log_likelihood(const Vector<double> &x) const = 0;
+
+    virtual ~Interface() = default;
   };
 
 
@@ -454,6 +458,8 @@ namespace LogPrior
   {
   public:
     virtual double log_prior(const Vector<double> &x) const = 0;
+
+    virtual ~Interface() = default;
   };
 
 
@@ -522,6 +528,8 @@ namespace ProposalGenerator
     virtual
     std::pair<Vector<double>,double>
     perturb(const Vector<double> &current_sample) const = 0;
+
+    virtual ~Interface() = default;
   };
 
 
