@@ -1,21 +1,20 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
 
-set (CMAKE_CXX_STANDARD 14)
-
 # Set the name of the project and target:
 SET(TARGET "parallel_in_time")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+SET(CMAKE_CXX_STANDARD 14)
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
-set(PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
-set(SRC_PATH "${PROJECT_PATH}/src")
-set(TEST_SRC_PATH "${PROJECT_PATH}/test")
-# set(BIN_PATH  "${PROJECT_BINARY_DIR}/bin")
-set(LIB_NAME "${TARGET}_lib")
-set(BIN_NAME "${TARGET}")
-set(TEST_PATH "${PROJECT_BINARY_DIR}/test")
-set(TEST_NAME "test_${TARGET}")
+SET(PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+SET(SRC_PATH "${PROJECT_PATH}/src")
+SET(TEST_SRC_PATH "${PROJECT_PATH}/test")
+# SET(BIN_PATH  "${PROJECT_BINARY_DIR}/bin")
+SET(LIB_NAME "${TARGET}_lib")
+SET(BIN_NAME "${TARGET}")
+SET(TEST_PATH "${PROJECT_BINARY_DIR}/test")
+SET(TEST_NAME "test_${TARGET}")
 
 SET(LIB_SRC
   ${SRC_PATH}/BraidFuncs.cc
@@ -32,18 +31,14 @@ SET(TEST_SRC
 
 OPTION(DO_MFG "Do the manufactured solution run" OFF)
 
-# Tell CMake to find MPI
-find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
-add_definitions(-DUSE_MPI)
-
-if(DO_MFG)
+IF(DO_MFG)
   # If we are doing the manufactured solution, tell
   # the C++ processor so it can enable MFG solutions
-  add_definitions(-DDO_MFG)
-endif(DO_MFG)
+  MESSAGE(STATUS "Manufactured solution enabled")
+  ADD_DEFINITIONS(-DDO_MFG)
+ENDIF(DO_MFG)
 
-FIND_PACKAGE(deal.II 9.0.0 QUIET
+FIND_PACKAGE(deal.II 9.1.0 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
@@ -55,11 +50,31 @@ IF(NOT ${deal.II_FOUND})
 ENDIF()
 
 # Find braid details
-if (NOT "$ENV{BRAID_DIR}" STREQUAL "")
-    set(BRAID_DIR "$ENV{BRAID_DIR}" CACHE INTERNAL "Copied BRAID_DIR from environment variable")
-endif()
+IF(NOT "$ENV{BRAID_DIR}" STREQUAL "")
+    SET(BRAID_DIR "$ENV{BRAID_DIR}" CACHE INTERNAL "Copied BRAID_DIR from environment variable")
+ENDIF()
+
+IF("${CMAKE_FIND_LIBRARY_PREFIXES}" STREQUAL "")
+    SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+ENDIF()
+
+FIND_PATH(BRAID_INCLUDE_DIR
+  NAMES braid.h
+  HINTS ${BRAID_DIR}
+  PATH_SUFFIXES include
+  )
+
+FIND_LIBRARY(BRAID_LIBRARY
+  NAMES braid.a
+  HINTS ${BRAID_DIR}
+  PATH_SUFFIXES lib64 lib
+  )
+
+MESSAGE(STATUS "Braid include directory: ${BRAID_INCLUDE_DIR}")
+MESSAGE(STATUS "Braid library:           ${BRAID_LIBRARY}")
+
 # Include the braid paths and libraries
-include_directories(${BRAID_DIR})
+INCLUDE_DIRECTORIES(${BRAID_INCLUDE_DIR})
 
 # Build the library
 ADD_LIBRARY(${LIB_NAME} SHARED ${LIB_SRC})
@@ -67,17 +82,23 @@ DEAL_II_SETUP_TARGET(${LIB_NAME})
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
+
+# Tell CMake to find MPI
+FIND_PACKAGE(MPI REQUIRED)
+ADD_DEFINITIONS(-DUSE_MPI)
+INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+
 DEAL_II_INVOKE_AUTOPILOT()
-target_link_libraries(${TARGET} ${BRAID_DIR}libbraid.a) # link braid
-target_link_libraries(${TARGET} ${LIB_NAME})
-set_target_properties(${TARGET} PROPERTIES
+TARGET_LINK_LIBRARIES(${TARGET} ${BRAID_LIBRARY}) # link braid
+TARGET_LINK_LIBRARIES(${TARGET} ${LIB_NAME})
+SET_TARGET_PROPERTIES(${TARGET} PROPERTIES
   LINK_FLAGS "${MPI_LINK_FLAGS}") # Link MPI
-set_target_properties(${MAIN_NAME} PROPERTIES
+SET_TARGET_PROPERTIES(${MAIN_NAME} PROPERTIES
   COMPILE_FLAGS "${MPI_COMPILE_FLAGS}") # Use MPI compile flags
 
 # Lastly build the tests
-enable_testing()
-add_subdirectory(test)
+ENABLE_TESTING()
+ADD_SUBDIRECTORY(test)
 
 
 
