@@ -25,6 +25,7 @@ int main(int argc, char** argv)
                                                       my_Init,
                                                       my_Access,
                                                       my_Free);
+  (void)init_access_result;
 
   braid_Int clone_result = braid_TestClone(app,
                                            comm,
@@ -34,6 +35,7 @@ int main(int argc, char** argv)
                                            my_Access,
                                            my_Free,
                                            my_Clone);
+  (void)clone_result;
 
   braid_Int sum_result = braid_TestSum(app,
                                        comm,
@@ -44,6 +46,7 @@ int main(int argc, char** argv)
                                        my_Free,
                                        my_Clone,
                                        my_Sum);
+  (void)sum_result;
 
   braid_Int norm_result = braid_TestSpatialNorm(app,
                                                 comm,
@@ -54,6 +57,7 @@ int main(int argc, char** argv)
                                                 my_Clone,
                                                 my_Sum,
                                                 my_SpatialNorm);
+  (void)norm_result;
 
   braid_Int buf_result = braid_TestBuf(app,
                                        comm,
@@ -66,6 +70,8 @@ int main(int argc, char** argv)
                                        my_BufSize,
                                        my_BufPack,
                                        my_BufUnpack);
+  (void)buf_result;
+
   //     /* Create spatial communicator for wrapper-tests */
   //     braid_SplitCommworld(&comm, 1, &comm_x, &comm_t);
 // 
