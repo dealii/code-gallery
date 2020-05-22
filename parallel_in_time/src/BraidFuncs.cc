@@ -215,7 +215,7 @@ my_BufUnpack(braid_App           app,
 
   my_Vector *u = NULL;
   double *dbuffer = (double*)buffer;
-  int size = dbuffer[0];
+  int size = static_cast<int>(dbuffer[0]);
   u = new(my_Vector);
   u->data.reinit(size);
 

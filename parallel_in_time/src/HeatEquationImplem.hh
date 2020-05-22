@@ -1,6 +1,7 @@
+#include "Utilities.hh"
+
 #include <iomanip>
 #include <math.h>
-#include "Utilities.hh"
 
 // Calculates the forcing function for the RightHandSide. See the
 // documentation for the math.

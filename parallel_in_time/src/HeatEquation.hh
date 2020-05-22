@@ -1,8 +1,6 @@
 #ifndef _HEATEQUATION_H_
 #define _HEATEQUATION_H_
 
-#include <fstream>
-
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
@@ -13,7 +11,7 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_refinement.h>
@@ -31,6 +29,8 @@
 #include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/base/convergence_table.h>
+
+#include <fstream>
 
 using namespace dealii;
 
@@ -70,7 +70,7 @@ private:
   FE_Q<dim>            fe;
   DoFHandler<dim>      dof_handler;
 
-  ConstraintMatrix     constraints;
+  AffineConstraints<double> constraints;
 
   SparsityPattern      sparsity_pattern;
   SparseMatrix<double> mass_matrix;
@@ -79,7 +79,7 @@ private:
 
   Vector<double>       system_rhs;
 
-  std::ofstream myfile;
+  std::ofstream        myfile;
 
   const double         theta;
 

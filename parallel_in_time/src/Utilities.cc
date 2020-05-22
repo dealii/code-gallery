@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 
-#include "mpi.h"
+#include <mpi.h>
 
 int procID = 0;
 

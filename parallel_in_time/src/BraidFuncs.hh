@@ -17,8 +17,8 @@
 /*-------- Third Party --------*/
 #include <deal.II/numerics/vector_tools.h>
 
-#include "braid.h"
-#include "braid_test.h"
+#include <braid.h>
+#include <braid_test.h>
 
 /*-------- Project --------*/
 #include "HeatEquation.hh"

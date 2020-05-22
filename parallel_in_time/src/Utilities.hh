@@ -1,5 +1,6 @@
 #ifndef _UTILITIES_H_
 #define _UTILITIES_H_
+
 #include <iostream>
 
 // This preprocessor macro is used on function arguments

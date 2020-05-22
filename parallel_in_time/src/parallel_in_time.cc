@@ -17,12 +17,12 @@
  * Author: Joshua Christopher, Colorado State University, 2018
  */
 
-#include <fstream>
-#include <iostream>
-
 #include "BraidFuncs.hh"
 #include "HeatEquation.hh"
 #include "Utilities.hh"
+
+#include <fstream>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
       braid_Core core;
       double tstart = 0.0;
       double tstop = 0.002;
-      double ntime = 10;
+      int    ntime = 10;
       my_App *app = new(my_App);
 
       braid_Init(MPI_COMM_WORLD, comm, tstart, tstop, ntime, app,

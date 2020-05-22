@@ -1,9 +1,9 @@
-#include <iostream>
-
-#include "braid.h"
-#include "braid_test.h"
-
 #include "BraidFuncs.hh"
+
+#include <braid.h>
+#include <braid_test.h>
+
+#include <iostream>
 
 int main(int argc, char** argv)
 {
