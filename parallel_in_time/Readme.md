@@ -8,7 +8,7 @@ Perhaps the largest bottleneck in concurrency for time-dependent simulations is 
 Traditional time integration methods solve for the time domain sequentially, and as the spatial grid is refined a proportionally larger number of time steps must be taken to maintain accuracy and stability constraints.
 While solving the time domain sequentially with a traditional time integration method is an optimal algorithm of order $\mathcal{O}(n)$, the $n$ time steps are not solved concurrently.
 
-The goal of this project is to make use of the XBraid library from Lawrence Livermore National Laboratory to solve the time domain in parallel using multigrid reduction in time techniques.
+The goal of this project is to make use of the [XBraid library](https://computing.llnl.gov/projects/parallel-time-integration-multigrid) from Lawrence Livermore National Laboratory to solve the time domain in parallel using multigrid reduction in time techniques.
 The XBraid library is implemented in C and aims to be a non-intrusive method to implement parallel time marching methods into existing codes.
 
 Implementation
@@ -21,7 +21,7 @@ In order to use the XBraid library, several data structures and functions must b
 The two required data structures are the app and vector structures.
 In general, the app struct contains the time independent data and the vector struct contains the time dependent data.
 For this initial example, the time independent data includes the mesh which is fixed for all time steps, and the time dependent data is the solution state vector.
-The functions tell XBraid how to perform operations on the data type used by your solver, in this case deal.ii uses the Vector data type.
+The functions tell XBraid how to perform operations on the data type used by your solver, in this case deal.II uses the Vector data type.
 These operations include how to initialize the data at a given time, how to sum the data, and how to pack and unpack linear buffers for transmission to other processors via MPI.
 The XBraid documentation should be read for a full list of functions that must be implemented and the details of what the function should do.
 
@@ -31,11 +31,11 @@ Perhaps the most important function is the step function.
 This function tells XBraid how to advance the solution forward in time from the initial to the final times given in the status struct.
 This method uses a traditional time integration method such as the fourth order explicit Runge Kutta method.
 
-deal.ii details
+deal.II details
 ---------------
 
-The solver used in this example is based off the heat equation solver from the step-26 tutorial of deal.ii.
-The HeatEquation class becomes member data to XBraid’s app struct, and XBraid’s vector struct becomes a wrapper for deal.ii’s Vector data type.
+The solver used in this example is based off the heat equation solver from the step-26 tutorial of deal.II.
+The HeatEquation class becomes member data to XBraid’s app struct, and XBraid’s vector struct becomes a wrapper for deal.II’s Vector data type.
 The HeatEquation class cannot simply be used as is though as it contains both time dependent and time independent member data.
 In order to simplify the problem the adaptive mesh refinement is removed.
 Theoretically XBraid is capable of working with adaptive mesh refinement and in fact contains support for time refinement (which is also not used for simplicity).
@@ -85,7 +85,7 @@ Method of Manufactured Solutions
 
 The method of manufactured solutions is used to test the correctness of the implementation.
 In the method of manufactured solutions, we create a solution $u_h$ to the heat equation, then compute the boundary conditions, initial conditions, and forcing functions required to generate that solution.
-This method is explained further in the step-7 tutorial of deal.ii.
+This method is explained further in the step-7 tutorial of deal.II.
 The created solution used is,
 @f{align}
   u_h = \exp\left( -4\pi^2t \right) \cos(2 \pi x) \cos(2 \pi y), \qquad \forall \boldsymbol{x} \in \Omega \cup \partial\Omega
@@ -151,7 +151,7 @@ Code Organization
 The entry point of the code is in parallel\_in\_time.cc and sets up XBraid for a simulation.
 The XBraid setup involves initializing the app struct and configuring XBraid for the desired number of timesteps, number of iterations, and so forth.
 The functions implemented for XBraid’s use are declared in `BraidFuncs.hh` and defined in `BraidFuncs.cc`.
-The HeatEquation class and all deal.ii functionality is declared in `HeatEquation.hh` and defined in `HeatEquationImplem.hh`.
+The HeatEquation class and all deal.II functionality is declared in `HeatEquation.hh` and defined in `HeatEquationImplem.hh`.
 Since HeatEquation is a class template, its definition file `HeatEquationImplem.hh` is included at the bottom of `HeatEquation.hh`.
 Lastly various helper functions and variables such as the current processor id and the output stream are declared in `Utilities.hh` and defined in `Utilities.cc`.
 
@@ -164,18 +164,18 @@ These tests verify the correct implementation of the various functions.
 
 This directory is for storing further documentation of the code.
 Not much is in this directory right now as most of the documentation is in the Readme or in comments of the source code files.
-Documentation is generated from the Readme and code comments by deal.ii’s documentation process.
+Documentation is generated from the Readme and code comments by deal.II’s documentation process.
 
 Compiling
 =========
 
-To compile, you need deal.ii and XBraid to be installed with development headers somewhere on your system.
+To compile, you need deal.II and XBraid to be installed with development headers somewhere on your system.
 Some implementation of MPI such as OpenMPI with development headers must also be installed.
-The source code for deal.ii is available at [deal.ii’s website](https://dealii.org/) and the source code for XBraid is available at [LLNL’s website](https://computation.llnl.gov/projects/parallel-time-integration-multigrid).
+The source code for deal.II is available at [deal.II’s website](https://dealii.org/) and the source code for XBraid is available at [LLNL’s website](https://computation.llnl.gov/projects/parallel-time-integration-multigrid).
 See the documentation of each package for compilation and installation instructions.
 
 Depending on where they are installed, `parallel_in_time` may need help finding these libraries.
-To find deal.ii, `parallel_in_time` first looks in typical deal.ii install directories followed by one directory up (`../`), two directories up (`../../`), and lastly in the environment variable `DEAL_II_DIR`.
+To find deal.II, `parallel_in_time` first looks in typical deal.II install directories followed by one directory up (`../`), two directories up (`../../`), and lastly in the environment variable `DEAL_II_DIR`.
 In contrast, XBraid currently does not have any default locations to look for and so the environment variable `BRAID_DIR` must be specified.
 For MPI, `parallel_in_time` looks in standard installation folders only, for that reason I recommend you install MPI with your package manager.
 
@@ -224,7 +224,7 @@ The spatial grid is fixed at 3201 degrees of freedom, and the spatial grid consi
 No spatial parallelization is used and the grid is fixed for all timesteps.
 The parallel in time solution is solved using XBraid’s multigrid reduction in time algorithm on 1, 2, 4, 16, 32, and 64 processors.
 The serial in time solution is run on a single processor using traditional sequential time stepping.
-The results are shown in Figure \[fig:strongscaling\].
+The results are shown in figure below.
 Running the multigrid algorithm on a single processor takes about an order of magnitude longer to run on a single processor than the serial algorithm on a single processor.
 At 16 processors the multigrid algorithm the wall clock time is approximately the same for the serial algorithm as for the multigrid algorithm, and for 32 and 64 processors in time the wall clock is faster by about a factor of 2 for 64 processors.
 
