@@ -3862,7 +3862,7 @@ namespace ElastoPlastic
 
         }
 
-        const CylindricalManifold<dim> inner_boundary_description(inner_radius, 2);
+        const CylindricalManifold<dim> inner_boundary_description(2);
         triangulation.set_manifold (10, inner_boundary_description);
 
         triangulation.refine_global(n_initial_global_refinements);
@@ -3954,7 +3954,7 @@ namespace ElastoPlastic
         }
 
         // Extrude the triangulation_2d and make it 3d
-        const unsigned int n_slices = length*1000/20 + 1;
+        const unsigned int n_slices = static_cast<int>(length*1000/20) + 1;
         extrude_triangulation(triangulation_2d,
                               n_slices, length, triangulation);
 
