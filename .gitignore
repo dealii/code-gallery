@@ -29,3 +29,8 @@
 
 # Build folders
 **/build/*
+
+# IDE related files
+.project
+.cproject
+.vscode
