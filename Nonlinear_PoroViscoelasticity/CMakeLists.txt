@@ -26,16 +26,12 @@ ENDIF()
 
 
 # Are all dependencies fullfilled?
-IF(NOT DEAL_II_WITH_CXX11     OR
-   NOT DEAL_II_WITH_MPI       OR
-   NOT DEAL_II_WITH_METIS     OR
+IF(NOT DEAL_II_WITH_MPI       OR
    NOT DEAL_II_WITH_TRILINOS  OR
    NOT DEAL_II_TRILINOS_WITH_SACADO)
   MESSAGE(FATAL_ERROR "
 Error! The deal.II library found at ${DEAL_II_PATH} was not configured with
-    DEAL_II_WITH_CXX11 = ON
     DEAL_II_WITH_MPI = ON
-    DEAL_II_WITH_METIS = ON
     DEAL_II_WITH_TRILINOS = ON
     DEAL_II_TRILINOS_WITH_SACADO = ON
 One or all of these are OFF in your installation but are required for this code gallery example."

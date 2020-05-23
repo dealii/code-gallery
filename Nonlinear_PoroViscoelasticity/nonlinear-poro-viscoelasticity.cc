@@ -33,9 +33,10 @@
 #include <deal.II/base/work_stream.h>
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/quadrature_point_data.h>
-#include <deal.II/base/std_cxx11/shared_ptr.h>
 
 #include <deal.II/differentiation/ad.h>
+
+#include <deal.II/distributed/shared_tria.h>
 
 #include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -47,7 +48,6 @@
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/manifold_lib.h>
-#include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/grid/tria_iterator.h>
@@ -448,12 +448,12 @@ namespace NonLinearPoroViscoElasticity
           gravity_value = prm.get_double("gravity value");
 
           if ( (fluid_type == "Markert") && ((init_intrinsic_perm == 0.0) || (viscosity_FR == 0.0)) )
-              throw std::runtime_error ("Markert seepage velocity formulation requires the definition of "
-                                          "'initial intrinsic permeability' and 'fluid viscosity' greater than 0.0.");
+              AssertThrow(false, ExcMessage("Markert seepage velocity formulation requires the definition of "
+                                            "'initial intrinsic permeability' and 'fluid viscosity' greater than 0.0."));
 
           if ( (fluid_type == "Ehlers") && ((init_darcy_coef == 0.0) || (weight_FR == 0.0)) )
-              throw std::runtime_error ("Ehler seepage velocity formulation requires the definition of "
-                                          "'initial Darcy coefficient' and 'fluid weight' greater than 0.0.");
+              AssertThrow(false, ExcMessage("Ehler seepage velocity formulation requires the definition of "
+                                            "'initial Darcy coefficient' and 'fluid weight' greater than 0.0."));
 
           const std::string eigen_solver_type = prm.get("eigen solver");
           if (eigen_solver_type == "QL Implicit Shifts")
@@ -1009,8 +1009,8 @@ namespace NonLinearPoroViscoElasticity
                   }
                   iteration += 1;
                   if (iteration > 15 )
-                      throw std::runtime_error ("No convergence in local Newton iteration for the "
-                                                "viscoelastic exponential time integration algorithm.");
+                      AssertThrow(false, ExcMessage("No convergence in local Newton iteration for the "
+                                                    "viscoelastic exponential time integration algorithm."));
               }
 
               NumberType aux_J_e_1 = 1.0;
@@ -1222,8 +1222,9 @@ namespace NonLinearPoroViscoElasticity
                  permeability_term = get_darcy_flow_current(F) / weight_FR;
 
              else
-                 throw std::runtime_error ("Material_Darcy_Fluid --> Only Markert "
-                          "and Ehlers formulations have been implemented.");
+                 AssertThrow(false, ExcMessage(
+                   "Material_Darcy_Fluid --> Only Markert "
+                   "and Ehlers formulations have been implemented."));
 
              return ( -1.0 * permeability_term * det_F
                       * (grad_p_fluid - get_body_force_FR_current()) );
@@ -1250,7 +1251,9 @@ namespace NonLinearPoroViscoElasticity
                  seepage_velocity = get_seepage_velocity_current(F,grad_p_fluid);
              }
              else
-                 throw std::runtime_error ("Material_Darcy_Fluid --> Only Markert and Ehlers formulations have been implemented.");
+                 AssertThrow(false, ExcMessage(
+                   "Material_Darcy_Fluid --> Only Markert and Ehlers "
+                   "formulations have been implemented."));
 
              dissipation_term = ( invert(permeability_term) * seepage_velocity ) * seepage_velocity;
              dissipation_term *= 1.0/(det_F*det_F);
@@ -1423,8 +1426,8 @@ namespace NonLinearPoroViscoElasticity
                 return body_force;
             }
         private:
-            std_cxx11::shared_ptr< Material_Hyperelastic<dim, NumberType> > solid_material;
-            std_cxx11::shared_ptr< Material_Darcy_Fluid<dim, NumberType> > fluid_material;
+            std::shared_ptr< Material_Hyperelastic<dim, NumberType> > solid_material;
+            std::shared_ptr< Material_Darcy_Fluid<dim, NumberType> > fluid_material;
     };
 
 // @sect3{Nonlinear poro-viscoelastic solid}
@@ -1439,7 +1442,7 @@ namespace NonLinearPoroViscoElasticity
             void run();
 
           protected:
-            typedef Sacado::Fad::DFad<double> ADNumberType;
+            using ADNumberType = Sacado::Fad::DFad<double>;
 
             std::ofstream outfile;
             std::ofstream pointfile;
@@ -1525,11 +1528,11 @@ namespace NonLinearPoroViscoElasticity
             const unsigned int               this_mpi_process;
             mutable ConditionalOStream       pcout;
 
-            //A collection of the parameters used to describe the problem setup
+            // A collection of the parameters used to describe the problem setup
             const Parameters::AllParameters &parameters;
 
-            //Declare an instance of dealii Triangulation class (mesh)
-            Triangulation<dim>  triangulation;
+            // Declare an instance of dealii Triangulation class (mesh)
+            parallel::shared::Triangulation<dim>  triangulation;
 
             // Keep track of the current time and the time spent evaluating certain functions
             Time          time;
@@ -1674,7 +1677,7 @@ namespace NonLinearPoroViscoElasticity
         this_mpi_process (Utilities::MPI::this_mpi_process(mpi_communicator)),
         pcout(std::cout, this_mpi_process == 0),
         parameters(parameters),
-        triangulation(Triangulation<dim>::maximum_smoothing),
+        triangulation(mpi_communicator,Triangulation<dim>::maximum_smoothing),
         time(parameters.end_time, parameters.delta_t),
         timerconsole( mpi_communicator,
                       pcout,
@@ -1993,10 +1996,6 @@ namespace NonLinearPoroViscoElasticity
         timerconsole.enter_subsection("Setup system");
         timerfile.enter_subsection("Setup system");
 
-        // Partition triangulation
-        GridTools::partition_triangulation (n_mpi_processes, triangulation);
-
-
         //Determine number of components per block
         std::vector<unsigned int> block_component(n_components, u_block);
         block_component[p_fluid_component] = p_fluid_block;
@@ -2174,13 +2173,15 @@ namespace NonLinearPoroViscoElasticity
 
         //Setup the initial quadrature point data using the info stored in parameters
         FilteredIterator<typename DoFHandler<dim>::active_cell_iterator>
-        cell (IteratorFilters::SubdomainEqualTo(this_mpi_process),
+        cell (IteratorFilters::LocallyOwnedCell(),
               dof_handler_ref.begin_active()),
-        endc (IteratorFilters::SubdomainEqualTo(this_mpi_process),
+        endc (IteratorFilters::LocallyOwnedCell(),
               dof_handler_ref.end());
         for (; cell!=endc; ++cell)
           {
-            Assert(cell->subdomain_id()==this_mpi_process, ExcInternalError());
+            Assert(cell->is_locally_owned(), ExcInternalError());
+            Assert(cell->subdomain_id() == this_mpi_process, ExcInternalError());
+
             const std::vector<std::shared_ptr<PointHistory<dim, ADNumberType> > >
                 lqph = quadrature_point_history.get_data(cell);
             Assert(lqph.size() == n_q_points, ExcInternalError());
@@ -2481,13 +2482,15 @@ namespace NonLinearPoroViscoElasticity
                                                    solution_total);
 
         FilteredIterator<typename DoFHandler<dim>::active_cell_iterator>
-        cell (IteratorFilters::SubdomainEqualTo(this_mpi_process),
+        cell (IteratorFilters::LocallyOwnedCell(),
               dof_handler_ref.begin_active()),
-        endc (IteratorFilters::SubdomainEqualTo(this_mpi_process),
+        endc (IteratorFilters::LocallyOwnedCell(),
               dof_handler_ref.end());
         for (; cell != endc; ++cell)
           {
-            Assert(cell->subdomain_id()==this_mpi_process, ExcInternalError());
+            Assert(cell->is_locally_owned(), ExcInternalError());
+            Assert(cell->subdomain_id() == this_mpi_process, ExcInternalError());
+
             assemble_system_one_cell(cell, scratch_data, per_task_data);
             copy_local_to_global_system(per_task_data);
           }
@@ -2526,7 +2529,7 @@ namespace NonLinearPoroViscoElasticity
               ScratchData_ASM<ADNumberType>                        &scratch,
               PerTaskData_ASM                                      &data) const
     {
-        Assert(cell->subdomain_id()==this_mpi_process, ExcInternalError());
+        Assert(cell->is_locally_owned(), ExcInternalError());
 
         data.reset();
         scratch.reset();
@@ -2747,13 +2750,15 @@ namespace NonLinearPoroViscoElasticity
     void Solid<dim>::update_end_timestep()
     {
           FilteredIterator<typename DoFHandler<dim>::active_cell_iterator>
-          cell (IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          cell (IteratorFilters::LocallyOwnedCell(),
                 dof_handler_ref.begin_active()),
-          endc (IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          endc (IteratorFilters::LocallyOwnedCell(),
                 dof_handler_ref.end());
           for (; cell!=endc; ++cell)
           {
-            Assert(cell->subdomain_id()==this_mpi_process, ExcInternalError());
+            Assert(cell->is_locally_owned(), ExcInternalError());
+            Assert(cell->subdomain_id() == this_mpi_process, ExcInternalError());
+
             const std::vector<std::shared_ptr<PointHistory<dim, ADNumberType> > >
                 lqph = quadrature_point_history.get_data(cell);
             Assert(lqph.size() == n_q_points, ExcInternalError());
@@ -2799,9 +2804,7 @@ namespace NonLinearPoroViscoElasticity
     class FilteredDataOut : public DataOut<dim, DH>
     {
         public:
-          FilteredDataOut (const unsigned int subdomain_id)
-            :
-            subdomain_id (subdomain_id)
+          FilteredDataOut ()
           {}
 
           virtual ~FilteredDataOut() {}
@@ -2812,7 +2815,7 @@ namespace NonLinearPoroViscoElasticity
             typename DataOut<dim, DH>::active_cell_iterator
             cell = this->dofs->begin_active();
             while ((cell != this->dofs->end()) &&
-                   (cell->subdomain_id() != subdomain_id))
+                   (!cell->is_locally_owned()))
               ++cell;
             return cell;
           }
@@ -2822,7 +2825,7 @@ namespace NonLinearPoroViscoElasticity
           {
             if (old_cell != this->dofs->end())
               {
-                const IteratorFilters::SubdomainEqualTo predicate(subdomain_id);
+                const IteratorFilters::LocallyOwnedCell predicate{};
                 return
                   ++(FilteredIterator<typename DataOut<dim, DH>::active_cell_iterator>
                      (predicate,old_cell));
@@ -2830,18 +2833,13 @@ namespace NonLinearPoroViscoElasticity
             else
               return old_cell;
           }
-
-        private:
-          const unsigned int subdomain_id;
     };
 
     template<int dim, class DH=DoFHandler<dim> >
      class FilteredDataOutFaces : public DataOutFaces<dim,DH>
      {
          public:
-           FilteredDataOutFaces (const unsigned int subdomain_id)
-             :
-             subdomain_id (subdomain_id)
+           FilteredDataOutFaces ()
            {}
 
            virtual ~FilteredDataOutFaces() {}
@@ -2851,7 +2849,7 @@ namespace NonLinearPoroViscoElasticity
            {
              typename DataOutFaces<dim,DH>::active_cell_iterator
              cell = this->dofs->begin_active();
-             while ((cell!=this->dofs->end()) && (cell->subdomain_id()!=subdomain_id))
+             while ((cell!=this->dofs->end()) && (!cell->is_locally_owned()))
                ++cell;
              return cell;
            }
@@ -2861,7 +2859,7 @@ namespace NonLinearPoroViscoElasticity
            {
              if (old_cell!=this->dofs->end())
              {
-                 const IteratorFilters::SubdomainEqualTo predicate(subdomain_id);
+                 const IteratorFilters::LocallyOwnedCell predicate{};
                  return
                    ++(FilteredIterator<typename DataOutFaces<dim,DH>::active_cell_iterator>
                       (predicate,old_cell));
@@ -2869,9 +2867,6 @@ namespace NonLinearPoroViscoElasticity
              else
                return old_cell;
            }
-
-         private:
-           const unsigned int subdomain_id;
      };
 
     //Class to compute gradient of the pressure
@@ -3028,20 +3023,22 @@ namespace NonLinearPoroViscoElasticity
 
         //Iterate through elements (cells) and Gauss Points
         FilteredIterator<typename DoFHandler<dim>::active_cell_iterator>
-          cell(IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          cell(IteratorFilters::LocallyOwnedCell(),
                dof_handler_ref.begin_active()),
-          endc(IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          endc(IteratorFilters::LocallyOwnedCell(),
                dof_handler_ref.end()),
-          cell_v(IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          cell_v(IteratorFilters::LocallyOwnedCell(),
                  vertex_handler_ref.begin_active()),
-          cell_v_vec(IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          cell_v_vec(IteratorFilters::LocallyOwnedCell(),
                      vertex_vec_handler_ref.begin_active());
         //start cell loop
         for (; cell!=endc; ++cell, ++cell_v, ++cell_v_vec)
         {
-          if (cell->subdomain_id() != this_mpi_process) continue;
-                material_id(cell->active_cell_index())=
-                   static_cast<int>(cell->material_id());
+            Assert(cell->is_locally_owned(), ExcInternalError());
+            Assert(cell->subdomain_id() == this_mpi_process, ExcInternalError());
+
+            material_id(cell->active_cell_index())=
+              static_cast<int>(cell->material_id());
 
             fe_values_ref.reinit(cell);
 
@@ -3274,7 +3271,7 @@ namespace NonLinearPoroViscoElasticity
         }
 
         // Add the results to the solution to create the output file for Paraview
-        FilteredDataOut<dim> data_out(this_mpi_process);
+        FilteredDataOut<dim> data_out;
         std::vector<DataComponentInterpretation::DataComponentInterpretation>
           comp_type(dim,
                     DataComponentInterpretation::component_is_part_of_vector);
@@ -3532,15 +3529,15 @@ namespace NonLinearPoroViscoElasticity
 
         //Iterate through elements (cells) and Gauss Points
         FilteredIterator<typename DoFHandler<dim>::active_cell_iterator>
-          cell(IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          cell(IteratorFilters::LocallyOwnedCell(),
                dof_handler_ref.begin_active()),
-          endc(IteratorFilters::SubdomainEqualTo(this_mpi_process),
+          endc(IteratorFilters::LocallyOwnedCell(),
                dof_handler_ref.end());
         //start cell loop
         for (; cell!=endc; ++cell)
         {
-
-            if (cell->subdomain_id() != this_mpi_process) continue;
+            Assert(cell->is_locally_owned(), ExcInternalError());
+            Assert(cell->subdomain_id() == this_mpi_process, ExcInternalError());
 
             fe_values_ref.reinit(cell);
 
@@ -4092,7 +4089,7 @@ namespace NonLinearPoroViscoElasticity
               std::vector<double> displ_incr(dim, 0.0);
               (void)boundary_id;
               (void)direction;
-              throw std::runtime_error ("Displacement loading not implemented for Ehlers verification examples.");
+              AssertThrow(false, ExcMessage("Displacement loading not implemented for Ehlers verification examples."));
 
               return displ_incr;
           }
@@ -4320,7 +4317,7 @@ namespace NonLinearPoroViscoElasticity
               std::vector<double> displ_incr(dim, 0.0);
               (void)boundary_id;
               (void)direction;
-              throw std::runtime_error ("Displacement loading not implemented for Ehlers verification examples.");
+              AssertThrow(false, ExcMessage("Displacement loading not implemented for Ehlers verification examples."));
 
               return displ_incr;
           }
@@ -4480,7 +4477,7 @@ namespace NonLinearPoroViscoElasticity
               std::vector<double> displ_incr(dim, 0.0);
               (void)boundary_id;
               (void)direction;
-              throw std::runtime_error ("Displacement loading not implemented for Franceschini examples.");
+              AssertThrow(false, ExcMessage("Displacement loading not implemented for Franceschini examples."));
 
               return displ_incr;
           }
