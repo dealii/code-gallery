@@ -32,7 +32,6 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/base/work_stream.h>
 #include <deal.II/base/quadrature_point_data.h>
-#include <deal.II/base/std_cxx11/shared_ptr.h>
 
 #include <deal.II/dofs/dof_renumbering.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -50,6 +49,7 @@
 #include <deal.II/fe/mapping_q_eulerian.h>
 #include <deal.II/fe/mapping_q.h>
 
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/block_vector.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
@@ -57,7 +57,6 @@
 #include <deal.II/lac/precondition_selector.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/sparse_direct.h>
-#include <deal.II/lac/constraint_matrix.h>
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -76,6 +75,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 
 // We then stick everything that relates to this tutorial program into a
@@ -892,10 +892,10 @@ namespace Cook_Membrane
     const unsigned int               n_q_points_f;
 
     // Objects that store the converged solution and right-hand side vectors,
-    // as well as the tangent matrix. There is a ConstraintMatrix object used
+    // as well as the tangent matrix. There is a AffineConstraints object used
     // to keep track of constraints.  We make use of a sparsity pattern
     // designed for a block system.
-    ConstraintMatrix                 constraints;
+    AffineConstraints<double>        constraints;
     BlockSparsityPattern             sparsity_pattern;
     BlockSparseMatrix<double>        tangent_matrix;
     BlockVector<double>              system_rhs;
@@ -1591,7 +1591,7 @@ namespace Cook_Membrane
     void
     copy_local_to_global_ASM(const PerTaskData_ASM &data)
     {
-      const ConstraintMatrix &constraints = data.solid->constraints;
+      const AffineConstraints<double> &constraints = data.solid->constraints;
       BlockSparseMatrix<double> &tangent_matrix = const_cast<Solid<dim,NumberType> *>(data.solid)->tangent_matrix;
       BlockVector<double> &system_rhs =  const_cast<Solid<dim,NumberType> *>(data.solid)->system_rhs;
 
@@ -2139,8 +2139,9 @@ namespace Cook_Membrane
       std::cout << " SLV " << std::flush;
       if (parameters.type_lin == "CG")
         {
-          const int solver_its = tangent_matrix.block(u_dof, u_dof).m()
-                                 * parameters.max_iterations_lin;
+          const int solver_its = static_cast<unsigned int>(
+                                    tangent_matrix.block(u_dof, u_dof).m()
+                                    * parameters.max_iterations_lin);
           const double tol_sol = parameters.tol_lin
                                  * system_rhs.block(u_dof).l2_norm();
 
