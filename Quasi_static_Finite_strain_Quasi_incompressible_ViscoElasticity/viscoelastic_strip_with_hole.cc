@@ -44,8 +44,8 @@
 #include <deal.II/fe/mapping_q_eulerian.h>
 #include <deal.II/lac/block_sparsity_pattern.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/solver_selector.h>
 #include <deal.II/lac/trilinos_block_sparse_matrix.h>
 #include <deal.II/lac/trilinos_precondition.h>
@@ -743,10 +743,10 @@ namespace ViscoElasStripHole
     const QGauss<dim - 1> qf_face;
     const unsigned int    n_q_points;
     const unsigned int    n_q_points_f;
-    ConstraintMatrix      constraints;
-    LA::BlockSparseMatrix tangent_matrix;
-    LA::MPI::BlockVector  system_rhs;
-    LA::MPI::BlockVector  solution_n;
+    AffineConstraints<double> constraints;
+    LA::BlockSparseMatrix     tangent_matrix;
+    LA::MPI::BlockVector      system_rhs;
+    LA::MPI::BlockVector      solution_n;
     struct Errors
     {
       Errors()
@@ -832,7 +832,7 @@ namespace ViscoElasStripHole
     make_grid();
     setup_system(solution_delta);
     {
-      ConstraintMatrix constraints;
+      AffineConstraints<double> constraints;
       constraints.close();
       const ComponentSelectFunction<dim>
       J_mask (J_component, n_components);
@@ -1249,7 +1249,7 @@ namespace ViscoElasStripHole
         std::vector<double> subdivision_width;
         subdivision_width.push_back(internal_width/2.0);
         const double width_remaining = (width - internal_width)/2.0;
-        const unsigned int n_subs = std::max(1.0,std::ceil(width_remaining/(internal_width/2.0)));
+        const unsigned int n_subs = static_cast<unsigned int>(std::max(1.0,std::ceil(width_remaining/(internal_width/2.0))));
         Assert(n_subs>0, ExcInternalError());
         for (unsigned int s=0; s<n_subs; ++s)
           subdivision_width.push_back(width_remaining/n_subs);
@@ -1262,7 +1262,7 @@ namespace ViscoElasStripHole
         std::vector<double> subdivision_length;
         subdivision_length.push_back(internal_width/2.0);
         const double length_remaining = (length - internal_width)/2.0;
-        const unsigned int n_subs = std::max(1.0,std::ceil(length_remaining/(internal_width/2.0)));
+        const unsigned int n_subs = static_cast<unsigned int>(std::max(1.0,std::ceil(length_remaining/(internal_width/2.0))));
         Assert(n_subs>0, ExcInternalError());
         for (unsigned int s=0; s<n_subs; ++s)
           subdivision_length.push_back(length_remaining/n_subs);
@@ -1928,7 +1928,7 @@ namespace ViscoElasStripHole
             if (time.current() < parameters.load_time+0.01*time.get_delta_t())
               {
                 const double delta_length = parameters.length*(parameters.stretch - 1.0)*parameters.scale;
-                const unsigned int n_stretch_steps = parameters.load_time/time.get_delta_t();
+                const unsigned int n_stretch_steps = static_cast<unsigned int>(parameters.load_time/time.get_delta_t());
                 const double delta_u_y = delta_length/2.0/n_stretch_steps;
                 VectorTools::interpolate_boundary_values(dof_handler,
                                                          boundary_id,
@@ -1979,7 +1979,8 @@ namespace ViscoElasStripHole
       tangent_matrix.block(J_block, p_block),
       LA::PreconditionJacobi::AdditionalData());
     ReductionControl solver_control_K_Jp_inv (
-      tangent_matrix.block(J_block, p_block).m() * parameters.max_iterations_lin,
+      static_cast<unsigned int>(tangent_matrix.block(J_block, p_block).m() 
+                                * parameters.max_iterations_lin),
       1.0e-30, 1e-6);
     dealii::SolverCG<LA::MPI::Vector> solver_K_Jp_inv (solver_control_K_Jp_inv);
 
@@ -1998,7 +1999,8 @@ namespace ViscoElasStripHole
         true /*elliptic*/,
         (parameters.poly_degree > 1 /*higher_order_elements*/)) );
     ReductionControl solver_control_K_con_inv (
-      tangent_matrix.block(u_block, u_block).m() * parameters.max_iterations_lin,
+      static_cast<unsigned int>(tangent_matrix.block(u_block, u_block).m() 
+                                * parameters.max_iterations_lin),
       1.0e-30, parameters.tol_lin);
     dealii::SolverSelector<LA::MPI::Vector> solver_K_con_inv;
     solver_K_con_inv.select(parameters.type_lin);
