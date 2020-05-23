@@ -1,9 +1,9 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/petsc_parallel_sparse_matrix.h>
 #include <deal.II/lac/petsc_parallel_vector.h>
 #include <deal.II/lac/petsc_solver.h>
@@ -115,7 +115,7 @@ private:
   std::vector<double> boundary_values_v;
   std::vector<double> boundary_values_phi;
 
-  ConstraintMatrix     constraints;
+  AffineConstraints<double> constraints;
 
   double time;
   double time_step;

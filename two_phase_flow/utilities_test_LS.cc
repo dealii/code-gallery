@@ -62,7 +62,7 @@ public:
 };
 
 template <int dim>
-double BoundaryPhi<dim>::value (const Point<dim> &p, const unsigned int) const
+double BoundaryPhi<dim>::value (const Point<dim> &, const unsigned int) const
 {
   return -1.0;
 }
@@ -122,7 +122,7 @@ public:
 };
 
 template <int dim>
-double ExactW<dim>::value (const Point<dim> &p, const unsigned int) const
+double ExactW<dim>::value (const Point<dim> &, const unsigned int) const
 {
   // PROBLEM = 3D_DIAGONAL_ADVECTION
   return 1.0;
