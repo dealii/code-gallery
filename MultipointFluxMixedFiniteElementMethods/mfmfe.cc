@@ -17,6 +17,7 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/timer.h>
+#include <deal.II/base/utilities.h>
 #include <deal.II/base/work_stream.h>
 
 #include <deal.II/lac/full_matrix.h>
@@ -417,7 +418,7 @@ namespace MFMFE
     const FEValuesExtractors::Vector velocity (0);
     const FEValuesExtractors::Scalar pressure (dim);
 
-    const unsigned int n_vel = dim*pow(degree+1,dim);
+    const unsigned int n_vel = dim*Utilities::pow(degree+1,dim);
     std::unordered_map<unsigned int, std::unordered_map<unsigned int, double>> div_map;
 
     // One, we need to be able to assemble the communication between velocity and
@@ -818,7 +819,7 @@ namespace MFMFE
 
     pres_solution.reinit(n_p);
 
-    SolverControl solver_control (2.0*n_p, 1e-10);
+    SolverControl solver_control (static_cast<int>(2.0*n_p), 1e-10);
     SolverCG<> solver (solver_control);
 
     PreconditionIdentity identity;

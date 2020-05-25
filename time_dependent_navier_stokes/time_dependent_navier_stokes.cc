@@ -6,9 +6,9 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/base/utilities.h>
 
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/block_sparse_matrix.h>
 #include <deal.II/lac/block_vector.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
@@ -572,8 +572,8 @@ namespace fluid
     QGauss<dim> volume_quad_formula;
     QGauss<dim - 1> face_quad_formula;
 
-    ConstraintMatrix zero_constraints;
-    ConstraintMatrix nonzero_constraints;
+    AffineConstraints<double> zero_constraints;
+    AffineConstraints<double> nonzero_constraints;
 
     BlockSparsityPattern sparsity_pattern;
     // System matrix to be solved
@@ -873,7 +873,7 @@ namespace fluid
 
             cell->get_dof_indices(local_dof_indices);
 
-            const ConstraintMatrix &constraints_used =
+            const AffineConstraints<double> &constraints_used =
               use_nonzero_constraints ? nonzero_constraints : zero_constraints;
             if (assemble_system)
               {
@@ -903,7 +903,7 @@ namespace fluid
 
   // @sect4{InsIMEX::solve}
   // Solve the linear system using FGMRES solver with block preconditioner.
-  // After solving the linear system, the same ConstraintMatrix as used
+  // After solving the linear system, the same AffineConstraints object as used
   // in assembly must be used again, to set the constrained value.
   // The second argument is used to determine whether the block
   // preconditioner should be reset or not.
@@ -935,7 +935,7 @@ namespace fluid
     // The solution vector must be non-ghosted
     gmres.solve(system_matrix, solution_increment, system_rhs, *preconditioner);
 
-    const ConstraintMatrix &constraints_used =
+    const AffineConstraints<double> &constraints_used =
       use_nonzero_constraints ? nonzero_constraints : zero_constraints;
     constraints_used.distribute(solution_increment);
 

@@ -74,7 +74,10 @@ One per plasticity step:
 #include <string>
 #include <time.h>
 #include <math.h>
+
+DEAL_II_DISABLE_EXTRA_DIAGNOSTICS
 #include <armadillo>
+DEAL_II_ENABLE_EXTRA_DIAGNOSTICS
 
 #include "../support_code/ellipsoid_grav.h"
 #include "../support_code/ellipsoid_fit.h"
@@ -223,7 +226,7 @@ namespace Step22
     Assert(component < this->n_components,
            ExcIndexRange (component, 0, this->n_components));
 
-    Assert(p[0] >= -10, ExcLowerRange (p[0], 0)); //value of -10 is to permit some small numerical error moving nodes left of x=0; a << value is in fact sufficient
+    Assert(p[0] >= -10.0, ExcLowerRangeType<double>(p[0], -10.0)); //value of -10 is to permit some small numerical error moving nodes left of x=0; a << value is in fact sufficient
 
     return 0;
   }
@@ -2159,7 +2162,7 @@ int main(int argc, char *argv[])
 
   if (argc == 1) // if no input parameters (as if launched from eclipse)
     {
-      std::strcpy(cfg_filename,"config/ConfigurationV2.cfg");
+      std::strcpy(cfg_filename,"config/sample_CeresFE_config.cfg");
     }
   else
     std::strcpy(cfg_filename,argv[1]);

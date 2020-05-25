@@ -1,10 +1,9 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/constraint_matrix.h>
-#include <deal.II/lac/compressed_simple_sparsity_pattern.h>
 #include <deal.II/lac/petsc_parallel_sparse_matrix.h>
 #include <deal.II/lac/petsc_parallel_vector.h>
 #include <deal.II/lac/petsc_solver.h>
@@ -120,8 +119,8 @@ private:
   IndexSet             locally_owned_dofs_U_disp_field;
   IndexSet             locally_relevant_dofs_U_disp_field;
 
-  ConstraintMatrix     constraints;
-  ConstraintMatrix     constraints_disp_field;
+  AffineConstraints<double> constraints;
+  AffineConstraints<double> constraints_disp_field;
 
   double time;
   double time_step;

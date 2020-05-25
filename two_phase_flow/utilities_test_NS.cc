@@ -6,7 +6,7 @@ class RhoFunction : public Function <dim>
 {
 public:
   RhoFunction (double t=0) : Function<dim>() {this->set_time(t);}
-  virtual double value (const Point<dim>   &p, const unsigned int component=0) const;
+  virtual double value (const Point<dim> &p, const unsigned int component=0) const;
 };
 template <int dim>
 double RhoFunction<dim>::value (const Point<dim> &p,
@@ -29,7 +29,7 @@ public:
   virtual double value (const Point<dim>   &p, const unsigned int component=0) const;
 };
 template <int dim>
-double NuFunction<dim>::value (const Point<dim> &p, const unsigned int) const
+double NuFunction<dim>::value (const Point<dim> &, const unsigned int) const
 {
   return 1.;
 }

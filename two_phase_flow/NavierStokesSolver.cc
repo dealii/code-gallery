@@ -1,9 +1,9 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/petsc_parallel_sparse_matrix.h>
 #include <deal.II/lac/petsc_parallel_vector.h>
 #include <deal.II/lac/petsc_solver.h>
@@ -120,11 +120,11 @@ private:
   void assemble_system_U();
   void assemble_system_dpsi_q();
   // SOLVERS //
-  void solve_U(const ConstraintMatrix &constraints, PETScWrappers::MPI::SparseMatrix &Matrix,
+  void solve_U(const AffineConstraints<double> &constraints, PETScWrappers::MPI::SparseMatrix &Matrix,
                std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                PETScWrappers::MPI::Vector &completely_distributed_solution,
                const PETScWrappers::MPI::Vector &rhs);
-  void solve_P(const ConstraintMatrix &constraints, PETScWrappers::MPI::SparseMatrix &Matrix,
+  void solve_P(const AffineConstraints<double> &constraints, PETScWrappers::MPI::SparseMatrix &Matrix,
                std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                PETScWrappers::MPI::Vector &completely_distributed_solution,
                const PETScWrappers::MPI::Vector &rhs);
@@ -182,8 +182,8 @@ private:
 
   int degree_MAX;
 
-  ConstraintMatrix constraints;
-  ConstraintMatrix constraints_psi;
+  AffineConstraints<double> constraints;
+  AffineConstraints<double> constraints_psi;
 
   std::vector<types::global_dof_index> boundary_values_id_u;
   std::vector<types::global_dof_index> boundary_values_id_v;
@@ -984,7 +984,7 @@ void NavierStokesSolver<dim>::assemble_system_dpsi_q()
 /////////////////////// SOLVERS ///////////////////////
 ///////////////////////////////////////////////////////
 template<int dim>
-void NavierStokesSolver<dim>::solve_U(const ConstraintMatrix &constraints,
+void NavierStokesSolver<dim>::solve_U(const AffineConstraints<double> &constraints,
                                       PETScWrappers::MPI::SparseMatrix &Matrix,
                                       std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                                       PETScWrappers::MPI::Vector &completely_distributed_solution,
@@ -1005,7 +1005,7 @@ void NavierStokesSolver<dim>::solve_U(const ConstraintMatrix &constraints,
 }
 
 template<int dim>
-void NavierStokesSolver<dim>::solve_P(const ConstraintMatrix &constraints,
+void NavierStokesSolver<dim>::solve_P(const AffineConstraints<double> &constraints,
                                       PETScWrappers::MPI::SparseMatrix &Matrix,
                                       std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                                       PETScWrappers::MPI::Vector &completely_distributed_solution,

@@ -1,9 +1,9 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/function.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/petsc_parallel_sparse_matrix.h>
 #include <deal.II/lac/petsc_sparse_matrix.h>
 #include <deal.II/lac/petsc_parallel_vector.h>
@@ -160,7 +160,7 @@ private:
   ///////////////
   void get_sparsity_pattern();
   void get_map_from_Q1_to_Q2();
-  void solve(const ConstraintMatrix &constraints,
+  void solve(const AffineConstraints<double> &constraints,
              PETScWrappers::MPI::SparseMatrix &Matrix,
              std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
              PETScWrappers::MPI::Vector &completely_distributed_solution,
@@ -245,7 +245,7 @@ private:
   PETScWrappers::MPI::Vector inverse_ML_vector;
 
   // CONSTRAINTS
-  ConstraintMatrix     constraints;
+  AffineConstraints<double> constraints;
 
   // TIME STEPPING
   double time_step;
@@ -1532,7 +1532,7 @@ void LevelSetSolver<dim>::get_map_from_Q1_to_Q2()
 }
 
 template <int dim>
-void LevelSetSolver<dim>::solve(const ConstraintMatrix &constraints,
+void LevelSetSolver<dim>::solve(const AffineConstraints<double> &constraints,
                                 PETScWrappers::MPI::SparseMatrix &Matrix,
                                 std::shared_ptr<PETScWrappers::PreconditionBoomerAMG> preconditioner,
                                 PETScWrappers::MPI::Vector &completely_distributed_solution,

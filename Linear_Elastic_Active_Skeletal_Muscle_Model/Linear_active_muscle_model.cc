@@ -29,12 +29,12 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/parameter_handler.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria.h>
@@ -808,7 +808,7 @@ namespace LMM
     QGauss<dim>          qf_cell;
     QGauss<dim-1>        qf_face;
 
-    ConstraintMatrix     hanging_node_constraints;
+    AffineConstraints<double> hanging_node_constraints;
 
     SparsityPattern      sparsity_pattern;
     SparseMatrix<double> system_matrix;
