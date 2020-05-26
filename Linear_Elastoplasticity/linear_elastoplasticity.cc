@@ -52,6 +52,9 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/meshworker/copy_data.h>
+#include <deal.II/meshworker/mesh_loop.h>
+#include <deal.II/meshworker/scratch_data.h>
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/data_out.h>
@@ -1142,70 +1145,86 @@ namespace LinearElastoplasticity
     system_matrix = 0;
     system_rhs = 0;
 
-    FEValues<dim> fe_values (fe, qf_cell,
-                             update_values | update_gradients |
-                             update_quadrature_points | update_JxW_values);
+    using ScratchData      = MeshWorker::ScratchData<dim>;
+    using CopyData         = MeshWorker::CopyData<1, 1, 1>;
+    using CellIteratorType = decltype(dof_handler.begin_active());
 
-    const unsigned int   dofs_per_cell   = fe.dofs_per_cell;
-    const unsigned int   n_q_points_cell = qf_cell.size();
+    const ScratchData sample_scratch_data (fe, qf_cell,
+                                           update_values | update_gradients |
+                                           update_quadrature_points | update_JxW_values);
+    CopyData          sample_copy_data (fe.dofs_per_cell);
+    
+    auto cell_worker = [this] (const CellIteratorType &cell,
+                               ScratchData            &scratch_data,
+                               CopyData               &copy_data)
+    {
+      const FEValues<dim> &fe_values = scratch_data.reinit(cell);
+      FullMatrix<double>  &cell_matrix = copy_data.matrices[0];
 
-    FullMatrix<double>   cell_matrix (dofs_per_cell, dofs_per_cell);
-    Vector<double>       cell_rhs (dofs_per_cell);
+      std::vector<types::global_dof_index> &local_dof_indices = copy_data.local_dof_indices[0];
+      cell->get_dof_indices(local_dof_indices);
 
-    std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
-    std::vector<Tensor<2, dim> > solution_grads_u_total (qf_cell.size());
+      const unsigned int dofs_per_cell = fe_values.dofs_per_cell;
+      const unsigned int n_q_points_cell = fe_values.n_quadrature_points;
 
-    for (typename DoFHandler<dim>::active_cell_iterator
-         cell = dof_handler.begin_active();
-         cell!=dof_handler.end(); ++cell)
-      {
-        cell_matrix = 0;
-        cell_rhs = 0;
+      std::vector<Tensor<2, dim> > solution_grads_u_total (n_q_points_cell);
+      fe_values[u_fe].get_function_gradients(
+          solution,
+          solution_grads_u_total);
 
-        fe_values.reinit (cell);
-        fe_values[u_fe].get_function_gradients(
-            solution,
-            solution_grads_u_total);
+      const std::vector<std::shared_ptr< PointHistory<dim> > > lqph =
+      quadrature_point_history.get_data(cell);
 
-        const std::vector<std::shared_ptr< PointHistory<dim> > > lqph =
-        quadrature_point_history.get_data(cell);
+      for (unsigned int q_point_cell=0; q_point_cell<n_q_points_cell; ++q_point_cell)
+        {
+          const Tensor<2,dim> &Grad_u = solution_grads_u_total[q_point_cell];
+          const SymmetricTensor<2,dim> epsilon = Physics::Elasticity::Kinematics::epsilon(Grad_u);
+          lqph[q_point_cell]->update_internal_equilibrium(epsilon);
+          const SymmetricTensor<4,dim> K = lqph[q_point_cell]->get_K(epsilon);
 
-        for (unsigned int q_point_cell=0; q_point_cell<n_q_points_cell; ++q_point_cell)
-          {
-            const Tensor<2,dim> &Grad_u = solution_grads_u_total[q_point_cell];
-            const SymmetricTensor<2,dim> epsilon = Physics::Elasticity::Kinematics::epsilon(Grad_u);
-            lqph[q_point_cell]->update_internal_equilibrium(epsilon);
-            const SymmetricTensor<4,dim> K = lqph[q_point_cell]->get_K(epsilon);
+          const double JxW = fe_values.JxW(q_point_cell);
 
-            const double JxW = fe_values.JxW(q_point_cell);
+          // Precompute the shape function symmetric gradients
+          // (related to the variation of the small strain)
+          std::vector< SymmetricTensor<2,dim> > d_epsilon (dofs_per_cell);
+          for (unsigned int K=0; K<dofs_per_cell; ++K)
+            d_epsilon[K] = fe_values[u_fe].symmetric_gradient(K,q_point_cell);
 
-            // Precompute the shape function symmetric gradients
-            // (related to the variation of the small strain)
-            std::vector< SymmetricTensor<2,dim> > d_epsilon (dofs_per_cell);
-            for (unsigned int K=0; K<dofs_per_cell; ++K)
-              d_epsilon[K] = fe_values[u_fe].symmetric_gradient(K,q_point_cell);
+          for (unsigned int I=0; I<dofs_per_cell; ++I)
+            {
+              const SymmetricTensor<2,dim> &d_epsilon_I = d_epsilon[I];
 
-            for (unsigned int I=0; I<dofs_per_cell; ++I)
-              {
-                const SymmetricTensor<2,dim> &d_epsilon_I = d_epsilon[I];
+              for (unsigned int J=I; J<dofs_per_cell; ++J)
+                {
+                  const SymmetricTensor<2,dim> &d_epsilon_J = d_epsilon[J];
 
-                for (unsigned int J=I; J<dofs_per_cell; ++J)
-                  {
-                    const SymmetricTensor<2,dim> &d_epsilon_J = d_epsilon[J];
+                  cell_matrix(I,J)
+                    += contract3(d_epsilon_I,K,d_epsilon_J) * JxW;
+                }
+            }
+        }
 
-                    cell_matrix(I,J)
-                      += contract3(d_epsilon_I,K,d_epsilon_J) * JxW;
-                  }
-              }
-          }
+      for (unsigned int I=0; I<dofs_per_cell; ++I)
+        for (unsigned int J=I+1; J<dofs_per_cell; ++J)
+          cell_matrix(J,I) = cell_matrix(I,J);
+    };
 
-        for (unsigned int I=0; I<dofs_per_cell; ++I)
-          for (unsigned int J=I+1; J<dofs_per_cell; ++J)
-            cell_matrix(J,I) = cell_matrix(I,J);
+    auto copier = [this](const CopyData &copy_data)
+    {
+      const FullMatrix<double>  &cell_matrix = copy_data.matrices[0];
+      const Vector<double>      &cell_rhs = copy_data.vectors[0];
+      const std::vector<types::global_dof_index> &local_dof_indices = copy_data.local_dof_indices[0];
 
-        cell->get_dof_indices (local_dof_indices);
-        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
-      }
+      constraints.distribute_local_to_global(cell_matrix, cell_rhs, 
+                                             local_dof_indices, 
+                                             system_matrix, system_rhs);
+    };
+
+    MeshWorker::mesh_loop(dof_handler.active_cell_iterators(),
+                          cell_worker, copier,
+                          sample_scratch_data, 
+                          sample_copy_data,
+                          MeshWorker::assemble_own_cells);
   }
 
 
