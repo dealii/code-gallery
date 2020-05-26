@@ -243,10 +243,10 @@ wherein $\mathbf{n}$ represents the outward facing normal on $\partial\Omega$, t
 \end{easylist}
 
 \clearpage
-\section{Constitutive law: Hyperelasticity}
+\section{Constitutive law: Linear elasticity}
 
 \begin{easylist}[itemize]
-# Hyperelasticity
+# Linear elasticity (a special case of hyperelasticity)
 ## Dissipation (in-)equality
 \begin{gather}
 \mathcal{D} 
@@ -492,12 +492,15 @@ D
   = \underbrace{\left[ \boldsymbol{\mathcal{C}} - \frac{1}{D} \left[ \boldsymbol{\mathcal{C}} : \frac{\partial \Phi}{\partial \boldsymbol{\sigma}} \right] \otimes \left[ \frac{\partial \Phi}{\partial \boldsymbol{\sigma}} : \boldsymbol{\mathcal{C}} \right] \right]}_{\boldsymbol{\mathcal{C}}^{ep} \textnormal{ (symmetric)}} : \dot{\boldsymbol{\varepsilon}}
 \end{gather*}
 # Result for isotropic hardening
-\begin{align*}
+\begin{subequations}
+\begin{align}
 \boldsymbol{\mathcal{C}}^{ep, dev}
  &= 2 \mu \boldsymbol{\mathcal{I}}^{dev} - \frac{\left[ 2\mu \right]^{2}}{2\mu + \frac{2}{3}k} \boldsymbol{n} \otimes \boldsymbol{n} \\
 \boldsymbol{\mathcal{C}}^{ep, vol}
  &= \kappa \boldsymbol{1} \otimes \boldsymbol{1}
-\end{align*}
+ \label{equ: Constutitve law: Algorithmically correct tangent: Volumetric}
+\end{align}
+\end{subequations}
 with
 \begin{gather*}
 \boldsymbol{n}
@@ -648,11 +651,12 @@ with
 \begin{easylist}
 # Note: The definition of the consistent elastoplastic tangent depends on the algorithms used to update stresses, internal variables
 # Goal: Tangent to compute
-\begin{gather*}
+\begin{gather}
  \boldsymbol{\mathcal{C}}^{ep} 
   = \frac{\partial \boldsymbol{\sigma}_{n+1}}{\partial \boldsymbol{\varepsilon}_{n+1}}
   = \boldsymbol{\mathcal{C}}^{ep, vol} + \boldsymbol{\mathcal{C}}^{ep, dev}
-\end{gather*}
+\label{equ: Constutitve law: Algorithmically correct tangent}
+\end{gather}
 # Stress tensors
 \begin{gather*}
 \boldsymbol{\sigma}_{n+1}
@@ -708,7 +712,7 @@ with
   - \boldsymbol{n}_{n+1} \otimes \boldsymbol{n}_{n+1} \right]
 \end{align*}
 ## Resulting deviatoric part of the elasto-plastic tangent
-\begin{align*}
+\begin{align}
 \boldsymbol{\mathcal{C}}^{ep, dev}
  &= \frac{\partial \boldsymbol{\sigma}^{dev}_{n+1}}{\partial \boldsymbol{\varepsilon}_{n+1}}
   = \frac{\partial \boldsymbol{\sigma}^{dev, trial}_{n+1}}{\partial \boldsymbol{\varepsilon}_{n+1}}
@@ -723,7 +727,8 @@ with
  &= 2 \mu \boldsymbol{\mathcal{I}}^{dev}
   - \frac{ \left[2 \mu \right]^{2}}{2 \mu + \frac{2}{3} k} \boldsymbol{n}_{n+1} \otimes  \boldsymbol{n}_{n+1} \\ 
  & + \left[\Delta \lambda_{n+1} \frac{\left[ 2 \mu \right]^{2}}{{\Vert \boldsymbol{\sigma}^{dev, trial}_{n+1} \Vert}} \left[ \boldsymbol{\mathcal{I}}^{dev}_{n+1} - \boldsymbol{n}_{n+1} \otimes \boldsymbol{n}_{n+1} \right] \right]
-\end{align*}
+ \label{equ: Constutitve law: Algorithmically correct tangent: Deviatoric}
+\end{align}
 ## Compared to continuous case, the tangents are not equal but they converge to the same expression when $\Delta \lambda_{n+1} \rightarrow 0$
 \end{easylist}
 
@@ -734,7 +739,7 @@ with
 For clarity, it is worth mentioning up front that in this \namecref{sec: FE discretisation} we will denote the general elasto-plastic tangent by $\boldsymbol{\mathbb{C}}^{ep}$;
 so, in the elastic region $\boldsymbol{\mathbb{C}}^{ep} \equiv \boldsymbol{\mathbb{C}}$ while in the plastic region $\boldsymbol{\mathbb{C}}^{ep}$ represents the consistent tangent.
 
-Combining \cref{equ: Weak form of the balance of linear momentum,equ: Full expansion of constitutive laws} renders the complete expression of the balance of linear momentum, with accommodation of the muscle fibre model, namely
+Combining \cref{equ: Weak form of the balance of linear momentum,equ: Constutitve law: Algorithmically correct tangent} (specifically, \cref{equ: Constutitve law: Algorithmically correct tangent: Volumetric,equ: Constutitve law: Algorithmically correct tangent: Deviatoric}) renders the complete expression of the balance of linear momentum, namely
 \begin{gather}
 \int\limits_{\Omega} \frac{\partial \delta v_{i}}{\partial x_{j}} \, \left[ \boldsymbol{\mathbb{C}}^{ep} \right]_{ijkl} \varepsilon_{kl} \, dv
   = \int\limits_{\Omega} \delta v_{i} \, b_{i} \, dv
@@ -743,43 +748,26 @@ Combining \cref{equ: Weak form of the balance of linear momentum,equ: Full expan
 \label{equ: Weak form of the balance of linear momentum: Muscle model}
 \end{gather}
 
-We discretise the trial solution and test function using finite element shape functions (ansatz)
+We discretise the trial solution and test function using vector-valued finite element shape functions (ansatz)
 \begin{gather}
 \mathbf{u} \left( \mathbf{x} \right)
-  \approx \sum\limits_{I} \boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right) u^{I}
+  \approx \sum\limits_{I} \mathbf{N}^{I} \left( \mathbf{x} \right) u^{I}
 \quad , \quad
 \mathbf{v} \left( \mathbf{x} \right)
-  \approx \sum\limits_{I} \boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right) v^{I}
+  \approx \sum\limits_{I} \mathbf{N}^{I} \left( \mathbf{x} \right) v^{I}
 \end{gather}
 where $\mathbf{N}^{I} \left( \mathbf{x} \right)$ is the (position-dependent) vector-valued finite element shape function corresponding to the $I^{\textnormal{th}}$ degree-of-freedom, and $u^{I}, v^{I}$ are coefficients of the solution and trial function.
-In \texttt{deal.II} nomenclature, the shape function is computed from a scalar base shape function and some expansion into higher-dimensional space by
-\begin{gather}
-\boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right) 
-  = N^{I} \left( \mathbf{x} \right) \mathbf{e}_{\textnormal{comp}(I)}
-\end{gather}
-where $N^{I}$ is a scalar shape function and $\mathbf{e}_{\textnormal{comp}(I)}$ is the basis direction associated with the $I^{\textnormal{th}}$ degree-of-freedom.
-Therefore, the $j^{\textnormal{th}}$ local component of shape function $\boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right)$ is given by
-\begin{gather}
-\left[\boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right)\right]_{j}
-  = N^{I} \left( \mathbf{x} \right) \left[ \mathbf{e}_{\textnormal{comp}(I)} \right]_{j}
-  = N^{I} \left( \mathbf{x} \right) \delta_{\textnormal{comp}(I) j}
-\quad .
-\end{gather}
-where $\delta_{ij}$ is the Kronecker delta. 
-Note that in this instance we use the same ansatz for the test and trial spaces, and the $0 \leq \textnormal{comp}(I), j < \textnormal{spacedim}$.
 
 We now use these shape functions to discretise the weak expression for the balance of linear momentum.
 Starting on the right-hand side of \cref{equ: Weak form of the balance of linear momentum: Muscle model}, the body force and traction contributions are computed by
 \begin{align}
 \int\limits_{\Omega} \delta v_{i} \, b_{i} \, dv
-  &= \int\limits_{\Omega} \left[ \sum\limits_{I} \boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right) \delta v^{I} \right]_{i} \, b_{i} \, dv
-   = \sum\limits_{I} \delta v^{I} \int\limits_{\Omega} \left[  \boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right) \right]_{i} \, b_{i} \, dv \notag\\
-  &= \sum\limits_{I} \delta v^{I} \int\limits_{\Omega} N^{I} \left( \mathbf{x} \right) \delta_{\textnormal{comp}(I) i} \, b_{i} \, dv
-   = \sum\limits_{I} \delta v^{I} \int\limits_{\Omega} N^{I} \, b_{\textnormal{comp}(I)} \, dv 
+  &= \int\limits_{\Omega} \left[ \sum\limits_{I} \mathbf{N}^{I} \left( \mathbf{x} \right) \delta v^{I} \right]_{i} \, b_{i} \, dv
+   = \sum\limits_{I} \delta v^{I} \int\limits_{\Omega} \mathbf{N}^{I}_{i} \, b_{i} \, dv 
 \label{equ: Discretisation: Body force}
 \\
 \int\limits_{\Omega} \delta v_{i} \, t_{i} \, dv
-  &= \sum\limits_{I} \delta v^{I} \int\limits_{\Omega} N^{I} \, t_{\textnormal{comp}(I)} \, dv 
+  &= \sum\limits_{I} \delta v^{I} \int\limits_{\Omega} \mathbf{N}^{I}_{i} \, t_{i} \, dv 
 \label{equ: Discretisation: Traction}
 \quad .
 \end{align}
@@ -790,19 +778,24 @@ Before we do, we observe that using the minor symmetry of the material stiffness
   = \boldsymbol{\mathbb{C}} : \frac{1}{2} \left[ \nabla \mathbf{u} + \left[ \nabla \mathbf{u} \right]^{T} \right]
   \equiv \boldsymbol{\mathbb{C}} : \nabla \mathbf{u}
 \end{gather}
+from which we can similarly deduce that
+\begin{gather}
+\nabla \mathbf{u} : \boldsymbol{\mathbb{C}}
+  \equiv \boldsymbol{\varepsilon} : \boldsymbol{\mathbb{C}}
+\end{gather}
 Therefore, this contribution written in discrete form is
 \begin{align}
 &\int\limits_{\Omega} \frac{\partial \delta v_{i}}{\partial x_{j}} \, \left[ \boldsymbol{\mathbb{C}}^{ep} \right]_{ijkl} \varepsilon_{kl} \, dv
   \equiv \int\limits_{\Omega} \frac{\partial \delta v_{i}}{\partial x_{j}} \, \mathbb{C}^{ep}_{ijkl} \, \frac{\partial \delta u_{k}}{\partial x_{l}} \, dv \notag\\
-  &\equiv \int\limits_{\Omega} \frac{\partial}{\partial x_{j}} \left[ \sum\limits_{I} \boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right) \delta v^{I} \right]_{i} \, \mathbb{C}^{ep}_{ijkl} \, \frac{\partial}{\partial x_{l}} \left[ \sum\limits_{J} \boldsymbol{\varPhi}^{J} \left( \mathbf{x} \right) \delta u^{J} \right]_{k} \, dv \notag\\
-  &\equiv \sum\limits_{I,J} \delta v^{I} \left[ \int\limits_{\Omega} \frac{\partial}{\partial x_{j}} \left[  \boldsymbol{\varPhi}^{I} \left( \mathbf{x} \right)  \right]_{i} \, \mathbb{C}^{ep}_{ijkl} \, \frac{\partial}{\partial x_{l}} \left[ \boldsymbol{\varPhi}^{J} \left( \mathbf{x} \right)  \right]_{k} \, dv \right] \delta u^{J} \notag\\
-  &\equiv \sum\limits_{I,J} \delta v^{I} \left[ \int\limits_{\Omega} \frac{\partial N^{I} \left( \mathbf{x} \right)}{\partial x_{j}} \delta_{\textnormal{comp}(I) i}  \, \mathbb{C}^{ep}_{ijkl} \, \frac{\partial  N^{J} \left( \mathbf{x} \right)}{\partial x_{l}} \delta_{\textnormal{comp}(J) k} \, dv \right] \delta u^{J} \notag\\
-  &\equiv \sum\limits_{I,J} \delta v^{I} \left[ \int\limits_{\Omega} \frac{\partial N^{I} \left( \mathbf{x} \right)}{\partial x_{j}}  \, \mathbb{C}^{ep}_{\textnormal{comp}(I) \,j \, \textnormal{comp}(J) \, l} \, \frac{\partial  N^{J} \left( \mathbf{x} \right)}{\partial x_{l}} \, dv \right] \delta u^{J}
+  &= \int\limits_{\Omega} \frac{\partial}{\partial x_{j}} \left[ \sum\limits_{I} \mathbf{N}^{I} \left( \mathbf{x} \right) \delta v^{I} \right]_{i} \, \mathbb{C}^{ep}_{ijkl} \, \frac{\partial}{\partial x_{l}} \left[ \sum\limits_{J} \mathbf{N}^{J} \left( \mathbf{x} \right) \delta u^{J} \right]_{k} \, dv \notag\\
+  &= \sum\limits_{I,J} \delta v^{I} \left[ \int\limits_{\Omega} \frac{\partial}{\partial x_{j}} \left[  \mathbf{N}^{I} \left( \mathbf{x} \right)  \right]_{i} \, \mathbb{C}^{ep}_{ijkl} \, \frac{\partial}{\partial x_{l}} \left[ \mathbf{N}^{J} \left( \mathbf{x} \right)  \right]_{k} \, dv \right] \delta u^{J} \notag\\
+  &= \sum\limits_{I,J} \delta v^{I} \left[ \int\limits_{\Omega} \left[  \mathbf{N}^{I} \left( \mathbf{x} \right)  \right]_{i,j} \, \mathbb{C}^{ep}_{ijkl} \, \left[ \mathbf{N}^{J} \left( \mathbf{x} \right)  \right]_{k,l} \, dv \right] \delta u^{J} \notag\\
+  &\equiv \sum\limits_{I,J} \delta v^{I} \left[ \int\limits_{\Omega} \left[\left[  \mathbf{N}^{I} \left( \mathbf{x} \right)  \right]_{i,j} \right]^{S} \, \mathbb{C}^{ep}_{ijkl} \, \left[\left[ \mathbf{N}^{J} \left( \mathbf{x} \right)  \right]_{k,l}\right]^{S} \, dv \right] \delta u^{J}
 \label{equ: Discretisation: Material tangent}
 \quad .
 \end{align}
 
-\Cref{equ: Discretisation: Body force,equ: Discretisation: Traction,equ: Discretisation: Stress history,equ: Discretisation: Material tangent} are collectively used to develop the system of linear equations that are solved at each time step.
+\Cref{equ: Discretisation: Body force,equ: Discretisation: Traction,equ: Discretisation: Material tangent} are collectively used to develop the system of linear equations that are solved at each time step.
 
 \bibliographystyle{plain}
 \bibliography{\jobname} 

@@ -17,7 +17,7 @@ end
 
 subsection Geometry
   # Geometry to simulate
-  # Options: Notched cylinder ; Tensile specimen ; Notched tensile specimen
+  # Options: Notched cylinder ; Tensile specimen
   set Geometry type = Notched cylinder
 
   # Global grid scaling factor

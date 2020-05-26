@@ -19,6 +19,7 @@
  *          University of Erlangen-Nuremberg, 2018
  */
 
+
 // @sect3{Include files}
 
 #include <deal.II/base/quadrature_lib.h>
@@ -64,9 +65,10 @@
 #include <iostream>
 #include <vector>
 
-namespace LMM
+namespace LinearElastoplasticity
 {
   using namespace dealii;
+
 
 // @sect3{Run-time parameters}
 //
@@ -74,6 +76,7 @@ namespace LMM
 // ParameterHandler object to read in the choices at run-time.
   namespace Parameters
   {
+
 // @sect4{Finite Element system}
 
 // Here we specify the polynomial order used to approximate the solution.
@@ -115,9 +118,10 @@ namespace LMM
       prm.leave_subsection();
     }
 
-    // @sect4{Boundary conditions}
 
-    // The boundary conditions to be applied to the problem.
+// @sect4{Boundary conditions}
+
+// The boundary conditions to be applied to the problem.
 
         struct BoundaryConditions
         {
@@ -149,6 +153,7 @@ namespace LMM
           }
           prm.leave_subsection();
         }
+
 
 // @sect4{Geometry}
 
@@ -190,7 +195,7 @@ namespace LMM
       prm.enter_subsection("Geometry");
       {
         prm.declare_entry("Geometry type", "Notched cylinder",
-                          Patterns::Selection("Notched cylinder|Tensile specimen|Notched tensile specimen"),
+                          Patterns::Selection("Notched cylinder|Tensile specimen"),
                           "The geometry to be modelled");
 
         prm.declare_entry("Grid scale", "1e-3",
@@ -254,9 +259,10 @@ namespace LMM
                   ExcMessage("Cannot create geometry with given dimensions"));
     }
 
-    // @sect4{Material properties}
 
-    // Make adjustments to the material of the notched specimen.
+// @sect4{Material properties}
+
+// Make adjustments to the material of the notched specimen.
 
         struct MaterialProperties
         {
@@ -314,7 +320,6 @@ namespace LMM
         }
 
 
-
 // @sect4{Time}
 
 // Set the timestep size $ \varDelta t $ and the simulation end-time.
@@ -354,6 +359,7 @@ namespace LMM
       }
       prm.leave_subsection();
     }
+
 
 // @sect4{All parameters}
 
@@ -401,7 +407,8 @@ namespace LMM
     }
   }
 
-  // @sect3{Time}
+
+// @sect3{Time incrementation}
 
   class Time
   {
@@ -444,6 +451,8 @@ namespace LMM
     const double delta_t;
 };
 
+
+// @sect3{Constitutive laws}
 
   template <int dim>
   class Material_Base
@@ -720,6 +729,8 @@ namespace LMM
   };
 
 
+// @sect3{Quadrature point data}
+
   template <int dim>
   class PointHistory
   {
@@ -780,7 +791,7 @@ namespace LMM
 };
 
 
-  // @sect3{The <code>LinearElastoplasticProblem</code> class template}
+// @sect3{The <code>LinearElastoplasticProblem</code> class template}
 
   template <int dim>
   class LinearElastoplasticProblem
@@ -830,7 +841,8 @@ namespace LMM
     static const unsigned int first_u_component = 0;
   };
 
-  // @sect4{LinearElastoplasticProblem::LinearElastoplasticProblem}
+
+// @sect4{LinearElastoplasticProblem::LinearElastoplasticProblem}
 
   template <int dim>
   LinearElastoplasticProblem<dim>::LinearElastoplasticProblem (const std::string &input_file)
@@ -847,7 +859,7 @@ namespace LMM
   }
 
 
-  // @sect4{LinearElastoplasticProblem::~LinearElastoplasticProblem}
+// @sect4{LinearElastoplasticProblem::~LinearElastoplasticProblem}
 
   template <int dim>
   LinearElastoplasticProblem<dim>::~LinearElastoplasticProblem ()
@@ -856,7 +868,7 @@ namespace LMM
   }
 
 
-  // @sect4{LinearElastoplasticProblem::make_grid}
+// @sect4{LinearElastoplasticProblem::make_grid}
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::make_grid ()
@@ -958,7 +970,9 @@ namespace LMM
           rad[0] = 0.0;
           const double radius = rad.norm();
           if (radius > radius_for_cyl_cells)
+          {
             cell->set_all_manifold_ids(1); // Cylindrical manifold
+          }
         }
       for (typename Triangulation<dim>::active_cell_iterator
            cell = triangulation.begin_active();
@@ -1024,10 +1038,6 @@ namespace LMM
 
       triangulation.refine_global(parameters.n_global_refinement_steps);
     }
-    else if (parameters.geometry_type == "Notched tensile specimen")
-    {
-      AssertThrow(false, ExcNotImplemented());
-    }
     else
       AssertThrow(false, ExcMessage("Unknown geometry"));
 
@@ -1044,7 +1054,8 @@ namespace LMM
       }
   }
 
-  // @sect4{LinearElastoplasticProblem::refine_grid}
+
+// @sect4{LinearElastoplasticProblem::refine_grid}
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::refine_grid ()
@@ -1063,7 +1074,8 @@ namespace LMM
     triangulation.execute_coarsening_and_refinement();
   }
 
-  // @sect4{LinearElastoplasticProblem::setup_system}
+
+// @sect4{LinearElastoplasticProblem::setup_system}
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::setup_system ()
@@ -1098,6 +1110,8 @@ namespace LMM
   }
 
 
+// @sect4{LinearElastoplasticProblem::setup_qph}
+
   template <int dim>
   void LinearElastoplasticProblem<dim>::setup_qph()
   {
@@ -1125,20 +1139,15 @@ namespace LMM
   template <int dim>
   void LinearElastoplasticProblem<dim>::assemble_system ()
   {
-    // Reset system
     system_matrix = 0;
     system_rhs = 0;
 
     FEValues<dim> fe_values (fe, qf_cell,
                              update_values | update_gradients |
                              update_quadrature_points | update_JxW_values);
-    FEFaceValues<dim> fe_face_values (fe, qf_face,
-                                      update_values |
-                                      update_quadrature_points | update_JxW_values);
 
     const unsigned int   dofs_per_cell   = fe.dofs_per_cell;
     const unsigned int   n_q_points_cell = qf_cell.size();
-    // const unsigned int   n_q_points_face = qf_face.size();
 
     FullMatrix<double>   cell_matrix (dofs_per_cell, dofs_per_cell);
     Vector<double>       cell_rhs (dofs_per_cell);
@@ -1198,6 +1207,9 @@ namespace LMM
         constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
       }
   }
+
+
+// @sect4{LinearElastoplasticProblem::make_constraints}
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::make_constraints ()
@@ -1303,10 +1315,6 @@ namespace LMM
                                                   component_mask_yz);
       }
     }
-    else if (parameters.geometry_type == "Notched tensile specimen")
-    {
-      AssertThrow(false, ExcNotImplemented());
-    }
     else
       AssertThrow(false, ExcMessage("Unknown geometry"));
 
@@ -1315,7 +1323,7 @@ namespace LMM
   }
 
 
-  // @sect4{LinearElastoplasticProblem::solve}
+// @sect4{LinearElastoplasticProblem::solve}
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::solve ()
@@ -1332,6 +1340,8 @@ namespace LMM
     constraints.distribute(solution);
   }
 
+
+// @sect4{LinearElastoplasticProblem::update_end_timestep}
 
   template <int dim>
   void LinearElastoplasticProblem<dim>::update_end_timestep ()
@@ -1372,6 +1382,7 @@ namespace LMM
     FullMatrix<double> projection_matrix_qpoint_to_support_point;
   };
 
+
   template <int dim>
   PostProcessIsotropicHardening<dim>::PostProcessIsotropicHardening(
       const CellDataStorage<typename Triangulation<dim>::active_cell_iterator,
@@ -1393,6 +1404,7 @@ namespace LMM
                projection_matrix_qpoint_to_support_point);
   }
 
+  
   template <int dim>
   void PostProcessIsotropicHardening<dim>::evaluate_vector_field(
     const DataPostprocessorInputs::Vector<dim> &inputs,
@@ -1451,10 +1463,9 @@ namespace LMM
   template <int dim>
   void LinearElastoplasticProblem<dim>::output_results () const
   {
-    // Visual output: FEM results
     std::string filename = "solution-";
     filename += Utilities::int_to_string(time.get_timestep(),4);
-    filename += ".vtk";
+    filename += ".vtu";
     std::ofstream output (filename.c_str());
 
     PostProcessIsotropicHardening<dim> pp_isotropic_hardening (quadrature_point_history, qf_cell);
@@ -1474,10 +1485,14 @@ namespace LMM
     DataOutBase::VtkFlags flags;
     flags.write_higher_order_cells = true;
     data_out.set_flags (flags);
-    data_out.build_patches (StaticMappingQ1<dim>::mapping, fe.degree, DataOut<dim>::curved_inner_cells);
-    data_out.write_vtk (output);
-  }
+    data_out.build_patches (StaticMappingQ1<dim>::mapping, std::max(fe.degree,2u), DataOut<dim>::curved_inner_cells);
+    data_out.write_vtu (output);
 
+    static std::vector< std::pair< double, std::string >> times_and_names;
+    times_and_names.emplace_back (time.current(), filename);
+    std::ofstream pvd_output ("solution.pvd");
+    DataOutBase::write_pvd_record (pvd_output, times_and_names);
+  }
 
 
   // @sect4{LinearElastoplasticProblem::run}
@@ -1533,7 +1548,8 @@ namespace LMM
         time.increment();
       }
   }
-}
+} // namespace LinearElastoplasticity
+
 
 // @sect3{The <code>main</code> function}
 
@@ -1546,7 +1562,7 @@ int main (int argc, char *argv[])
 
       dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
-      LMM::LinearElastoplasticProblem<dim> elastoplastic_problem ("parameters.prm");
+      LinearElastoplasticity::LinearElastoplasticProblem<dim> elastoplastic_problem ("parameters.prm");
       elastoplastic_problem.run ();
     }
   catch (std::exception &exc)
