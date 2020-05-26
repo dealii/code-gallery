@@ -526,7 +526,7 @@ namespace LinearElastoplasticity
 
       // Check that stress-strain relationship really is linear and
       // correctly implemented
-      Assert((get_sigma(epsilon) - K_e*epsilon).norm() < 1e-9, ExcInternalError());
+      Assert((get_sigma(epsilon) - K_e*epsilon).norm() < 1e-6, ExcInternalError());
 
       return K_e;
     }
@@ -609,7 +609,7 @@ namespace LinearElastoplasticity
       {
         // Check that stress-strain relationship really is linear and
         // correctly implemented
-        Assert((get_sigma(epsilon) - K_e*epsilon).norm() < 1e-9, ExcInternalError());
+        Assert((get_sigma(epsilon) - K_e*epsilon).norm() < 1e-6, ExcInternalError());
 
         return K_e;
       }
@@ -1153,7 +1153,7 @@ namespace LinearElastoplasticity
                                            update_values | update_gradients |
                                            update_quadrature_points | update_JxW_values);
     CopyData          sample_copy_data (fe.dofs_per_cell);
-    
+
     auto cell_worker = [this] (const CellIteratorType &cell,
                                ScratchData            &scratch_data,
                                CopyData               &copy_data)
