@@ -1485,7 +1485,7 @@ namespace LinearElastoplasticity
     DataOutBase::VtkFlags flags;
     flags.write_higher_order_cells = true;
     data_out.set_flags (flags);
-    data_out.build_patches (StaticMappingQ1<dim>::mapping, std::max(fe.degree,2u), DataOut<dim>::curved_inner_cells);
+    data_out.build_patches (StaticMappingQ1<dim>::mapping, fe.degree, DataOut<dim>::curved_inner_cells);
     data_out.write_vtu (output);
 
     static std::vector< std::pair< double, std::string >> times_and_names;
@@ -1560,7 +1560,7 @@ int main (int argc, char *argv[])
       dealii::deallog.depth_console (0);
       const unsigned int dim = 3;
 
-      dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+      dealii::Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv);
 
       LinearElastoplasticity::LinearElastoplasticProblem<dim> elastoplastic_problem ("parameters.prm");
       elastoplastic_problem.run ();
