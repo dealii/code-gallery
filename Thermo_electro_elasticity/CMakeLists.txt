@@ -23,7 +23,7 @@ SET(TARGET_SRC
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
-FIND_PACKAGE(deal.II 8.2 QUIET
+FIND_PACKAGE(deal.II 9.1.0 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
@@ -59,6 +59,11 @@ ADD_CUSTOM_TARGET(clean_output
 ADD_CUSTOM_TARGET(run_mpi_2
   COMMAND mpirun -np 2 ${TARGET}
   COMMENT "run_mpi_2 invoked"
+)
+
+ADD_CUSTOM_TARGET(run_mpi_4
+  COMMAND mpirun -np 4 ${TARGET}
+  COMMENT "run_mpi_4 invoked"
 )
 
 ADD_CUSTOM_TARGET(run_mpi_8

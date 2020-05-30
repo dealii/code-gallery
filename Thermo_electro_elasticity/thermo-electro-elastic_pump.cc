@@ -1,4 +1,26 @@
-/* =========================
+/* ---------------------------------------------------------------------
+ * Copyright (C) 2020 by the deal.II authors and
+ *                           Markus Mehnert and Jean-Paul Pelteret
+ *
+ * This file is part of the deal.II library.
+ *
+ * The deal.II library is free software; you can use it, redistribute
+ * it, and/or modify it under the terms of the GNU Lesser General
+ * Public License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * The full text of the license can be found in the file LICENSE at
+ * the top level of the deal.II distribution.
+ *
+ * ---------------------------------------------------------------------
+ */
+
+/*
+ * Authors: Markus Mehnert, University of Erlangen-Nuremberg,
+ *          Jean-Paul Pelteret, University of Erlangen-Nuremberg, 2020
+ */
+
+/** 
+ * =========================
  * THERMO-ELECTRO-ELASTICITY
  * =========================
  * Problem description:
@@ -6,43 +28,33 @@
  *   field induced in the axial direction and a temperature gradient
  *   prescribed between the inner and outer radial surfaces.
  *
- * Initial implementation
- *   Author: Markus Mehnert (2015)
- *           Friedrich-Alexander University Erlangen-Nuremberg
- *   Description:
- *           Staggered one-way coupling of quasi-static
- *           linear-elasticity and thermal (conductivity) problems
- *
- * Extensions
- *   Author: Jean-Paul Pelteret (2015)
- *            Friedrich-Alexander University Erlangen-Nuremberg
- *   Description:
- *       [X] Nonlinear, finite deformation quasi-static  elasticity
- *       [X] Nonlinear quasi-static thermal (conductivity) problem
- *       [X] Nonlinear iterative solution scheme (Newton-Raphson)
- *           that encompasses staggered thermal / coupled EM
- *           solution update
- *       [X] Parallelisation via Trilinos (and possibly PETSc)
- *       [X] Parallel output of solution, residual
- *       [X] Choice of direct and indirect solvers
- *       [X] Adaptive grid refinement using Kelly error estimator
- *       [X] Parameter collection
- *       [X] Generic continuum point framework for integrating
- *           constitutive models
- *       [X] Nonlinear constitutive models
- *          [X] St. Venant Kirchoff
- *              + Materially linear thermal conductivity
- *          [X] Fully decoupled NeoHookean
- *              + Materially isotropic dielectric material
- *              + Spatially isotropic thermal conductivity
- *          [X] One-way coupled thermo-electro-mechanical model
- *              based on Markus' paper (Mehnert2015a)
- *              + Spatially isotropic thermal conductivity
+ * Summary of features:
+ *   - Staggered one-way coupling of quasi-static electro-elasticity
+ *     and thermal (conductivity) problems
+ *   - Nonlinear, finite deformation quasi-static elasticity
+ *   - Nonlinear quasi-static thermal (conductivity) problem
+ *   - Nonlinear iterative solution scheme (Newton-Raphson)
+ *     that encompasses staggered thermal / coupled EM solution update
+ *   - Parallelisation via Trilinos (and possibly PETSc)
+ *   - Parallel output of solution, residual
+ *   - Choice of direct and indirect solvers
+ *   - Adaptive grid refinement using Kelly error estimator
+ *   - Parameter collection
+ *   - Generic continuum point framework for integrating constitutive models
+ *   - Nonlinear constitutive models:
+ *      - St. Venant Kirchoff
+ *        + Materially linear thermal conductivity
+ *      - Fully decoupled NeoHookean
+ *        + Materially isotropic dielectric material
+ *        + Spatially isotropic thermal conductivity
+ *      - One-way coupled thermo-electro-mechanical model
+ *        based on Markus' paper (Mehnert2015a)
+ *        + Spatially isotropic thermal conductivity
  *
  *  References:
- *  Wriggers, P. Nonlinear finite element methods. 2008
- *  Holzapfel, G. A. Nonlinear solid mechanics. 2007
- *  Vu, K., On coupled BEM-FEM simulation of nonlinear electro-elastostatics
+ *    Wriggers, P. Nonlinear finite element methods. 2008
+ *    Holzapfel, G. A. Nonlinear solid mechanics. 2007
+ *    Vu, K., On coupled BEM-FEM simulation of nonlinear electro-elastostatics
  */
 
 #include <deal.II/base/utilities.h>
@@ -65,7 +77,7 @@
 #include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_selector.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/lac/block_sparsity_pattern.h>
 
@@ -111,7 +123,7 @@
 // #include <deal.II/differentiation/ad/sacado_product_types.h>
 #include <deal.II/differentiation/ad/sacado_product_types.h>
 #include <deal.II/differentiation/ad/sacado_math.h>
-#include <Sacado.hpp>
+// #include <Sacado.hpp>
 
 
 #include <deal.II/lac/generic_linear_algebra.h>
@@ -194,6 +206,7 @@ struct Parameters
 	static const std::string solver_type_EM;
 	static constexpr double tol_rel_EM = 1e-6;
 };
+
 const std::string Parameters::mesh_file = "Pump_um_coarse.inp";
 const std::string Parameters::solver_type_T = "Direct";
 const std::string Parameters::solver_type_EM = "Direct";
@@ -229,10 +242,8 @@ struct Coefficients
 	static constexpr double alpha = 20e-6; //thermal expansion coefficient in 1/K
 	static constexpr double theta_0 = 293; // in K
 	static constexpr double k = 0.50; // Heat conductivity in N/(s*K)
-
-
-
 };
+
 template<int dim>
 struct Values_ad
 {
@@ -531,10 +542,10 @@ protected:
 	// \Psi_{\text{vol}}(\widetilde{J})}{\partial \widetilde{J}}$
 	ad_type
 	get_dW_vol_elastic_dJ (const double kappa,
-			const double g_0) const
+			                   const double /*g_0*/) const
 	{
 		const ad_type &J = values_ad.J;
-		return (0.5*(kappa)*(J-1/J));
+		return (0.5*(kappa)*(J - 1.0/J));
 
 	}
 
@@ -543,44 +554,43 @@ protected:
 	// \Psi_{\text{vol}}(\widetilde{J})}{\partial \widetilde{J}}$
 	ad_type
 	get_dW_J_dJ (const double kappa,
-			const double g_0) const
+			         const double /*g_0*/) const
 	{
 		const ad_type &J = values_ad.J;
-		return (0.5*(kappa)*(J-1/J));
+		return (0.5*(kappa)*(J - 1.0/J));
 
 	}
 
 	SymmetricTensor<2,dim,ad_type>
 	get_dW_J_dC (const double kappa,
-			const double g_0) const
-			{
+		           const double g_0) const
+  {
 		// See Wriggers p46 eqs. 3.123, 3.124; Holzapfel p230
 		return get_dW_J_dJ(kappa, g_0)*this->values_ad.dJ_dC();
-			}
+  }
 
 	ad_type
 	get_dW_vol_elastic_dJ_EM (const double kappa,
-			const double g_0) const
+		                      	const double /*g_0*/) const
 	{
 		const ad_type &J_EM = values_ad.J_EM;
-		return (0.5*(kappa)*(J_EM-1/J_EM));
-
+		return (0.5*(kappa)*(J_EM - 1.0/J_EM));
 	}
 
 	SymmetricTensor<2,dim,ad_type>
 	get_dW_vol_elastic_dC (const double kappa,
-			const double g_0) const
-			{
+			                   const double g_0) const
+  {
 		// See Wriggers p46 eqs. 3.123, 3.124; Holzapfel p230
 		return get_dW_vol_elastic_dJ(kappa, g_0)*this->values_ad.dJ_dC();
-			}
+  }
 	SymmetricTensor<2,dim,ad_type>
 	get_dW_vol_elastic_dC_EM (const double kappa,
-			const double g_0) const
-			{
+			                      const double g_0) const
+  {
 		// See Wriggers p46 eqs. 3.123, 3.124; Holzapfel p230
 		return get_dW_vol_elastic_dJ_EM(kappa, g_0)*this->values_ad.dJ_EM_dC_EM();
-			}
+  }
 
 	SymmetricTensor<2,dim,ad_type>
 	get_dPsi_p_dC () const
@@ -889,58 +899,38 @@ protected:
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_dW_FE_iso_elastic_dC (const double g_0,
-			const double N,
+			const double /*N*/,
 			const double c_2) const
-			{
-
-		//		const ad_type &lambda=get_lambda();
-		//
-		//		return	ad_type((0.5*g_0/dim)*((dim*N-lambda*lambda)/(N-lambda*lambda)))*
-		//				(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_dC();
-		//
-		const SymmetricTensor<2,dim,ad_type> &C_inv = this->values_ad.C_inv;
-		return (g_0/2)*(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_dC();
-
-			}
+  {
+		// const SymmetricTensor<2,dim,ad_type> &C_inv = this->values_ad.C_inv;
+		return (g_0/2.0)*(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_dC();
+  }
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_dW_FE_iso_elastic_dC_EM (const double g_0,
-			const double N,
-			const double c_2) const
+                              const double N,
+                              const double c_2) const
 			{
 
 		const SymmetricTensor<4,dim,ad_type> P= get_Dev_P(this->values_ad.F_EM);//get_dC_bar_dC();
 		const SymmetricTensor<2,dim,ad_type> dW_FE_dC_EM_bar=get_dW_FE_iso_elastic_dC_EM_bar(g_0,N,c_2);
 
 		return (dW_FE_dC_EM_bar*P);
-
-
 			}
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_dW_FE_iso_elastic_dC_bar (const double g_0,
-			const double N,
+			const double /*N*/,
 			const double c_2) const
-			{
-		//		const ad_type &lambda_bar=get_lambda_bar();
-		//
-		//		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_bar*lambda_bar)/(N-lambda_bar*lambda_bar)))*
-		//				(unit_symmetric_tensor<dim,ad_type>())+ c_2*this->values_ad.dI5_bar_dC_bar();
-
+  {
 		return (g_0 /2.0)*this->values_ad.dI1_bar_dC_bar()+ c_2*this->values_ad.dI5_bar_dC_bar();
-
-			}
+  }
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_dW_FE_iso_elastic_dC_EM_bar (const double g_0,
-			const double N,
+			const double /*N*/,
 			const double c_2) const
 			{
-		//		const ad_type &lambda_EM_bar=get_lambda_EM_bar();
-		//
-		//		return	ad_type((0.5*g_0/dim)*((dim*N-lambda_EM_bar*lambda_EM_bar)/(N-lambda_EM_bar*lambda_EM_bar)))*
-		//				(unit_symmetric_tensor<dim,ad_type>()) + c_2*this->values_ad.dI5_EM_bar_dC_EM_bar();
-
 		return g_0 /2.0*this->values_ad.dI1_EM_bar_dC_EM_bar()+ c_2*this->values_ad.dI5_EM_bar_dC_EM_bar();
 
 			}
@@ -1100,8 +1090,6 @@ private:
 		uncoupled_material_id=2
 	};
 
-
-
 	static bool cell_is_in_3Field_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
 	static bool cell_is_in_1Field_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
 
@@ -1114,19 +1102,16 @@ private:
 	const FEValuesExtractors::Scalar pressure;
 	const FEValuesExtractors::Scalar temperature;
 
-
 	MPI_Comm           mpi_communicator;
 	const unsigned int n_mpi_processes;
 	const unsigned int this_mpi_process;
 	mutable ConditionalOStream pcout;
 	mutable TimerOutput computing_timer;
 
-
 	Triangulation<dim>    triangulation;
 	hp::FECollection<dim> fe_collection;
 	hp::DoFHandler<dim>   dof_handler;
 
-	std::vector<IndexSet> all_locally_owned_dofs;
 	IndexSet locally_owned_dofs;
 	IndexSet locally_relevant_dofs;
 	std::vector<IndexSet> locally_owned_partitioning;
@@ -1136,27 +1121,22 @@ private:
 
 	hp::QCollection<dim> q_collection;
 
-
 	FESystem<dim> fe_cell_3Field;
 	FESystem<dim> fe_cell_1Field;
-
 
 	QGauss<dim> qf_cell_3Field;
 	QGauss<dim> qf_cell_1Field;
 
-	ConstraintMatrix hanging_node_constraints;
-	ConstraintMatrix dirichlet_constraints;
-	ConstraintMatrix periodicity_constraints;
-	ConstraintMatrix all_constraints;
+	AffineConstraints<double> hanging_node_constraints;
+	AffineConstraints<double> dirichlet_constraints;
+	AffineConstraints<double> periodicity_constraints;
+	AffineConstraints<double> all_constraints;
 
 	LA::MPI::BlockSparseMatrix system_matrix;
 	LA::MPI::BlockVector       system_rhs;
-	//	LA::MPI::BlockVector       solution;
 	LA::MPI::BlockVector locally_relevant_solution;
 	LA::MPI::BlockVector locally_relevant_solution_update;
 	LA::MPI::BlockVector completely_distributed_solution_update;
-
-
 };
 
 template<int dim>
@@ -1389,8 +1369,8 @@ CoupledProblem<dim>::setup_system ()
 
 	std::vector<types::global_dof_index>  block_component(n_components, uV_block); // Displacement
 	block_component[V_component] = uV_block; // Voltage
-	block_component[J_component] = uV_block; // dilatation
-	block_component[p_component] = uV_block; // pressure
+	block_component[J_component] = uV_block; // Dilatation
+	block_component[p_component] = uV_block; // Pressure
 	block_component[T_component] = T_block; // Temperature
 
 	DoFRenumbering::Cuthill_McKee(dof_handler);
@@ -1400,10 +1380,6 @@ CoupledProblem<dim>::setup_system ()
 	DoFTools::count_dofs_per_block(dof_handler, dofs_per_block, block_component);
 	const types::global_dof_index &n_u_V = dofs_per_block[0];
 	const types::global_dof_index &n_th = dofs_per_block[1];
-
-	all_locally_owned_dofs = DoFTools::locally_owned_dofs_per_subdomain (dof_handler);
-	std::vector<IndexSet> all_locally_relevant_dofs	= DoFTools::locally_relevant_dofs_per_subdomain (dof_handler);
-
 
 	pcout
 	<< "Number of active cells: "
@@ -1418,15 +1394,12 @@ CoupledProblem<dim>::setup_system ()
 	<< std::endl;
 
 	locally_owned_dofs.clear();
-	locally_owned_partitioning.clear();
-	Assert(all_locally_owned_dofs.size() > this_mpi_process, ExcInternalError());
-	locally_owned_dofs = all_locally_owned_dofs[this_mpi_process];
-
 	locally_relevant_dofs.clear();
-	locally_relevant_partitioning.clear();
-	Assert(all_locally_relevant_dofs.size() > this_mpi_process, ExcInternalError());
-	locally_relevant_dofs = all_locally_relevant_dofs[this_mpi_process];
+	locally_owned_dofs = dof_handler.locally_owned_dofs();
+	DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
 
+	locally_owned_partitioning.clear();
+	locally_relevant_partitioning.clear();
 	locally_owned_partitioning.reserve(n_blocks);
 	locally_relevant_partitioning.reserve(n_blocks);
 	for (unsigned int b=0; b<n_blocks; ++b)
@@ -1472,23 +1445,16 @@ CoupledProblem<dim>::setup_system ()
 	sp.compress();
 	system_matrix.reinit (sp);
 
-
 	system_rhs.reinit (locally_owned_partitioning,
 			locally_relevant_partitioning,
 			mpi_communicator,
 			true);
-	//	solution.reinit (locally_owned_partitioning,
-	//			locally_relevant_partitioning,
-	//			mpi_communicator,
-	//			true);
 	locally_relevant_solution.reinit (locally_relevant_partitioning,
 			mpi_communicator);
 	locally_relevant_solution_update.reinit (locally_relevant_partitioning,
 			mpi_communicator);
 	completely_distributed_solution_update.reinit(locally_owned_partitioning,
 			mpi_communicator);
-
-
 }
 
 
@@ -1510,7 +1476,7 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 
 		pcout << "  CST T" << std::flush;
 
-		const double temperature_difference_per_ts = Parameters::Temperature_Difference/static_cast<double>(Parameters::n_timesteps);
+		// const double temperature_difference_per_ts = Parameters::Temperature_Difference/static_cast<double>(Parameters::n_timesteps);
 		if (timestep==1)
 		{
 			// Prescribed temperature at inner radius
@@ -1675,9 +1641,9 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 
 	// Combine constraint matrices
 	all_constraints.clear();
-	all_constraints.reinit (locally_relevant_dofs);
+	all_constraints.reinit(locally_relevant_dofs);
 	all_constraints.merge(hanging_node_constraints);
-	all_constraints.merge(dirichlet_constraints, ConstraintMatrix::left_object_wins);
+	all_constraints.merge(dirichlet_constraints, AffineConstraints<double>::left_object_wins);
 	all_constraints.close();
 }
 
@@ -1685,7 +1651,7 @@ template<int dim>
 void
 CoupledProblem<dim>::assemble_system_thermo()
 {
-	typedef Sacado::Fad::DFad<double> ad_type;
+	using ad_type = Sacado::Fad::DFad<double>;
 
 	TimerOutput::Scope timer_scope (computing_timer, "Assembly: Thermal");
 	pcout << "  ASM T" << std::flush;
@@ -1789,7 +1755,7 @@ CoupledProblem<dim>::assemble_system_thermo()
 				local_dof_indices,
 				system_matrix, system_rhs);
 	}
-	//
+
 	system_matrix.compress (VectorOperation::add);
 	system_rhs.compress (VectorOperation::add);
 }
@@ -1971,7 +1937,7 @@ CoupledProblem<dim>::assemble_system_mech ()
 			{
 				for (unsigned int I=0; I<n_independent_variables; ++I)
 				{
-					const unsigned int i_group     = fe_cell_3Field.system_to_base_index(I).first.first;
+					// const unsigned int i_group     = fe_cell_3Field.system_to_base_index(I).first.first;
 
 					const ad_type &res_I = cell_residual_ad[I];
 					cell_rhs(I) = -res_I.val();
@@ -1981,11 +1947,10 @@ CoupledProblem<dim>::assemble_system_mech ()
 					for (unsigned int J=0; J<n_independent_variables; ++J)
 					{
 						const double lin_IJ=res_I.dx(J);
-						const unsigned int j_group  = fe_cell_3Field.system_to_base_index(J).first.first;
+						// const unsigned int j_group  = fe_cell_3Field.system_to_base_index(J).first.first;
 						cell_matrix(I,J) += lin_IJ; // Tangent Matrix
 
 					}
-
 				}
 			}
 			else
@@ -1999,11 +1964,10 @@ CoupledProblem<dim>::assemble_system_mech ()
 					unsigned int mat_id;
 					mat_id = cell->material_id();
 
-
 					for (unsigned int J=0; J<n_independent_variables; ++J)
 					{
 						const double lin_IJ=res_I.dx(J);
-						const unsigned int j_group  = fe_cell_3Field.system_to_base_index(J).first.first;
+						// const unsigned int j_group  = fe_cell_3Field.system_to_base_index(J).first.first;
 
 						if (i_group == u_dof||i_group == V_dof)
 						{
@@ -2020,12 +1984,9 @@ CoupledProblem<dim>::assemble_system_mech ()
 		all_constraints.distribute_local_to_global(cell_matrix, cell_rhs,
 				local_dof_indices,
 				system_matrix, system_rhs);
-		//		throw;
 
 	}
 
-	//	throw;
-	//
 	system_matrix.compress (VectorOperation::add);
 	system_rhs.compress (VectorOperation::add);
 }
@@ -2396,7 +2357,7 @@ struct L2_norms
 
 	void
 	set (const LA::MPI::BlockVector & vector,
-			const ConstraintMatrix & all_constraints)
+			const AffineConstraints<double> & all_constraints)
 	{
 		LA::MPI::BlockVector vector_zeroed;
 		vector_zeroed.reinit (locally_owned_partitioning,
@@ -2603,7 +2564,7 @@ CoupledProblem<dim>::run ()
 	setup_system();
 
 	{
-		ConstraintMatrix constraints;
+		AffineConstraints<double> constraints;
 		constraints.close();
 
 		const ComponentSelectFunction<dim> J_mask (J_component, n_components);
