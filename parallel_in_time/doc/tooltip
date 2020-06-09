@@ -1,0 +1,1 @@
+Solves the heat equation time steps in parallel using the multigrid reduction in time technique from the XBraid library.
