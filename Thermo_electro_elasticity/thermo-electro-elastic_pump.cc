@@ -66,30 +66,10 @@
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/symmetric_tensor.h>
 #include <deal.II/base/tensor_function.h>
-#include <deal.II/lac/generic_linear_algebra.h>
 
-#include <deal.II/lac/block_vector.h>
-#include <deal.II/lac/vector.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/block_sparse_matrix.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/sparse_direct.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_selector.h>
-#include <deal.II/lac/affine_constraints.h>
-#include <deal.II/lac/sparsity_tools.h>
-#include <deal.II/lac/block_sparsity_pattern.h>
-
-#include <deal.II/grid/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_refinement.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/tria_boundary_lib.h>
-#include <deal.II/grid/manifold.h>
-#include <deal.II/grid/manifold_lib.h>
-#include <deal.II/grid/grid_in.h>
+#include <deal.II/distributed/shared_tria.h>
+#include <deal.II/distributed/grid_refinement.h>
+#include <deal.II/distributed/solution_transfer.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
@@ -104,19 +84,38 @@
 #include <deal.II/fe/mapping_q_eulerian.h>
 #include <deal.II/fe/fe_nothing.h>
 
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_refinement.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+#include <deal.II/grid/tria_boundary_lib.h>
+#include <deal.II/grid/manifold.h>
+#include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/grid_in.h>
+
+#include <deal.II/hp/dof_handler.h>
+#include <deal.II/hp/fe_collection.h>
+#include <deal.II/hp/fe_values.h>
+
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/solution_transfer.h>
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
-
-#include <deal.II/hp/dof_handler.h>
-#include <deal.II/hp/fe_collection.h>
-#include <deal.II/hp/fe_values.h>
+#include <deal.II/lac/generic_linear_algebra.h>
+#include <deal.II/lac/block_vector.h>
+#include <deal.II/lac/vector.h>
+#include <deal.II/lac/full_matrix.h>
+#include <deal.II/lac/sparse_matrix.h>
+#include <deal.II/lac/block_sparse_matrix.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/precondition.h>
+#include <deal.II/lac/solver_selector.h>
+#include <deal.II/lac/affine_constraints.h>
+#include <deal.II/lac/sparsity_tools.h>
+#include <deal.II/lac/block_sparsity_pattern.h>
 
 // #include <deal.II/differentiation/ad.h>
 #include <deal.II/physics/elasticity/kinematics.h>
@@ -175,9 +174,6 @@ struct Parameters
 	// Time
 	static constexpr double dt = 0.1;
 	static constexpr unsigned int n_timesteps = 10;
-
-	//J-Ps additions
-
 	static constexpr double time_end = 50.0e-3;
 	static constexpr double time_delta = time_end/(static_cast<double>(n_timesteps));
 
@@ -191,11 +187,13 @@ struct Parameters
 
 	// Finite element
 	static constexpr unsigned int poly_order = 1;
+  static constexpr unsigned int fe_index_3_field = 0;
+  static constexpr unsigned int fe_index_1_field = 1;
 
 	// Nonlinear solver
 	static constexpr unsigned int max_newton_iterations = 20;
 	static constexpr double max_res_T_norm = 1e-6;
-	static constexpr double max_res_uV_norm = 1e-9;
+	static constexpr double max_res_EM_norm = 1e-9;
 	static constexpr double max_res_abs = 1e-6;
 
 	// Linear solver: Thermal
@@ -224,7 +222,7 @@ struct Coefficients
 	static constexpr double N = 7.84e5;
 
 	// Electro parameters
-	static constexpr double epsilon_0 = 8.854187817; // F/m = C/(V*m)= (A*s)/(V*m) = N/(uV*uV)
+	static constexpr double epsilon_0 = 8.854187817; // F/m = C/(V*m)= (A*s)/(V*m) = N/(EM*EM)
 	static constexpr double c_1 = epsilon_0;
 	static constexpr double c_2 = 2000*epsilon_0;
 
@@ -1058,8 +1056,6 @@ private:
 	solve_nonlinear_timestep (const int ts);
 	void
 	output_results (const unsigned int timestep) const;
-	double
-	get_norm(const SymmetricTensor<2,dim> X);
 
 	const unsigned int n_blocks;
 	const unsigned int first_u_component; // Displacement
@@ -1071,7 +1067,7 @@ private:
 
 	enum
 	{
-		uV_block = 0,
+		EM_block = 0,
 		T_block  = 1
 	};
 
@@ -1108,7 +1104,7 @@ private:
 	mutable ConditionalOStream pcout;
 	mutable TimerOutput computing_timer;
 
-	Triangulation<dim>    triangulation;
+	parallel::shared::Triangulation<dim> triangulation;
 	hp::FECollection<dim> fe_collection;
 	hp::DoFHandler<dim>   dof_handler;
 
@@ -1136,7 +1132,7 @@ private:
 	LA::MPI::BlockVector       system_rhs;
 	LA::MPI::BlockVector locally_relevant_solution;
 	LA::MPI::BlockVector locally_relevant_solution_update;
-	LA::MPI::BlockVector completely_distributed_solution_update;
+	// LA::MPI::BlockVector completely_distributed_solution_update;
 };
 
 template<int dim>
@@ -1167,31 +1163,30 @@ computing_timer(mpi_communicator,
 		pcout,
 		TimerOutput::summary,
 		TimerOutput::wall_times),
-		triangulation(Triangulation<dim>::maximum_smoothing),
+triangulation(mpi_communicator, Triangulation<dim>::maximum_smoothing),
 
-		dof_handler(triangulation),
+dof_handler(triangulation),
 
-		poly_order (Parameters::poly_order),
-		fe_cell_3Field(FE_Q<dim> (poly_order), dim,
-				FE_Q<dim> (poly_order), 1, // Voltage
-				FE_DGPMonomial<dim>(poly_order - 1), 1,  // Dilatation
-				FE_DGPMonomial<dim>(poly_order - 1), 1,  // Pressure
-				FE_Q<dim> (poly_order), 1), // Temperature
-				fe_cell_1Field(FE_Q<dim> (poly_order), dim,
-						FE_Q<dim> (poly_order), 1, // Voltage
-						FE_Nothing<dim>(), 1,  // Dilatation
-						FE_Nothing<dim>(), 1, // Pressure
-						FE_Q<dim> (poly_order), 1), // Temperature
+poly_order (Parameters::poly_order),
+fe_cell_3Field(FE_Q<dim> (poly_order), dim,
+    FE_Q<dim> (poly_order), 1, // Voltage
+    FE_DGPMonomial<dim>(poly_order - 1), 1,  // Dilatation
+    FE_DGPMonomial<dim>(poly_order - 1), 1,  // Pressure
+    FE_Q<dim> (poly_order), 1), // Temperature
+fe_cell_1Field(FE_Q<dim> (poly_order), dim,
+    FE_Q<dim> (poly_order), 1, // Voltage
+    FE_Nothing<dim>(), 1,  // Dilatation
+    FE_Nothing<dim>(), 1, // Pressure
+    FE_Q<dim> (poly_order), 1), // Temperature
 
-						qf_cell_3Field(poly_order+1),
-						qf_cell_1Field(poly_order+1)
-						{
+qf_cell_3Field(poly_order+1),
+qf_cell_1Field(poly_order+1)
+{
 	fe_collection.push_back(fe_cell_3Field);
 	fe_collection.push_back(fe_cell_1Field);
 	q_collection.push_back(qf_cell_3Field);
 	q_collection.push_back(qf_cell_1Field);
-						}
-
+}
 
 
 template<int dim>
@@ -1340,6 +1335,7 @@ CoupledProblem<dim>::make_grid () //Generate thick walled cylinder
 	triangulation.refine_global (Parameters::n_global_refinements);
 }
 
+
 template <int dim>
 void
 CoupledProblem<dim>::set_active_fe_indices()
@@ -1349,28 +1345,33 @@ CoupledProblem<dim>::set_active_fe_indices()
 			cell != dof_handler.end();
 			++cell)
 	{
+    if (!cell->is_locally_owned())
+      continue;
+
 		if (Parameters::use_3_Field)
-			cell->set_active_fe_index(0);
+			cell->set_active_fe_index(Parameters::fe_index_3_field);
 		else if (Parameters::use_3_Field==false)
-			cell->set_active_fe_index(1);
+			cell->set_active_fe_index(Parameters::fe_index_1_field);
 		else
 			Assert(false, ExcNotImplemented());
 	}
 }
+
 
 template<int dim>
 void
 CoupledProblem<dim>::setup_system ()
 {
 	TimerOutput::Scope timer_scope (computing_timer, "System setup");
+
 	pcout << "Setting up the thermo-electro-mechanical system..." << std::endl;
 	set_active_fe_indices();
 	dof_handler.distribute_dofs(fe_collection);
 
-	std::vector<types::global_dof_index>  block_component(n_components, uV_block); // Displacement
-	block_component[V_component] = uV_block; // Voltage
-	block_component[J_component] = uV_block; // Dilatation
-	block_component[p_component] = uV_block; // Pressure
+	std::vector<types::global_dof_index>  block_component(n_components, EM_block); // Displacement
+	block_component[V_component] = EM_block; // Voltage
+	block_component[J_component] = EM_block; // Dilatation
+	block_component[p_component] = EM_block; // Pressure
 	block_component[T_component] = T_block; // Temperature
 
 	DoFRenumbering::Cuthill_McKee(dof_handler);
@@ -1413,6 +1414,13 @@ CoupledProblem<dim>::setup_system ()
 		locally_owned_partitioning.push_back(locally_owned_dofs.get_view(idx_begin, idx_end));
 		locally_relevant_partitioning.push_back(locally_relevant_dofs.get_view(idx_begin, idx_end));
 	}
+  // for (unsigned int b = 0; b < n_blocks; ++b)
+  //   {
+  //     const types::global_dof_index idx_begin = std::accumulate(dofs_per_block.begin(), std::next(dofs_per_block.begin(), b), 0);
+  //     const types::global_dof_index idx_end   = std::accumulate(dofs_per_block.begin(), std::next(dofs_per_block.begin(), b + 1), 0);
+  //     locally_owned_partitioning.push_back(locally_owned_dofs.get_view(idx_begin, idx_end));
+  //     locally_relevant_partitioning.push_back(locally_relevant_dofs.get_view(idx_begin, idx_end));
+  //   }
 
 
 	hanging_node_constraints.clear();
@@ -1421,40 +1429,29 @@ CoupledProblem<dim>::setup_system ()
 			hanging_node_constraints);
 	hanging_node_constraints.close();
 
-	Table<2, DoFTools::Coupling> coupling(n_components, n_components);
-	for (unsigned int ii = 0; ii < n_components; ++ii)
-		for (unsigned int jj = 0; jj < n_components; ++jj)
-			if (((ii < p_component) && (jj == J_component))
-					|| ((ii == J_component) && (jj < p_component))
-					|| ((ii == p_component) && (jj == p_component)))
-				coupling[ii][jj] = DoFTools::none;
-			else if (((ii < T_component) && (jj == T_component))
-					|| ((ii == T_component) && (jj < T_component)))
-				coupling[ii][jj] = DoFTools::none;
-			else
-				coupling[ii][jj] = DoFTools::always;
-
-	TrilinosWrappers::BlockSparsityPattern sp (locally_owned_partitioning,
-			locally_owned_partitioning,
-			locally_relevant_partitioning,
+	TrilinosWrappers::BlockSparsityPattern bsp (
+      locally_owned_partitioning,
+			// locally_owned_partitioning,
+			// locally_relevant_partitioning,
 			mpi_communicator);
-	DoFTools::make_sparsity_pattern (dof_handler, sp,
+	DoFTools::make_sparsity_pattern (
+      dof_handler, bsp,
 			all_constraints, false,
 			this_mpi_process);
 
-	sp.compress();
-	system_matrix.reinit (sp);
+	bsp.compress();
+	system_matrix.reinit (bsp);
 
 	system_rhs.reinit (locally_owned_partitioning,
-			locally_relevant_partitioning,
+			// locally_relevant_partitioning,
 			mpi_communicator,
 			true);
 	locally_relevant_solution.reinit (locally_relevant_partitioning,
 			mpi_communicator);
 	locally_relevant_solution_update.reinit (locally_relevant_partitioning,
 			mpi_communicator);
-	completely_distributed_solution_update.reinit(locally_owned_partitioning,
-			mpi_communicator);
+	// completely_distributed_solution_update.reinit(locally_owned_partitioning,
+	// 		mpi_communicator);
 }
 
 
@@ -1828,11 +1825,8 @@ CoupledProblem<dim>::assemble_system_mech ()
 			fe_values[temperature].get_function_gradients(locally_relevant_solution, Grad_T);
 
 			std::vector<ad_type> cell_residual_ad(cell->get_fe().dofs_per_cell, ad_type(0.0));
-
-
 			for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
 			{
-
 				unsigned int mat_id;
 				mat_id = cell->material_id();
 
@@ -1852,7 +1846,6 @@ CoupledProblem<dim>::assemble_system_mech ()
 				{
 					if(mat_id==coupled_material_id)
 					{
-
 						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
 						S_ad=cp_ad.get_S_3Field();
 						D_ad=cp_ad.get_D();
@@ -1928,9 +1921,6 @@ CoupledProblem<dim>::assemble_system_mech ()
 					}
 				}
 
-
-
-
 			}
 
 			if (Parameters::use_3_Field)
@@ -1941,9 +1931,6 @@ CoupledProblem<dim>::assemble_system_mech ()
 
 					const ad_type &res_I = cell_residual_ad[I];
 					cell_rhs(I) = -res_I.val();
-					unsigned int mat_id;
-					mat_id = cell->material_id();
-
 					for (unsigned int J=0; J<n_independent_variables; ++J)
 					{
 						const double lin_IJ=res_I.dx(J);
@@ -1961,8 +1948,6 @@ CoupledProblem<dim>::assemble_system_mech ()
 
 					const ad_type &res_I = cell_residual_ad[I];
 					cell_rhs(I) = -res_I.val();
-					unsigned int mat_id;
-					mat_id = cell->material_id();
 
 					for (unsigned int J=0; J<n_independent_variables; ++J)
 					{
@@ -2031,25 +2016,25 @@ CoupledProblem<dim>::solve_mech (LA::MPI::BlockVector &locally_relevant_solution
 	TimerOutput::Scope timer_scope (computing_timer, "Solve: Mechanical");
 	pcout << "  SLV M" << std::flush;
 
-	//	LA::MPI::BlockVector
-	//	completely_distributed_solution_update (locally_owned_partitioning,
-	//			mpi_communicator);
+  LA::MPI::BlockVector
+  completely_distributed_solution_update (locally_owned_partitioning,
+      mpi_communicator);
 
 	{ // Direct solver
 #ifdef USE_TRILINOS_LA
 		SolverControl solver_control(1, 1e-12);
 		TrilinosWrappers::SolverDirect solver (solver_control);
 
-		solver.solve(system_matrix.block(uV_block, uV_block),
-				completely_distributed_solution_update.block(uV_block),
-				system_rhs.block(uV_block));
+		solver.solve(system_matrix.block(EM_block, EM_block),
+				completely_distributed_solution_update.block(EM_block),
+				system_rhs.block(EM_block));
 #else
 		AssertThrow(false, ExcNotImplemented());
 #endif
 	}
 
 	all_constraints.distribute(completely_distributed_solution_update);
-	locally_relevant_solution_update.block(uV_block) = completely_distributed_solution_update.block(uV_block);
+	locally_relevant_solution_update.block(EM_block) = completely_distributed_solution_update.block(EM_block);
 
 }
 
@@ -2382,30 +2367,14 @@ struct L2_norms
 };
 
 template<int dim>
-double
-CoupledProblem<dim>::get_norm(const SymmetricTensor<2,dim> X)
-{
-
-	double norm_squr(0);
-
-	for (unsigned int A=0; A<dim; ++A)
-		for (unsigned int B=0; B<dim; ++B)
-		{
-			norm_squr+=X[A][B]*X[A][B];
-		}
-	return std::sqrt(norm_squr);
-
-}
-
-template<int dim>
 void
 CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 {
-	L2_norms ex_T  (T_block,
+	L2_norms ex_T (T_block,
 			locally_owned_partitioning,
 			locally_relevant_partitioning,
 			mpi_communicator);
-	L2_norms ex_uV (uV_block,
+	L2_norms ex_EM (EM_block,
 			locally_owned_partitioning,
 			locally_relevant_partitioning,
 			mpi_communicator);
@@ -2415,16 +2384,16 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 
 	L2_norms res_T_0(ex_T), update_T_0(ex_T);
 	L2_norms res_T(ex_T), update_T(ex_T);
-	L2_norms res_uV_0(ex_uV), update_uV_0(ex_uV);
-	L2_norms res_uV(ex_uV), update_uV(ex_uV);
+	L2_norms res_EM_0(ex_EM), update_EM_0(ex_EM);
+	L2_norms res_EM(ex_EM), update_EM(ex_EM);
 
 	pcout
 	<< std::string(52,' ')
 	<< "|"
 	<< "  RES_T  " << std::string(2,' ')
 	<< "  NUP_T  " << std::string(2,' ')
-	<< "  RES_UV " << std::string(2,' ')
-	<< "  NUP_UV "
+	<< "  RES_EM " << std::string(2,' ')
+	<< "  NUP_EM "
 	<< std::endl;
 
 	for (unsigned int n=0; n < Parameters::max_newton_iterations; ++n)
@@ -2473,7 +2442,7 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 
 		assemble_system_mech();
 		solve_mech(locally_relevant_solution_update);
-		locally_relevant_solution.block(uV_block) += locally_relevant_solution_update.block(uV_block);
+		locally_relevant_solution.block(EM_block) += locally_relevant_solution_update.block(EM_block);
 		//      locally_relevant_solution.compress (VectorOperation::add);
 
 		// To analyse the residual, we must reassemble both
@@ -2483,19 +2452,19 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 
 		// Compute electro-mechanical residual
 		{
-			res_uV.set(system_rhs, all_constraints);
-			update_uV.set(locally_relevant_solution_update,
+			res_EM.set(system_rhs, all_constraints);
+			update_EM.set(locally_relevant_solution_update,
 					all_constraints);
 
 			if (n == 0 || n == 1)
 			{
-				res_uV_0.set(system_rhs, all_constraints);
-				update_uV_0.set(locally_relevant_solution_update,
+				res_EM_0.set(system_rhs, all_constraints);
+				update_EM_0.set(locally_relevant_solution_update,
 						all_constraints);
 			}
 
-			res_uV.normalise(res_uV_0);
-			update_uV.normalise(update_uV_0);
+			res_EM.normalise(res_EM_0);
+			update_EM.normalise(update_EM_0);
 		}
 
 		pcout
@@ -2506,8 +2475,8 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 		<< "|"
 		<< "  " << res_T.value_norm
 		<< "  " << update_T.value_norm
-		<< "  " << res_uV.value_norm
-		<< "  " << update_uV.value_norm
+		<< "  " << res_EM.value_norm
+		<< "  " << update_EM.value_norm
 		<< std::endl;
 
 		bool converged_abs=false;
@@ -2515,13 +2484,13 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 
 		{
 			if((res_T.value < Parameters::max_res_abs) &&
-					(res_uV.value < Parameters::max_res_abs))
+					(res_EM.value < Parameters::max_res_abs))
 			{
 				converged_abs = true;
 			}
 
 			if((res_T.value_norm < Parameters::max_res_T_norm) &&
-					(res_uV.value_norm < Parameters::max_res_uV_norm))
+					(res_EM.value_norm < Parameters::max_res_EM_norm))
 			{
 				converged_rel = true;
 			}
@@ -2549,8 +2518,8 @@ CoupledProblem<dim>::solve_nonlinear_timestep (const int ts)
 	<< "res_T:  " << res_T.value
 	<< "\t update_T:  " << update_T.value
 	<< std::endl
-	<< "res_uV: " << res_uV.value
-	<< "\t update_uV: " << update_uV.value
+	<< "res_EM: " << res_EM.value
+	<< "\t update_EM: " << update_EM.value
 	<< std::endl;
 
 }
@@ -2563,24 +2532,88 @@ CoupledProblem<dim>::run ()
 	make_grid();
 	setup_system();
 
-	{
-		AffineConstraints<double> constraints;
-		constraints.close();
+  if (Parameters::use_3_Field)
+  {
+    // Currently, this function is not implemented for any Triangulation in the
+    // parallel namespace in deal.II 9.1 and 9.2. 
+    // So for this reason we do the projection for the dilatation field manually.
+    const bool use_deal_II_project = false;
+    if (use_deal_II_project)
+    {
+      AffineConstraints<double> constraints;
+      constraints.close();
 
-		const ComponentSelectFunction<dim> J_mask (J_component, n_components);
+      const ComponentSelectFunction<dim> J_mask (J_component, n_components);
+      
+      LA::MPI::BlockVector tmp (locally_owned_partitioning,
+        mpi_communicator);
 
-		hp::QCollection<dim> q_collection;
+      VectorTools::project (dof_handler,
+          constraints,
+          q_collection,
+          J_mask,
+          tmp);
 
-		{
-			q_collection.push_back(qf_cell_3Field);
-		}
+      locally_relevant_solution = tmp;
+    }
+    else
+    {
+      FE_DGPMonomial<dim> fe_dilatation(poly_order - 1);
+      QGauss<dim> qf_cell_dilatation(poly_order+1);
 
-		VectorTools::project (dof_handler,
-				constraints,
-				q_collection,
-				J_mask,
-				locally_relevant_solution);
-	}
+      Vector<double> initial_value_dof(fe_dilatation.dofs_per_cell);
+      Vector<double> initial_value_qp(qf_cell_dilatation.size());
+      for (unsigned int q=0; q<qf_cell_dilatation.size(); ++q)
+        initial_value_qp[q] = 1.0;
+
+      FullMatrix<double> qpoint_to_dof_matrix (fe_dilatation.dofs_per_cell,
+                                               qf_cell_dilatation.size());
+      FETools::compute_projection_from_quadrature_points_matrix
+                (fe_dilatation,
+                 qf_cell_dilatation, 
+                 qf_cell_3Field,
+                 qpoint_to_dof_matrix);
+
+      Vector<double> cell_rhs (fe_cell_3Field.dofs_per_cell);
+      std::vector<types::global_dof_index> local_dof_indices (fe_cell_3Field.dofs_per_cell);
+
+      LA::MPI::BlockVector soln_projected_dilatation (locally_owned_partitioning,
+        mpi_communicator);
+
+      for (typename hp::DoFHandler<dim>::active_cell_iterator cell =
+          dof_handler.begin_active();
+          cell != dof_handler.end();
+          ++cell)
+      {
+        if (!cell->is_locally_owned())
+          continue;
+        Assert(cell->active_fe_index() == Parameters::fe_index_3_field, ExcInternalError());
+
+        cell_rhs = 0;
+        cell->get_dof_indices(local_dof_indices);
+
+        qpoint_to_dof_matrix.vmult (initial_value_dof,
+                                    initial_value_qp);
+
+        for (unsigned int i = 0, i_proj = 0; i < cell->get_fe().dofs_per_cell; ++i)
+        {
+          const unsigned int i_group = fe_cell_3Field.system_to_base_index(i).first.first;
+          if (i_group == J_dof)
+          {
+            Assert(i_proj < initial_value_dof.size(), ExcInternalError());
+            cell_rhs(i) = initial_value_dof(i_proj++);
+          }
+        }
+
+        all_constraints.distribute_local_to_global(cell_rhs,
+            local_dof_indices,
+            soln_projected_dilatation);
+      }
+
+      soln_projected_dilatation.compress(VectorOperation::add);
+      locally_relevant_solution = soln_projected_dilatation;
+    }
+  }
 
 	output_results(0);
 
