@@ -148,7 +148,7 @@ using namespace dealii;
 struct Parameters
 {
 	// Formulation
-	static const bool use_3_Field = true;
+	static const bool use_3_field_formulation = false;
 
 	// Geometry file
 	static const std::string mesh_file;
@@ -166,10 +166,8 @@ struct Parameters
 	static constexpr unsigned int boundary_id_cut_outlet = 9;
 
 	// Boundary conditions
-	static constexpr double Temperature_Difference = 0.0;
-
-	//    Potential difference in MV
-	static constexpr double potential_difference = 0.04; // 0.1
+	static constexpr double temperature_difference = 20.0;
+	static constexpr double potential_difference = 0.04; // Potential difference in MV
 
 	// Time
 	static constexpr double dt = 0.1;
@@ -180,8 +178,8 @@ struct Parameters
 	// Refinement
 	static constexpr unsigned int n_global_refinements = 0;
 	static constexpr bool perform_AMR = false;
-	static constexpr unsigned int n_ts_per_refinement = 10;
-	static constexpr unsigned int max_grid_level = 5;
+	static constexpr unsigned int n_ts_per_refinement = 3;
+	static constexpr unsigned int max_grid_level = 4;
 	static constexpr double frac_refine = 0.3;
 	static constexpr double frac_coarsen = 0.03;
 
@@ -191,7 +189,7 @@ struct Parameters
   static constexpr unsigned int fe_index_1_field = 1;
 
 	// Nonlinear solver
-	static constexpr unsigned int max_newton_iterations = 20;
+	static constexpr unsigned int max_newton_iterations = 10;
 	static constexpr double max_res_T_norm = 1e-6;
 	static constexpr double max_res_EM_norm = 1e-9;
 	static constexpr double max_res_abs = 1e-6;
@@ -224,12 +222,11 @@ struct Coefficients
 	// Electro parameters
 	static constexpr double epsilon_0 = 8.854187817; // F/m = C/(V*m)= (A*s)/(V*m) = N/(EM*EM)
 	static constexpr double c_1 = epsilon_0;
-	static constexpr double c_2 = 2000*epsilon_0;
+	static constexpr double c_2 = 2000.0*epsilon_0;
 
 
 	// Independent of length and voltage units
-
-	static constexpr double nu = 0.499; // Poisson ratio
+	static constexpr double nu = (Parameters::use_3_field_formulation ? 0.499 : 0.45); // Poisson ratio
 	static constexpr double mu = g_0; // Small strain shear modulus
 
 	static constexpr double lambda = 2.0*mu*nu/(1.0-2.0*nu); // Lame constant
@@ -238,16 +235,16 @@ struct Coefficients
 	// Thermal parameters
 	static constexpr double c_0 = 460e6; // specific heat capacity in J/(kg*K)
 	static constexpr double alpha = 20e-6; //thermal expansion coefficient in 1/K
-	static constexpr double theta_0 = 293; // in K
+	static constexpr double theta_0 = 293.0; // in K
 	static constexpr double k = 0.50; // Heat conductivity in N/(s*K)
 };
 
 template<int dim>
-struct Values_ad
+struct Values_AD
 {
-	typedef Sacado::Fad::DFad<double> ad_type;
+	using ad_type = Sacado::Fad::DFad<double>;
 
-	Values_ad (const Tensor<2,dim,ad_type> & F,
+	Values_AD (const Tensor<2,dim,ad_type> & F,
 			const Tensor<1,dim,ad_type> & E,
 			const Tensor<1,dim> & Grad_T,
 			const double theta,
@@ -293,8 +290,8 @@ struct Values_ad
 	  I5_EM_bar (E*(C_EM_bar*E)) // [ExE].C
 
 	{}
-	//
-	//	// Directly related to solution field
+
+  // Directly related to solution field
 	const Tensor<2,dim,ad_type> F; // Deformation gradient
 	const Tensor<1,dim,ad_type> E;
 	const Tensor<1,dim> Grad_T;
@@ -324,10 +321,7 @@ struct Values_ad
 	const SymmetricTensor<2,dim,ad_type> C_EM_bar;
 	const SymmetricTensor<2,dim,ad_type> C_EM_bar_inv;
 
-
-
-	//
-	//	// Invariants
+  // Invariants
 	const ad_type I1;
 	const ad_type I1_EM;
 	const ad_type I1_bar;
@@ -446,11 +440,11 @@ struct Values_ad
 };
 
 template<int dim>
-struct CM_Base_ad
+struct CM_Base_AD
 {
-	typedef Sacado::Fad::DFad<double> ad_type;
+	using ad_type = Sacado::Fad::DFad<double>;
 
-	CM_Base_ad (const Tensor<2,dim,ad_type> & F,
+	CM_Base_AD (const Tensor<2,dim,ad_type> & F,
 			const Tensor<1,dim,ad_type> & E,
 			const Tensor<1,dim> & Grad_T,
 			const double theta,
@@ -461,11 +455,11 @@ struct CM_Base_ad
 	: values_ad (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
 	{}
 
-	virtual ~CM_Base_ad () {}
+	virtual ~CM_Base_AD () {}
 
 	// --- Kinematic Quantities ---
 
-	const Values_ad<dim> values_ad;
+	const Values_AD<dim> values_ad;
 
 	// --- Kinetic Quantities ---
 
@@ -473,17 +467,16 @@ struct CM_Base_ad
 	inline SymmetricTensor<2,dim,ad_type>
 	get_S_3Field () const
 	{
-		const double theta_ratio = values_ad.theta/293.0;
+		const double theta_ratio = values_ad.theta/Material::Coefficients::theta_0;
 		const ad_type &J_theta = this->values_ad.J_theta;
-		return ad_type(std::pow(J_theta ,-2.0/dim))*(get_S_iso_3Field()+2*theta_ratio*get_dPsi_p_dC_EM());
+		return ad_type(std::pow(J_theta ,-2.0/dim))*(get_S_iso_3Field()+2.0*theta_ratio*get_dPsi_p_dC_EM());
 	}
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_S_1Field () const
 	{
-		return (get_S_iso_1Field()+get_S_vol());
+		return get_S_iso_1Field() + get_S_vol();
 	}
-
 
 	inline SymmetricTensor<2,dim,ad_type>
 	get_S_iso_3Field () const
@@ -516,7 +509,7 @@ struct CM_Base_ad
 		const ad_type &J_EM = this->values_ad.J_EM;
 		const ad_type &J_tilde = this->values_ad.J_tilde;
 
-		return  J_EM - J_tilde;
+		return J_EM - J_tilde;
 	}
 
 	inline ad_type
@@ -526,7 +519,6 @@ struct CM_Base_ad
 		const ad_type &J_tilde = this->values_ad.J_tilde;
 
 		double kappa=Material::Coefficients::kappa;
-
 
 		return 0.5* kappa * (J_tilde-1.0/J_tilde) - p;
 	}
@@ -544,7 +536,6 @@ protected:
 	{
 		const ad_type &J = values_ad.J;
 		return (0.5*(kappa)*(J - 1.0/J));
-
 	}
 
 	// Derivative of the volumetric free energy with respect to
@@ -556,7 +547,6 @@ protected:
 	{
 		const ad_type &J = values_ad.J;
 		return (0.5*(kappa)*(J - 1.0/J));
-
 	}
 
 	SymmetricTensor<2,dim,ad_type>
@@ -595,18 +585,14 @@ protected:
 	{
 		const ad_type &p = values_ad.p;
 		return p*this->values_ad.dJ_dC();
-
 	}
 
 	SymmetricTensor<2,dim,ad_type>
 	get_dPsi_p_dC_EM () const
 	{
-
 		const ad_type &p = values_ad.p;
 		return p*this->values_ad.dJ_EM_dC_EM();
-
 	}
-
 
 	// --- Coupled mechanical response ---
 
@@ -622,9 +608,6 @@ protected:
 	virtual SymmetricTensor<2,dim,ad_type>
 	get_dPsi_iso_dC_EM () const = 0;
 
-	//	virtual SymmetricTensor<2,dim,ad_type>
-	//	get_dPsi_iso_dC2 () const = 0;
-
 	// --- Coupled electric response ---
 
 	virtual Tensor<1,dim,ad_type>
@@ -634,10 +617,10 @@ protected:
 
 //
 //template<int dim>
-//struct CM_Incompressible_Uncoupled_8Chain_ad : public CM_Base_ad<dim>
+//struct CM_Incompressible_Uncoupled_8Chain_AD : public CM_Base_AD<dim>
 //{
-//	typedef Sacado::Fad::DFad<double> ad_type;
-//	CM_Incompressible_Uncoupled_8Chain_ad  (const Tensor<2,dim,ad_type> & F,
+//	using ad_type = Sacado::Fad::DFad<double>;
+//	CM_Incompressible_Uncoupled_8Chain_AD  (const Tensor<2,dim,ad_type> & F,
 //			const Tensor<1,dim,ad_type> & E,
 //			const Tensor<1,dim> & Grad_T,
 //			const double theta,
@@ -645,11 +628,11 @@ protected:
 //			const ad_type p,
 //			const double alpha,
 //			const double c_2)
-//	: CM_Base_ad<dim> (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
+//	: CM_Base_AD<dim> (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
 //	  {}
 //
 //
-//	virtual ~CM_Incompressible_Uncoupled_8Chain_ad () {}
+//	virtual ~CM_Incompressible_Uncoupled_8Chain_AD () {}
 //
 //protected:
 //
@@ -838,10 +821,11 @@ protected:
 
 
 template<int dim>
-struct CM_Coupled_NeoHooke_ad : public CM_Base_ad<dim>
+struct CM_Coupled_NeoHooke_AD : public CM_Base_AD<dim>
 {
-	typedef Sacado::Fad::DFad<double> ad_type;
-	CM_Coupled_NeoHooke_ad  (const Tensor<2,dim,ad_type> & F,
+	using ad_type = typename CM_Base_AD<dim>::ad_type;
+  
+	CM_Coupled_NeoHooke_AD  (const Tensor<2,dim,ad_type> & F,
 			const Tensor<1,dim,ad_type> & E,
 			const Tensor<1,dim> & Grad_T,
 			const double theta,
@@ -849,18 +833,16 @@ struct CM_Coupled_NeoHooke_ad : public CM_Base_ad<dim>
 			const ad_type p,
 			const double alpha,
 			const double c_2)
-	: CM_Base_ad<dim> (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
-	  {}
+	: CM_Base_AD<dim> (F,E,Grad_T,theta,J_tilde,p,alpha,c_2)
+  {}
 
-
-	virtual ~CM_Coupled_NeoHooke_ad () {}
+	virtual ~CM_Coupled_NeoHooke_AD () {}
 
 protected:
 
 	virtual SymmetricTensor<2,dim,ad_type>
 	get_dPsi_iso_dC () const
 	{
-
 		double mu=Material::Coefficients::g_0;
 		double N=Material::Coefficients::N;
 		double c_2=this->values_ad.c_2;
@@ -871,12 +853,9 @@ protected:
 	virtual SymmetricTensor<2,dim,ad_type>
 	get_dPsi_iso_dC_EM () const
 	{
-
-
 		double mu=Material::Coefficients::g_0;
 		double N=Material::Coefficients::N;
 		double c_2=this->values_ad.c_2;
-
 
 		return theta_ratio()*(get_dW_FE_iso_elastic_dC_EM(mu,N,c_2));
 	}
@@ -1026,8 +1005,8 @@ protected:
 template<int dim>
 class CoupledProblem
 {
-	typedef Material::CM_Coupled_NeoHooke_ad<dim> Continuum_Point_Coupled_NeoHooke_ad;
-	//	typedef Material::CM_Incompressible_Uncoupled_8Chain_ad<dim> Continuum_Point_8_Chain_uncoupled_ad;
+	using Continuum_Point_Coupled_NeoHooke_AD = Material::CM_Coupled_NeoHooke_AD<dim>;
+	//	using Continuum_Point_8_Chain_uncoupled_AD = Material::CM_Incompressible_Uncoupled_8Chain_AD<dim>;
 
 public:
 	CoupledProblem ();
@@ -1082,12 +1061,9 @@ private:
 
 	enum
 	{
-		coupled_material_id=1,
-		uncoupled_material_id=2
+		coupled_material_id = 1,
+		uncoupled_material_id = 2
 	};
-
-	static bool cell_is_in_3Field_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
-	static bool cell_is_in_1Field_domain(const typename hp::DoFHandler<dim>::cell_iterator &cell);
 
 	const FEValuesExtractors::Vector displacement;
 	const FEValuesExtractors::Scalar x_displacement;
@@ -1208,8 +1184,8 @@ CoupledProblem<dim>::make_grid () //Generate thick walled cylinder
 
 	grid_in.read_abaqus (input_file);
 
-	//	static CylindricalManifold<dim> manifold_cylinder_X (0,1); // Manifold id 1
-	//	static CylindricalManifold<dim> manifold_cylinder_Z (2,1); // Manifold id 2
+  static CylindricalManifold<dim> manifold_cylinder_X (0); // Manifold id 1
+  static CylindricalManifold<dim> manifold_cylinder_Z (2); // Manifold id 2
 
 	// Set boundary and manifold ID's for this tricky geometry.
 	// Note: X-aligned cylinder manifold > Z-aligned cylinder manifold > Straight/Planar manifold
@@ -1329,8 +1305,8 @@ CoupledProblem<dim>::make_grid () //Generate thick walled cylinder
 		}
 	}
 
-	//	triangulation.set_manifold (1, manifold_cylinder_X);
-	//	triangulation.set_manifold (2, manifold_cylinder_Z);
+  triangulation.set_manifold (1, manifold_cylinder_X);
+  triangulation.set_manifold (2, manifold_cylinder_Z);
 
 	triangulation.refine_global (Parameters::n_global_refinements);
 }
@@ -1348,9 +1324,9 @@ CoupledProblem<dim>::set_active_fe_indices()
     if (!cell->is_locally_owned())
       continue;
 
-		if (Parameters::use_3_Field)
+		if (Parameters::use_3_field_formulation)
 			cell->set_active_fe_index(Parameters::fe_index_3_field);
-		else if (Parameters::use_3_Field==false)
+		else if (Parameters::use_3_field_formulation==false)
 			cell->set_active_fe_index(Parameters::fe_index_1_field);
 		else
 			Assert(false, ExcNotImplemented());
@@ -1473,48 +1449,48 @@ CoupledProblem<dim>::make_constraints (const unsigned int newton_iteration, cons
 
 		pcout << "  CST T" << std::flush;
 
-		// const double temperature_difference_per_ts = Parameters::Temperature_Difference/static_cast<double>(Parameters::n_timesteps);
+		// const double temperature_difference_per_ts = Parameters::temperature_difference/static_cast<double>(Parameters::n_timesteps);
 		if (timestep==1)
 		{
 			// Prescribed temperature at inner radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_inner_radius,
-					ConstantFunction<dim>(293+Parameters::Temperature_Difference,n_components),
+					ConstantFunction<dim>(Material::Coefficients::theta_0+Parameters::temperature_difference,n_components),
 					dirichlet_constraints,
 					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at inner radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outlet_inner_radius,
-					ConstantFunction<dim>(293+Parameters::Temperature_Difference,n_components),
+					ConstantFunction<dim>(Material::Coefficients::theta_0+Parameters::temperature_difference,n_components),
 					dirichlet_constraints,
 					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at top
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_top,
-					ConstantFunction<dim>(293+Parameters::Temperature_Difference,n_components),
+					ConstantFunction<dim>(Material::Coefficients::theta_0+Parameters::temperature_difference,n_components),
 					dirichlet_constraints,
 					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at bottom
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_bottom,
-					ConstantFunction<dim>(293,n_components),
+					ConstantFunction<dim>(Material::Coefficients::theta_0,n_components),
 					dirichlet_constraints,
 					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at outer radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outer_radius,
-					ConstantFunction<dim>(293,n_components),
+					ConstantFunction<dim>(Material::Coefficients::theta_0,n_components),
 					dirichlet_constraints,
 					fe_collection.component_mask(temperature));
 
 			// Prescribed temperature at outer radius
 			VectorTools::interpolate_boundary_values(dof_handler,
 					Parameters::boundary_id_outlet_outer_radius,
-					ConstantFunction<dim>(293,n_components),
+					ConstantFunction<dim>(Material::Coefficients::theta_0,n_components),
 					dirichlet_constraints,
 					fe_collection.component_mask(temperature));
 		}
@@ -1670,7 +1646,6 @@ CoupledProblem<dim>::assemble_system_thermo()
 	{
 		if (cell->is_locally_owned() == false) continue;
 
-
 		hp_fe_values.reinit(cell);
 		const FEValues<dim> &fe_values = hp_fe_values.get_present_fe_values();
 		const unsigned int n_q_points = fe_values.n_quadrature_points;
@@ -1693,8 +1668,6 @@ CoupledProblem<dim>::assemble_system_thermo()
 
 		for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
 		{
-			unsigned int mat_id;
-			mat_id = cell->material_id();
 			const double &JxW = fe_values.JxW(q_point);
 
 			fe_values[displacement].get_function_gradients(locally_relevant_solution, Grad_u);
@@ -1762,7 +1735,7 @@ void
 CoupledProblem<dim>::assemble_system_mech ()
 
 {
-	typedef Sacado::Fad::DFad<double> ad_type;
+	using ad_type = Sacado::Fad::DFad<double>;
 
 	TimerOutput::Scope timer_scope (computing_timer, "Assembly: Mechanical");
 	pcout << "  ASM M" << std::flush;
@@ -1798,6 +1771,9 @@ CoupledProblem<dim>::assemble_system_mech ()
 		local_dof_indices.resize(cell->get_fe().dofs_per_cell);
 		cell->get_dof_indices(local_dof_indices);
 
+    
+      const types::material_id mat_id = cell->material_id();
+
 		{
 			const unsigned int n_independent_variables = local_dof_indices.size();
 			std::vector<double> local_dof_values(n_independent_variables);
@@ -1827,9 +1803,6 @@ CoupledProblem<dim>::assemble_system_mech ()
 			std::vector<ad_type> cell_residual_ad(cell->get_fe().dofs_per_cell, ad_type(0.0));
 			for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
 			{
-				unsigned int mat_id;
-				mat_id = cell->material_id();
-
 				const Tensor<2,dim,ad_type> F_ad = Physics::Elasticity::Kinematics::F(Grad_u_ad[q_point]);
 
 				SymmetricTensor<2,dim,ad_type> S_ad;
@@ -1842,11 +1815,11 @@ CoupledProblem<dim>::assemble_system_mech ()
 				const double alpha = Material::Coefficients::alpha;
 				const double c_2 = Material::Coefficients::c_2;
 
-				if (Parameters::use_3_Field)
+				if (Parameters::use_3_field_formulation)
 				{
 					if(mat_id==coupled_material_id)
 					{
-						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
+						const Continuum_Point_Coupled_NeoHooke_AD cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
 						S_ad=cp_ad.get_S_3Field();
 						D_ad=cp_ad.get_D();
 						dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
@@ -1854,7 +1827,7 @@ CoupledProblem<dim>::assemble_system_mech ()
 					}
 					else
 					{
-						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
+						const Continuum_Point_Coupled_NeoHooke_AD cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
 						S_ad=cp_ad.get_S_3Field();
 						D_ad=cp_ad.get_D();
 						dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
@@ -1890,15 +1863,19 @@ CoupledProblem<dim>::assemble_system_mech ()
 				}
 				else
 				{
+          const ad_type det_F_qp = determinant(F_ad);
+          const ad_type p_qp = p[q_point]; // TODO: FixME! 1/dim trace(sigma)
+          std::cout << "det_F_qp: " << det_F_qp << "  p_qp: " << p_qp << std::endl;
+
 					if(mat_id==coupled_material_id)
 					{
-						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
+						const Continuum_Point_Coupled_NeoHooke_AD cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],det_F_qp,p_qp,alpha,c_2);
 						S_ad=cp_ad.get_S_1Field();
 						D_ad=cp_ad.get_D();
 					}
 					else
 					{
-						const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
+						const Continuum_Point_Coupled_NeoHooke_AD cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],det_F_qp,p_qp,alpha,0.0);
 						S_ad=cp_ad.get_S_1Field();
 						D_ad=cp_ad.get_D();
 					}
@@ -1923,7 +1900,7 @@ CoupledProblem<dim>::assemble_system_mech ()
 
 			}
 
-			if (Parameters::use_3_Field)
+			if (Parameters::use_3_field_formulation)
 			{
 				for (unsigned int I=0; I<n_independent_variables; ++I)
 				{
@@ -2042,7 +2019,7 @@ template<int dim>
 void
 CoupledProblem<dim>::output_results (const unsigned int timestep) const
 {
-	typedef Sacado::Fad::DFad<double> ad_type;
+	using ad_type = Sacado::Fad::DFad<double>;
 	TimerOutput::Scope timer_scope (computing_timer, "Post-processing");
 
 	unsigned int scalar_components;
@@ -2106,6 +2083,8 @@ CoupledProblem<dim>::output_results (const unsigned int timestep) const
 		local_dof_indices.resize(cell->get_fe().dofs_per_cell);
 		cell->get_dof_indices(local_dof_indices);
 
+    const types::material_id mat_id = cell->material_id();
+
 		{
 			const unsigned int n_independent_variables = local_dof_indices.size();
 			std::vector<double> local_dof_values(n_independent_variables);
@@ -2136,10 +2115,6 @@ CoupledProblem<dim>::output_results (const unsigned int timestep) const
 
 			for (unsigned int q_point = 0; q_point < n_q_points; ++q_point)
 			{
-
-				unsigned int mat_id;
-				mat_id = cell->material_id();
-
 				const Tensor<2,dim,ad_type> F_ad = Physics::Elasticity::Kinematics::F(Grad_u_ad[q_point]);
 				SymmetricTensor<2,dim,ad_type> S_ad;
 				Tensor<1,dim,ad_type> D_ad;
@@ -2153,7 +2128,7 @@ CoupledProblem<dim>::output_results (const unsigned int timestep) const
 				if(mat_id==coupled_material_id)
 				{
 
-					const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
+					const Continuum_Point_Coupled_NeoHooke_AD cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,c_2);
 					S_ad=cp_ad.get_S_3Field();
 					D_ad=cp_ad.get_D();
 					dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
@@ -2161,7 +2136,7 @@ CoupledProblem<dim>::output_results (const unsigned int timestep) const
 				}
 				else
 				{
-					const Continuum_Point_Coupled_NeoHooke_ad cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
+					const Continuum_Point_Coupled_NeoHooke_AD cp_ad (F_ad, -Grad_V_ad[q_point],Grad_T[q_point], theta[q_point],J_tilde[q_point],p[q_point],alpha,0.0);
 					S_ad=cp_ad.get_S_3Field();
 					D_ad=cp_ad.get_D();
 					dPsi_dJ_tilde= cp_ad.get_dPsi_dJ_tilde();
@@ -2532,7 +2507,7 @@ CoupledProblem<dim>::run ()
 	make_grid();
 	setup_system();
 
-  if (Parameters::use_3_Field)
+  if (Parameters::use_3_field_formulation)
   {
     // Currently, this function is not implemented for any Triangulation in the
     // parallel namespace in deal.II 9.1 and 9.2. 
