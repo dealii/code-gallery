@@ -1,0 +1,1 @@
+Laplace equation surface coupled to an external simulation program (here simply a fancy boundary condition) using the coupling library preCICE.
