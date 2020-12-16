@@ -2,14 +2,14 @@ Laplace equation coupled to an external simulation program
 ------------------------------------------
 ## Overview
 
-preCICE allows to couple deal.II to external simulation software, such as OpenFOAM, SU2, or CalculiX. To keep dependencies of this example minimal, we couple deal.II to an external C++ program, which provides a time varying boundary condition. The deal.II code consists mainly of the [`step-4` tutorial program](https://www.dealii.org/developer/doxygen/deal.II/step_4.html), where a simple Laplace problem is solved. 
+preCICE allows to couple deal.II to external simulation software, such as OpenFOAM, SU2, or CalculiX. To keep dependencies of this example minimal, we couple deal.II to an external C++ program, which provides a time varying boundary condition. The deal.II code consists mainly of the step-4 tutorial program, where a simple Laplace problem is solved.
 
 Coupling with preCICE is usually carried out along surfaces in order to apply a Dirichlet-Neumann coupling between two domains (volume coupling is also possible). For the sake of simplicity, we couple here an external C++ program in a unidirectional fashion to one side of our quadrilateral domain. The external C++ program generates a parabolic boundary profile with time varying amplitude. The boundary values are then used in the Laplace solver as a Dirichlet boundary condition.
 
 ## Time discretization
 Coupled simulations deal mostly with time-dependent problems. Hence, we make the stationary Laplace problem from step-4 time dependent.
 @f{align*}
-  \\frac{\partial u}{\partial t}-\Delta u &= f \qquad\qquad & \text{in}\ \Omega,
+  \frac{\partial u}{\partial t}-\Delta u &= f \qquad\qquad & \text{in}\ \Omega,
   \\
   u &= x^2+y^2 \qquad\qquad & \text{on}\ \partial\Omega_s,
   \\
@@ -19,7 +19,7 @@ with the fixed Dirichlet boundary \Omega_s, the coupling boundary \Omega_c and t
 
 The system is consequently discretized by a first-order backward Euler method, resulting in
 @f{align*}
-  \\frac{u^{n+1}-u^n}{\Delta t}-\Delta u^{n+1} &= f \qquad\qquad & \text{in}\ \Omega,
+  \frac{u^{n+1}-u^n}{\Delta t}-\Delta u^{n+1} &= f \qquad\qquad & \text{in}\ \Omega,
 @f}
 at the next time level n+1.
 
