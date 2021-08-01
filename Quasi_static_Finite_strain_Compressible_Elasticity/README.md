@@ -31,10 +31,6 @@ formulation, the two-dimensional case corresponds to neither plane-strain
 nor plane-stress conditions.
 
 
-## Requirements
-* Version 8.5 or greater of `deal.II`
-
-
 ## Compiling and running
 Similar to the example programs, run
 ```
@@ -103,6 +99,8 @@ Below we briefly document the tip displacement as predicted for different
 discretisation levels and ansatz for the displacement field.
 A direct and, by visual inspection, favourable comparison of the following
 results can be made with those found in Miehe (1994).
+Specifically, figure 5 of Miehe (1994) plots the vertical displacement at the
+midway point on the traction surface for the compressible 3d case.
 Since the material is compressible, shear-locking is not exhibited by the
 beam for low-order elements.
 
@@ -110,7 +108,6 @@ beam for low-order elements.
 
 Elements per edge |        Q1       |        Q2
 :---------------: | :-------------: | :-------------:
-1                 |  24             | 81
 2                 |  54             | 225
 4                 |  150            | 729
 8                 |  486            | 2601
@@ -122,10 +119,9 @@ Elements per edge |        Q1       |        Q2
 
 Elements per edge |        Q1       |        Q2
 :---------------: | :-------------: | :-------------:
-1                 | 5.15            | 12.19
-2                 | 8.72            | 13.83
-4                 | 12.02           | 14.22
-8                 | 13.61           | 14.30
-16                | 14.13           | 14.32
-32                | 14.28           | 14.33
-64                | 14.32           | 14.33
+2                 | 8.638           | 14.30
+4                 | 12.07           | 14.65
+8                 | 13.86           | 14.71
+16                | 14.49           | 14.73
+32                | 14.67           | 14.74
+64                | 14.72           | 14.74
