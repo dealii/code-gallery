@@ -1101,7 +1101,7 @@ namespace Cook_Membrane
               cell->face(face)->set_boundary_id(1); // -X faces
             else if (std::abs(cell->face(face)->center()[0] - 48.0) < tol_boundary)
               cell->face(face)->set_boundary_id(11); // +X faces
-            else if (std::abs(std::abs(cell->face(face)->center()[0]) - 0.5) < tol_boundary)
+            else if (dim == 3 && std::abs(std::abs(cell->face(face)->center()[2]) - 0.5) < tol_boundary)
               cell->face(face)->set_boundary_id(2); // +Z and -Z faces
           }
 
@@ -1133,8 +1133,7 @@ namespace Cook_Membrane
     dof_handler_ref.distribute_dofs(fe);
     DoFRenumbering::Cuthill_McKee(dof_handler_ref);
     DoFRenumbering::component_wise(dof_handler_ref, block_component);
-    DoFTools::count_dofs_per_block(dof_handler_ref, dofs_per_block,
-                                   block_component);
+    dofs_per_block = DoFTools::count_dofs_per_fe_block(dof_handler_ref, block_component);
 
     std::cout << "Triangulation:"
               << "\n\t Number of active cells: " << triangulation.n_active_cells()
@@ -1369,9 +1368,11 @@ namespace Cook_Membrane
       std::cout << "_";
     std::cout << std::endl;
 
-    Point<dim> soln_pt (48.0*parameters.scale,60.0*parameters.scale);
-    if (dim == 3)
-      soln_pt[2] = 0.5*parameters.scale;
+    // The measurement point, as stated in the reference paper, is at the midway
+    // point of the surface on which the traction is applied.
+    const Point<dim> soln_pt = (dim == 3 ? 
+                                Point<dim>(48.0*parameters.scale, 52.0*parameters.scale, 0.5*parameters.scale) : 
+                                Point<dim>(48.0*parameters.scale, 52.0*parameters.scale));
     double vertical_tip_displacement = 0.0;
     double vertical_tip_displacement_check = 0.0;
 
@@ -2058,16 +2059,15 @@ namespace Cook_Membrane
     // and we can simply skip the rebuilding step if we do not clear it.
     if (it_nr > 1)
       return;
-    constraints.clear();
     const bool apply_dirichlet_bc = (it_nr == 0);
 
     // The boundary conditions for the indentation problem are as follows: On
-    // the -x, -y and -z faces (ID's 0,2,4) we set up a symmetry condition to
-    // allow only planar movement while the +x and +y faces (ID's 1,3) are
-    // traction free. In this contrived problem, part of the +z face (ID 5) is
-    // set to have no motion in the x- and y-component. Finally, as described
-    // earlier, the other part of the +z face has an the applied pressure but
-    // is also constrained in the x- and y-directions.
+    // the -x face (ID = 1), we set up a zero-displacement condition, -y and +y traction 
+    // free boundary condition (don't need to take care); -z and +z faces (ID = 2) are 
+    // not allowed to move along z axis so that it is a plane strain problem. 
+    // Finally, as described earlier, +x face (ID = 11) has an the applied 
+    // distributed shear force (converted by total force per unit area) which 
+    // needs to be taken care as an inhomogeneous Newmann boundary condition.
     //
     // In the following, we will have to tell the function interpolation
     // boundary values which components of the solution vector should be
@@ -2078,44 +2078,45 @@ namespace Cook_Membrane
     // select. To this end we first set up such extractor objects and later
     // use it when generating the relevant component masks:
 
-    // Fixed left hand side of the beam
+    if (apply_dirichlet_bc)
     {
-      const int boundary_id = 1;
+      constraints.clear();
 
-      if (apply_dirichlet_bc == true)
+      // Fixed left hand side of the beam
+      {
+        const int boundary_id = 1;
         VectorTools::interpolate_boundary_values(dof_handler_ref,
-                                                 boundary_id,
-                                                 ZeroFunction<dim>(n_components),
-                                                 constraints,
-                                                 fe.component_mask(u_fe));
-      else
-        VectorTools::interpolate_boundary_values(dof_handler_ref,
-                                                 boundary_id,
-                                                 ZeroFunction<dim>(n_components),
-                                                 constraints,
-                                                 fe.component_mask(u_fe));
-    }
+                                                boundary_id,
+                                                ZeroFunction<dim>(n_components),
+                                                constraints,
+                                                fe.component_mask(u_fe));
+      }
 
-    // Zero Z-displacement through thickness direction
-    // This corresponds to a plane strain condition being imposed on the beam
-    if (dim == 3)
+      // Zero Z-displacement through thickness direction
+      // This corresponds to a plane strain condition being imposed on the beam
+      if (dim == 3)
       {
         const int boundary_id = 2;
         const FEValuesExtractors::Scalar z_displacement(2);
-
-        if (apply_dirichlet_bc == true)
-          VectorTools::interpolate_boundary_values(dof_handler_ref,
-                                                   boundary_id,
-                                                   ZeroFunction<dim>(n_components),
-                                                   constraints,
-                                                   fe.component_mask(z_displacement));
-        else
-          VectorTools::interpolate_boundary_values(dof_handler_ref,
-                                                   boundary_id,
-                                                   ZeroFunction<dim>(n_components),
-                                                   constraints,
-                                                   fe.component_mask(z_displacement));
+        VectorTools::interpolate_boundary_values(dof_handler_ref,
+                                                boundary_id,
+                                                ZeroFunction<dim>(n_components),
+                                                constraints,
+                                                fe.component_mask(z_displacement));
       }
+    }
+    else
+    {
+      if (constraints.has_inhomogeneities())
+      {
+        AffineConstraints<double> homogeneous_constraints(constraints);
+        for (unsigned int dof = 0; dof != dof_handler_ref.n_dofs(); ++dof)
+          if (homogeneous_constraints.is_inhomogeneously_constrained(dof))
+            homogeneous_constraints.set_inhomogeneity(dof, 0.0);
+        constraints.clear();
+        constraints.copy_from(homogeneous_constraints);
+      }
+    }
 
     constraints.close();
   }
@@ -2245,7 +2246,7 @@ int main (int argc, char *argv[])
   using namespace dealii;
   using namespace Cook_Membrane;
 
-  const unsigned int dim = 2;
+  const unsigned int dim = 3;
   try
     {
       deallog.depth_console(0);
