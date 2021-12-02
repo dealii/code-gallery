@@ -1,7 +1,13 @@
 
-
 # Introduction
 In this tutorial, the studied problem is to simulate temperature distributions of a sample under a moving laser. Light penetrates the substrate without loss. The top-covered thin-film is, however, a light absorbing material. For simplicity, the thin-film is assumed to be TiO$_2$ mixed with silver nanoparticles, which supports light heating of the material by absorbing light energy. For this tutorial, we only consider the isotropic absorption. Figure \ref{fgr:s1} illustrates the sketch of the problem. The absorption coefficient is assumed to be $10^4 m^{-1}$. The substrate is glass. The thickness of the thin-film is assumed to be 400 nm. The spot size at the top of thin film is $20 \mu m$ at $e^{-2}$. The writing speed is assumed to be 10 mm/s. The laser power is 0.4 W. The time step is set as 10 $\mu s$. The initial position of laser center is $-50 \mu m$ with 50 $\mu m$ distance away from the left boundary to avoid boundary effects.
+
+## Illustration of the problem
+
+![illustration](./doc/structure-2d.png)
+
+## numerical results
+![animation](./doc/animation.gif)
 
 # Discretization of the non-uniform isotropic heat equation
 In general, the non-uniform isotropic heat equation is as following
@@ -64,17 +70,23 @@ The initial temperature can be interpolated over each vertex as follows,
 
 which is robust for general use. In fact, Deal.II provides a function (VectorTools::interpolate) doing the same thing, which is, however, may not necessary work for parallel version.
 
+## Mesh
+
+![mesh](./doc/mesh-2d.png)
+
 ## Results
 To simplify the question, the heat equation is solved in two-dimensions (x-y) by assuming that the z-axis is homogeneous. Following is part of the running results in 4-threads:
-<code>
-    Solving problem in 2 space dimensions.
-        Number of active cells: 6567
-        Total number of cells: 6567
-        Number of degrees of freedom: 11185
-        9 CG iterations needed to obtain convergence.
-	        initial convergence value = nan
-	        final convergence value = 2.31623e-20
 
+<code>
+	
+    Solving problem in 2 space dimensions.
+	Number of active cells: 6567
+	Total number of cells: 6567
+	Number of degrees of freedom: 11185
+	9 CG iterations needed to obtain convergence.
+	initial convergence value = nan
+	final convergence value = 2.31623e-20
+	
     Time step 1 at t=1e-05 time_step = 1e-05
         80 CG iterations needed to obtain convergence.
 	        initial convergence value = nan
@@ -111,12 +123,19 @@ To simplify the question, the heat equation is solved in two-dimensions (x-y) by
         80 CG iterations needed to obtain convergence.
 	    initial convergence value = nan
 	    final convergence value = 1.71207e-13
+
 </code>
 
-# Numerical results
+
+## Temperature distribution
+![temperatureDis](./doc/temperature-2d.png)
+
+## 8-threads
+![threads](./doc/threads-2d.png)
 
 # References
 <code>
+	
 @article{ma2021numerical,
   title={Numerical study of laser micro-and nano-processing of nanocomposite porous materials},
   author={Ma, Hongfeng},
