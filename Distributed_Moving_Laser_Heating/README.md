@@ -4,10 +4,10 @@ In this tutorial, the studied problem is to simulate temperature distributions o
 
 ## Illustration of the problem
 
-![illustration](./doc/structure-2d.png)
+![illustration](./images/structure-2d.png)
 
 ## numerical results
-![animation](./doc/animation.gif)
+![animation](./images/animation.gif)
 
 # Discretization of the non-uniform isotropic heat equation
 In general, the non-uniform isotropic heat equation is as following
@@ -72,7 +72,7 @@ which is robust for general use. In fact, Deal.II provides a function (VectorToo
 
 ## Mesh
 
-![mesh](./doc/mesh-2d.png)
+![mesh](./images/mesh-2d.png)
 
 ## Results
 To simplify the question, the heat equation is solved in two-dimensions (x-y) by assuming that the z-axis is homogeneous. Following is part of the running results in 4-threads:
@@ -128,10 +128,11 @@ To simplify the question, the heat equation is solved in two-dimensions (x-y) by
 
 
 ## Temperature distribution
-![temperatureDis](./doc/temperature-2d.png)
+![temperatureDis](./images/temperature-2d.png)
 
 ## 8-threads
-![threads](./doc/threads-2d.png)
+The colors stand for different cores.
+![threads](./images/threads-2d.png)
 
 # References
 <code>
