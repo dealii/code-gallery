@@ -2,8 +2,10 @@ Readme file for MCMC-Laplace
 ============================
 
 @note The intent and implementation of this program is extensively
-  described in D. Aristoff and W. Bangerth: "to be completed upon
-  actually writing the paper". See there for more information.
+  described in D. Aristoff and W. Bangerth: "A benchmark for the Bayesian
+  inversion of coefficients in partial differential equations",
+  submitted, 2021. A preprint can be found
+  [here](https://arxiv.org/abs/2102.07263). See there for more information.
 
 Motivation for project
 ----------------------
@@ -23,8 +25,8 @@ which hypothesized make-up of the body would result in predicted
 reactions that are "closest" to the measured one. This formulation of
 the problem is what is now generally called the "deterministic inverse
 problem", and it is an optimization problem: Among all possible
-make-ups of the body, which one minimizes the difference between
-predicted measurements and actual measurements. 
+make-ups of the body, find the one which *minimizes* the difference between
+predicted measurements and actual measurements.
 
 Since the late 1990s, a second paradigm for the formulation has come
 into play: "Bayesian inverse problems". It rests on the observation
