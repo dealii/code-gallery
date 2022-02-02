@@ -230,7 +230,7 @@ make_grid()
   triangulation.refine_global(n_refine);
 
   unsigned int local_refine = 2;
-  for (unsigned int i =0; i <local_refine; i++)
+  for (unsigned int i =0; i <local_refine; ++i)
     {
       typename Triangulation<dim>::active_cell_iterator
       cell = triangulation.begin_active(),
@@ -246,7 +246,7 @@ make_grid()
       // more realistic refinement stategies are
       // discussed elsewhere in the deal.ii
       // documentation.
-      for (; cell != endc; cell++)
+      for (; cell != endc; ++cell)
         {
           if ((cell->center()[1]) > 0.9 )
             {
@@ -273,7 +273,7 @@ make_grid()
   typename Triangulation<dim>::cell_iterator
   cell = triangulation.begin(),
   endc = triangulation.end();
-  for (; cell != endc; cell++)
+  for (; cell != endc; ++cell)
     {
       for (unsigned int face_no=0;
            face_no < GeometryInfo<dim>::faces_per_cell;
@@ -514,7 +514,7 @@ assemble_system()
   cell = dof_handler.begin_active(),
   endc = dof_handler.end();
 
-  for (; cell!=endc; cell++)
+  for (; cell!=endc; ++cell)
     {
       // Now, since we are working in a distributed setting,
       // we can only work on cells and write to dofs in the
@@ -856,16 +856,16 @@ assemble_cell_terms(
   // Now, we loop over the quadrature points in the
   // cell and then loop over the degrees of freedom and perform
   // quadrature to approximate the integrals.
-  for (unsigned int q=0; q<n_q_points; q++)
+  for (unsigned int q=0; q<n_q_points; ++q)
     {
-      for (unsigned int i=0; i<dofs_per_cell; i++)
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
         {
           const Tensor<1, dim> psi_i_field          = cell_fe[VectorField].value(i,q);
           const double         div_psi_i_field      = cell_fe[VectorField].divergence(i,q);
           const double         psi_i_potential      = cell_fe[Potential].value(i,q);
           const Tensor<1, dim> grad_psi_i_potential = cell_fe[Potential].gradient(i,q);
 
-          for (unsigned int j=0; j<dofs_per_cell; j++)
+          for (unsigned int j=0; j<dofs_per_cell; ++j)
             {
               const Tensor<1, dim> psi_j_field        = cell_fe[VectorField].value(j,q);
               const double         psi_j_potential    = cell_fe[Potential].value(j,q);
@@ -926,14 +926,14 @@ assemble_Dirichlet_boundary_terms(
   Dirichlet_bc_function.value_list(face_fe.get_quadrature_points(),
                                    Dirichlet_bc_values);
 
-  for (unsigned int q=0; q<n_q_points; q++)
+  for (unsigned int q=0; q<n_q_points; ++q)
     {
-      for (unsigned int i=0; i<dofs_per_cell; i++)
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
         {
           const Tensor<1, dim> psi_i_field     = face_fe[VectorField].value(i,q);
           const double         psi_i_potential = face_fe[Potential].value(i,q);
 
-          for (unsigned int j=0; j<dofs_per_cell; j++)
+          for (unsigned int j=0; j<dofs_per_cell; ++j)
             {
               const Tensor<1, dim> psi_j_field    = face_fe[VectorField].value(j,q);
               const double         psi_j_potential = face_fe[Potential].value(j,q);
@@ -994,14 +994,14 @@ assemble_Neumann_boundary_terms(
   // element faces.
   std::vector<double >    Neumann_bc_values(n_q_points);
 
-  for (unsigned int q=0; q<n_q_points; q++)
+  for (unsigned int q=0; q<n_q_points; ++q)
     {
-      for (unsigned int i=0; i<dofs_per_cell; i++)
+      for (unsigned int i=0; i<dofs_per_cell; ++i)
         {
           const Tensor<1, dim> psi_i_field     = face_fe[VectorField].value(i,q);
           const double         psi_i_potential = face_fe[Potential].value(i,q);
 
-          for (unsigned int j=0; j<dofs_per_cell; j++)
+          for (unsigned int j=0; j<dofs_per_cell; ++j)
             {
 
               const double    psi_j_potential = face_fe[Potential].value(j,q);
@@ -1057,23 +1057,23 @@ assemble_flux_terms(
   // the unit vector $\boldsymbol \beta$ that is used in defining
   // the LDG/ALternating fluxes.
   Point<dim> beta;
-  for (int i=0; i<dim; i++)
+  for (int i=0; i<dim; ++i)
     beta(i) = 1.0;
   beta /= sqrt(beta.square() );
 
   // Now we loop over all the quadrature points on the element face
   // and loop over all the degrees of freedom and approximate
   // the following flux integrals.
-  for (unsigned int q=0; q<n_face_points; q++)
+  for (unsigned int q=0; q<n_face_points; ++q)
     {
-      for (unsigned int i=0; i<dofs_this_cell; i++)
+      for (unsigned int i=0; i<dofs_this_cell; ++i)
         {
           const Tensor<1,dim>  psi_i_field_minus  =
             fe_face_values[VectorField].value(i,q);
           const double psi_i_potential_minus  =
             fe_face_values[Potential].value(i,q);
 
-          for (unsigned int j=0; j<dofs_this_cell; j++)
+          for (unsigned int j=0; j<dofs_this_cell; ++j)
             {
               const Tensor<1,dim> psi_j_field_minus   =
                 fe_face_values[VectorField].value(j,q);
@@ -1115,7 +1115,7 @@ assemble_flux_terms(
                                      fe_face_values.JxW(q);
             }
 
-          for (unsigned int j=0; j<dofs_neighbor_cell; j++)
+          for (unsigned int j=0; j<dofs_neighbor_cell; ++j)
             {
               const Tensor<1,dim> psi_j_field_plus    =
                 fe_neighbor_face_values[VectorField].value(j,q);
@@ -1159,14 +1159,14 @@ assemble_flux_terms(
             }
         }
 
-      for (unsigned int i=0; i<dofs_neighbor_cell; i++)
+      for (unsigned int i=0; i<dofs_neighbor_cell; ++i)
         {
           const Tensor<1,dim>  psi_i_field_plus =
             fe_neighbor_face_values[VectorField].value(i,q);
           const double         psi_i_potential_plus =
             fe_neighbor_face_values[Potential].value(i,q);
 
-          for (unsigned int j=0; j<dofs_this_cell; j++)
+          for (unsigned int j=0; j<dofs_this_cell; ++j)
             {
               const Tensor<1,dim> psi_j_field_minus               =
                 fe_face_values[VectorField].value(j,q);
@@ -1210,7 +1210,7 @@ assemble_flux_terms(
                                     fe_face_values.JxW(q);
             }
 
-          for (unsigned int j=0; j<dofs_neighbor_cell; j++)
+          for (unsigned int j=0; j<dofs_neighbor_cell; ++j)
             {
               const Tensor<1,dim> psi_j_field_plus =
                 fe_neighbor_face_values[VectorField].value(j,q);
@@ -1420,7 +1420,7 @@ output_results()    const
 
   Vector<float>   subdomain(triangulation.n_active_cells());
 
-  for (unsigned int i=0; i<subdomain.size(); i++)
+  for (unsigned int i=0; i<subdomain.size(); ++i)
     subdomain(i) = triangulation.locally_owned_subdomain();
 
   data_out.add_data_vector(subdomain,"subdomain");

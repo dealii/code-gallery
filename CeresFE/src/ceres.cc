@@ -484,7 +484,7 @@ namespace Step22
   {
     vector<double> etas;
 
-    for (unsigned int i=0; i < system_parameters::sizeof_depths_eta; i++)
+    for (unsigned int i=0; i < system_parameters::sizeof_depths_eta; ++i)
       {
         etas.push_back(system_parameters::depths_eta[i]);
         etas.push_back(system_parameters::eta_kinks[i]);
@@ -551,7 +551,7 @@ namespace Step22
 
     //find the correct interval to do the interpolation in
     int n_minus_one = -1;
-    for (unsigned int n = 1; n <= n_visc_kinks; n++)
+    for (unsigned int n = 1; n <= n_visc_kinks; ++n)
       {
         unsigned int ndeep = 2 * n - 2;
         unsigned int nshallow = 2 * n;
@@ -693,7 +693,7 @@ namespace Step22
     grav_parameters.push_back(system_parameters::rho[1]);
 
     std::cout << "Body parameters are: " ;
-    for (int i=0; i<6; i++)
+    for (int i=0; i<6; ++i)
       std::cout << grav_parameters[i] << " ";
     std::cout << endl;
 
@@ -1201,7 +1201,7 @@ namespace Step22
             cell_area += fe_values.JxW(q);
             velocities[q] *= fe_values.JxW(q);
             current_cell_velocity += velocities[q];
-            for (unsigned int i = 0; i < (dim+1); i++)
+            for (unsigned int i = 0; i < (dim+1); ++i)
               {
                 velocity_grads[q][i] *= fe_values.JxW(q);
                 current_cell_grads[i] += velocity_grads[q][i];
@@ -1210,7 +1210,7 @@ namespace Step22
             current_cell_old_phiphi_stress += local_quadrature_points_history[q].old_phiphi_stress * fe_values.JxW(q);
           }
         current_cell_velocity /= cell_area;
-        for (unsigned int i = 0; i < (dim+1); i++)
+        for (unsigned int i = 0; i < (dim+1); ++i)
           current_cell_grads[i] /= cell_area;
         current_cell_old_stress /= cell_area;
         current_cell_old_phiphi_stress /= cell_area;
@@ -1232,7 +1232,7 @@ namespace Step22
     if (plastic_iteration == 0)
       cell_viscosities.resize(0);
     //loop across all the cells to find and adjust eta of failing cells
-    for (unsigned int i = 0; i < triangulation.n_active_cells(); i++)
+    for (unsigned int i = 0; i < triangulation.n_active_cells(); ++i)
       {
         double current_cell_viscosity = 0;
 
@@ -1395,7 +1395,7 @@ namespace Step22
     if (total_fails <= 100 || decrease_in_plasticity <= 0.2)
       {
         system_parameters::continue_plastic_iterations = false;
-        for (unsigned int j=0; j < triangulation.n_active_cells(); j++)
+        for (unsigned int j=0; j < triangulation.n_active_cells(); ++j)
           {
             // Writes to file the undisturbed cell viscosities
             std::ofstream fout_vrnew(plastic_eta_output.str().c_str(), std::ios::app);
@@ -1434,7 +1434,7 @@ namespace Step22
                   local_quadrature_points_history[q].new_eta = system_parameters::eta_floor;
 
                 quad_viscosities[cell_no][q].reinit(dim+1);
-                for (unsigned int ii=0; ii<dim; ii++)
+                for (unsigned int ii=0; ii<dim; ++ii)
                   quad_viscosities[cell_no][q](ii) = fe_values.quadrature_point(q)[ii];
                 quad_viscosities[cell_no][q](dim) = local_quadrature_points_history[q].new_eta;
               }
@@ -1506,7 +1506,7 @@ namespace Step22
             while (find_more_cells)
               {
                 new_cells_found = 0;
-                for (unsigned int i = start_cell; i<neighbor_cells.size(); i++)
+                for (unsigned int i = start_cell; i<neighbor_cells.size(); ++i)
                   {
                     for (unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
                       {
@@ -1539,11 +1539,11 @@ namespace Step22
             for (unsigned int q = 0; q < quadrature_formula.size(); ++q)
               {
                 std::vector<double> nearby_etas_q;
-                for (unsigned int i = 0; i<neighbor_indices.size(); i++)
-                  for (unsigned int j=0; j<quadrature_formula.size(); j++)
+                for (unsigned int i = 0; i<neighbor_indices.size(); ++i)
+                  for (unsigned int j=0; j<quadrature_formula.size(); ++j)
                     {
                       Point<dim> test_q;
-                      for (unsigned int d=0; d<dim; d++)
+                      for (unsigned int d=0; d<dim; ++d)
                         test_q(d) = quad_viscosities[neighbor_indices[i]][j][d];
                       double qq_distance = fe_values.quadrature_point(q).distance(test_q);
                       if (qq_distance < system_parameters::smoothing_radius)
@@ -1551,7 +1551,7 @@ namespace Step22
                     }
                 // Write smoothed viscosities to quadrature_points_history; simple boxcar function is the smoothing kernel
                 double mean_eta = 0;
-                for (unsigned int l = 0; l<nearby_etas_q.size(); l++)
+                for (unsigned int l = 0; l<nearby_etas_q.size(); ++l)
                   {
                     mean_eta += nearby_etas_q[l];
                   }
@@ -1668,8 +1668,8 @@ namespace Step22
         if (cell->at_boundary())
           {
             int zero_faces = 0;
-            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; f++)
-              for (unsigned int i=0; i<dim; i++)
+            for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+              for (unsigned int i=0; i<dim; ++i)
                 if (fabs(cell->face(f)->center()[i]) < zero_tolerance)
                   zero_faces++;
             if (zero_faces==0)
@@ -1758,7 +1758,7 @@ namespace Step22
     std::vector<double> ellipse_axes(0);
     // compute fit to boundary 0, 1, 2 ...
     std::cout << endl;
-    for (unsigned int i = 0; i<system_parameters::sizeof_material_id; i++)
+    for (unsigned int i = 0; i<system_parameters::sizeof_material_id; ++i)
       {
         ellipsoid.compute_fit(ellipse_axes, system_parameters::material_id[i]);
         system_parameters::q_axes.push_back(ellipse_axes[0]);
@@ -1905,7 +1905,7 @@ namespace Step22
                 fout_boundaries.close();
 
                 how_many = 0;
-                for (unsigned int i=0; i<dim; i++)
+                for (unsigned int i=0; i<dim; ++i)
                   if (fabs(cell->face(f)->center()[i]) > zero_tolerance)
                     how_many++;
                 if (how_many==dim)
@@ -1925,7 +1925,7 @@ namespace Step22
     std::vector<double> ellipse_axes(0);
     // compute fit to boundary 0, 1, 2 ...
     std::cout << endl;
-    for (unsigned int i = 0; i<system_parameters::sizeof_material_id; i++)
+    for (unsigned int i = 0; i<system_parameters::sizeof_material_id; ++i)
       {
         ellipsoid.compute_fit(ellipse_axes, system_parameters::material_id[i]);
         system_parameters::q_axes.push_back(ellipse_axes[0]);
