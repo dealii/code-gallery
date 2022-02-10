@@ -418,3 +418,39 @@ This code reads in each of the input files (assuming that the executable is loca
 build directory parallel to the `testing/` directory) and outputs its results into the
 current directory. The inputs you get from a modified program should then be compared
 against the ones stored in the `testing/` directory. They should match to several digits.
+
+
+
+An alternative implementation in Matlab
+---------------------------------------
+
+To facilitate experiments, this directory also contains alternative
+implementations of the benchmark. The first one was written by David
+Aristoff in Matlab and can be found in the `Matlab/` directory. As is
+common in Matlab programs, each function is provided in its own
+file. We have verified that the program generates the same results (to
+12 or more digits) as the C++ program, using the tests mentioned in
+the previous section.
+
+
+
+An alternative implementation in Python
+---------------------------------------
+
+Another alternative, written by Wolfgang Bangerth, can be found in the
+`Python/` directory and uses Python3. As is common for Python
+programs, the whole program is provided in one file. As for the Matlab
+version, we have verified that the program generates the same results
+(to 12 or more digits) as the C++ program, using the tests mentioned
+in the previous section. In fact, if you just execute the program
+as-is, it runs diagnostics that output the errors.
+
+This Python version is essentially a literal translation of the Matlab
+code. It is not nearly as efficient (taking around 5 times as much
+time for each function evaluation) and could probably be optimized
+substantially if desired. A good starting point is the insertion of
+the local elements into the global matrix in the line
+```
+            A[np.ix_(dof,dof)] += thet*A_loc
+```
+that takes up a substantial fraction of the overall run time.
