@@ -239,3 +239,182 @@ samples. Each line has 66 entries:
   algorithm.
 - The remaining 64 numbers are the entries of the current sample
   vector.
+
+
+
+Testing modifications and alternative implementations
+-----------------------------------------------------
+
+In order to verify that modifications made to this code are correct,
+or that alternative implementations of the benchmark in other programming
+languages produce the expected results, it is useful to have known outputs
+for certain inputs. To this end, the `testing/` directory contains ten
+files with 64-dimensional input vectors: Each of the files `testing/input.X.txt`
+contains a vector of coefficients (_theta_) for which the corresponding
+`testing/output.X.z.txt` contains the corresponding output at the evaluation
+points (the _z_ vector that corresponds to the _theta_ vector, as described 
+in the paper linked to at the very top of this page). Furthermore, the
+`testing/output.X.likelihood.txt` file contains the corresponding likelihood 
+value for this _theta_ vector that can be computed from the _z_ vector, and
+the `testing/output.X.prior.txt` file contains the prior associated with
+this _theta_ vector. The values in these last two files are not normalized,
+and so care must be taken when comparing these values between implementations:
+An implementation (or a patched version of this program) may compute a different
+value, but the ratio of the values between different inputs must be the
+same -- in other words, the outputs must be like the ones stored in these
+files *up to a constant* for an implementation to be correct.
+
+The ten inputs are chosen as follows:
+
+* The `testing/input.0.txt` file corresponds to a 64-dimensional vector of
+  all ones.
+* The `testing/input.1.txt` file corresponds to a 64-dimensional vector of
+  coefficients _theta_ that are all equal to 10. This implies a membrane
+  that is ten times as stiff as the one in the first input file, and consequently
+  the outputs (the _z_ values) must all be exactly one tenth of the ones
+  for the first input file.
+* The `testing/input.2.txt` file corresponds to a 64-dimensional vector of
+  values that are increasing in integer steps from 1 to 64.
+* The remaining input files all have 64-dimensional vectors with random
+  entries that were chosen as _10^x_ where _x_ is a randomly distributed
+  number between -1 and 1. In other words, the entries of the vectors stored
+  in these remaining seven input files are all between 0.1 and 10. (Note that
+  this choice of randomly generated numbers _does not_ correspond to drawing
+  from the prior probability distribution used in this program and discussed
+  in the paper. However, for the purposes of testing, this is of course also
+  not necessary.)
+
+The stored output files were generated with the reference implementation of
+the solver by replacing the `main()` function with the following code:
+```
+int main()
+{
+  const Vector<double> exact_solution(
+    {   0.06076511762259369, 0.09601910120848481,
+        0.1238852517838584,  0.1495184117375201,
+        0.1841596127549784,  0.2174525028261122,
+        0.2250996160898698,  0.2197954769002993,
+        0.2074695698370926,  0.1889996477663016,
+        0.1632722532153726,  0.1276782480038186,
+        0.07711845915789312, 0.09601910120848552,
+        0.2000589533367983,  0.3385592591951766,
+        0.3934300024647806,  0.4040223892461541,
+        0.4122329537843092,  0.4100480091545554,
+        0.3949151637189968,  0.3697873264791232,
+        0.33401826235924,    0.2850397806663382,
+        0.2184260032478671,  0.1271121156350957,
+        0.1238852517838611,  0.3385592591951819,
+        0.7119285162766475,  0.8175712861756428,
+        0.6836254116578105,  0.5779452419831157,
+        0.5555615956136897,  0.5285181561736719,
+        0.491439702849224,   0.4409367494853282,
+        0.3730060082060772,  0.2821694983395214,
+        0.1610176733857739,  0.1495184117375257,
+        0.3934300024647929,  0.8175712861756562,
+        0.9439154625527653,  0.8015904115095128,
+        0.6859683749254024,  0.6561235366960599,
+        0.6213197201867315,  0.5753611315000049,
+        0.5140091754526823,  0.4325325506354165,
+        0.3248315148915482,  0.1834600412730086,
+        0.1841596127549917,  0.4040223892461832,
+        0.6836254116578439,  0.8015904115095396,
+        0.7870119561144977,  0.7373108331395808,
+        0.7116558878070463,  0.6745179049094283,
+        0.6235300574156917,  0.5559332704045935,
+        0.4670304994474178,  0.3499809143811,
+        0.19688263746294,    0.2174525028261253,
+        0.4122329537843404,  0.5779452419831566,
+        0.6859683749254372,  0.7373108331396063,
+        0.7458811983178246,  0.7278968022406559,
+        0.6904793535357751,  0.6369176452710288,
+        0.5677443693743215,  0.4784738764865867,
+        0.3602190632823262,  0.2031792054737325,
+        0.2250996160898818,  0.4100480091545787,
+        0.5555615956137137,  0.6561235366960938,
+        0.7116558878070715,  0.727896802240657,
+        0.7121928678670187,  0.6712187391428729,
+        0.6139157775591492,  0.5478251665295381,
+        0.4677122687599031,  0.3587654911000848,
+        0.2050734291675918,  0.2197954769003094,
+        0.3949151637190157,  0.5285181561736911,
+        0.6213197201867471,  0.6745179049094407,
+        0.690479353535786,   0.6712187391428787,
+        0.6178408289359514,  0.5453605027237883,
+        0.489575966490909,   0.4341716881061278,
+        0.3534389974779456,  0.2083227496961347,
+        0.207469569837099,   0.3697873264791366,
+        0.4914397028492412,  0.5753611315000203,
+        0.6235300574157017,  0.6369176452710497,
+        0.6139157775591579,  0.5453605027237935,
+        0.4336604929612851,  0.4109641743019312,
+        0.3881864790111245,  0.3642640090182592,
+        0.2179599909280145,  0.1889996477663011,
+        0.3340182623592461,  0.4409367494853381,
+        0.5140091754526943,  0.5559332704045969,
+        0.5677443693743304,  0.5478251665295453,
+        0.4895759664908982,  0.4109641743019171,
+        0.395727260284338,   0.3778949322004734,
+        0.3596268271857124,  0.2191250268948948,
+        0.1632722532153683,  0.2850397806663325,
+        0.373006008206081,   0.4325325506354207,
+        0.4670304994474315,  0.4784738764866023,
+        0.4677122687599041,  0.4341716881061055,
+        0.388186479011099,   0.3778949322004602,
+        0.3633362567187364,  0.3464457261905399,
+        0.2096362321365655,  0.1276782480038148,
+        0.2184260032478634,  0.2821694983395252,
+        0.3248315148915535,  0.3499809143811097,
+        0.3602190632823333,  0.3587654911000799,
+        0.3534389974779268,  0.3642640090182283,
+        0.35962682718569,    0.3464457261905295,
+        0.3260728953424643,  0.180670595355394,
+        0.07711845915789244, 0.1271121156350963,
+        0.1610176733857757,  0.1834600412730144,
+        0.1968826374629443,  0.2031792054737354,
+        0.2050734291675885,  0.2083227496961245,
+        0.2179599909279998,  0.2191250268948822,
+        0.2096362321365551,  0.1806705953553887,
+        0.1067965550010013                         });
+
+  ForwardSimulator::PoissonSolver<2> laplace_problem(
+    /* global_refinements = */ 5,
+    /* fe_degree = */ 1,
+    "");
+  LogLikelihood::Gaussian        log_likelihood(exact_solution, 0.05);
+  LogPrior::LogGaussian          log_prior(0, 2);
+
+  const unsigned int n_theta = 64;
+  for (unsigned int test=0; test<10; ++test)
+    {
+      std::cout << "Generating output for test " << test << std::endl;
+
+      // For each test, read the input file...
+      std::ifstream test_input ("../testing/input." + std::to_string(test) + ".txt");
+      Assert (test_input, ExcIO());
+
+      Vector<double> theta(n_theta);
+      for (unsigned int i=0; i<n_theta; ++i)
+        test_input >> theta[i];
+
+      // ...run it through the forward simulator to get the
+      // z vector (which we then output to a file)...
+      const Vector<double> z = laplace_problem.evaluate(theta);
+      std::ofstream test_output_z ("output." + std::to_string(test) + ".z.txt");
+      z.print(test_output_z, 16);
+
+      // ...and then also evaluate prior and likelihood for these
+      // theta vectors:
+      std::ofstream test_output_likelihood ("output." + std::to_string(test) + ".likelihood.txt");
+      test_output_likelihood.precision(12);
+      test_output_likelihood << log_likelihood.log_likelihood(z) << std::endl;
+
+      std::ofstream test_output_prior ("output." + std::to_string(test) + ".prior.txt");
+      test_output_prior.precision(12);
+      test_output_prior << log_prior.log_prior(theta) << std::endl;
+    }
+}
+```
+This code reads in each of the input files (assuming that the executable is located in a
+build directory parallel to the `testing/` directory) and outputs its results into the
+current directory. The inputs you get from a modified program should then be compared
+against the ones stored in the `testing/` directory. They should match to several digits.
