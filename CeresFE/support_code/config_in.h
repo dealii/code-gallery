@@ -122,22 +122,22 @@ namespace Step22
 
     // rheology parameters
 
-    for (unsigned int i=0; i<system_parameters::sizeof_depths_eta; i++)
+    for (unsigned int i=0; i<system_parameters::sizeof_depths_eta; ++i)
       fout_config << "depths_eta[" << i << "] = " << system_parameters::depths_eta[i] << endl;
 
-    for (unsigned int i=0; i<system_parameters::sizeof_eta_kinks; i++)
+    for (unsigned int i=0; i<system_parameters::sizeof_eta_kinks; ++i)
       fout_config << "eta_kinks[" << i << "] = " << system_parameters::eta_kinks[i] << endl;
 
-    for (unsigned int i=0; i<system_parameters::sizeof_depths_rho; i++)
+    for (unsigned int i=0; i<system_parameters::sizeof_depths_rho; ++i)
       fout_config << "depths_rho[" << i << "] = " << system_parameters::depths_rho[i] << endl;
 
-    for (unsigned int i=0; i<system_parameters::sizeof_rho; i++)
+    for (unsigned int i=0; i<system_parameters::sizeof_rho; ++i)
       fout_config << "rho[" << i << "] = " << system_parameters::rho[i] << endl;
 
-    for (unsigned int i=0; i<system_parameters::sizeof_material_id; i++)
+    for (unsigned int i=0; i<system_parameters::sizeof_material_id; ++i)
       fout_config << "material_id[" << i << "] = " << system_parameters::material_id[i] << endl;
 
-    for (unsigned int i=0; i<system_parameters::sizeof_G; i++)
+    for (unsigned int i=0; i<system_parameters::sizeof_G; ++i)
       fout_config << "G[" << i << "] = " << system_parameters::G[i] << endl;
 
     fout_config << "eta_ceiling = " << system_parameters::eta_ceiling << endl;
@@ -262,7 +262,7 @@ namespace Step22
         unsigned int ndepths_eta = set_depths_eta.getLength();
         system_parameters::sizeof_depths_eta = ndepths_eta;
 
-        for (unsigned int i=0; i<ndepths_eta; i++)
+        for (unsigned int i=0; i<ndepths_eta; ++i)
           {
             system_parameters::depths_eta.push_back(set_depths_eta[i]);
             cout << "depth_eta[" << i << "] = " << system_parameters::depths_eta[i] << endl;
@@ -276,7 +276,7 @@ namespace Step22
 
         //        cout << "Number of depth = " << ndepths << endl;
 
-        for (unsigned int i=0; i<neta_kinks; i++)
+        for (unsigned int i=0; i<neta_kinks; ++i)
           {
             system_parameters::eta_kinks.push_back(set_eta_kinks[i]);
             cout << "eta_kinks[" << i << "] = " << system_parameters::eta_kinks[i] << endl;
@@ -290,7 +290,7 @@ namespace Step22
 
         //        cout << "Number of depth = " << ndepths << endl;
 
-        for (unsigned int i=0; i<ndepths_rho; i++)
+        for (unsigned int i=0; i<ndepths_rho; ++i)
           {
             system_parameters::depths_rho.push_back(set_depths_rho[i]);
             cout << "depths_rho[" << i << "] = " << system_parameters::depths_rho[i] << endl;
@@ -304,7 +304,7 @@ namespace Step22
 
         //        cout << "Number of depth = " << ndepths << endl;
 
-        for (unsigned int i=0; i<nrho; i++)
+        for (unsigned int i=0; i<nrho; ++i)
           {
             system_parameters::rho.push_back(set_rho[i]);
             cout << "rho[" << i << "] = " << system_parameters::rho[i] << endl;
@@ -318,7 +318,7 @@ namespace Step22
 
         //        cout << "Number of depth = " << ndepths << endl;
 
-        for (unsigned int i=0; i<nmaterial_id; i++)
+        for (unsigned int i=0; i<nmaterial_id; ++i)
           {
             system_parameters::material_id.push_back(set_material_id[i]);
             cout << "material_id[" << i << "] = " << system_parameters::material_id[i] << endl;
@@ -332,7 +332,7 @@ namespace Step22
 
         //        cout << "Number of depth = " << ndepths << endl;
 
-        for (unsigned int i=0; i<nG; i++)
+        for (unsigned int i=0; i<nG; ++i)
           {
             system_parameters::G.push_back(set_G[i]);
             cout << "G[" << i << "] = " << system_parameters::G[i] << endl;

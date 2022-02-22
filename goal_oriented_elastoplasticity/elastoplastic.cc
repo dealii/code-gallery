@@ -4828,7 +4828,7 @@ namespace ElastoPlastic
           }
         else
           {
-            for (unsigned int i = 0; i < 5; i++)
+            for (unsigned int i = 0; i < 5; ++i)
               {
                 distributed_solution = incremental_displacement;
 
@@ -5469,8 +5469,8 @@ namespace ElastoPlastic
                          local_history_strain_values_at_qpoints (dim, std::vector< Vector<double> >(dim)),
                          local_history_strain_fe_values (dim, std::vector< Vector<double> >(dim));
 
-    for (unsigned int i=0; i<dim; i++)
-      for (unsigned int j=0; j<dim; j++)
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
         {
           history_stress_field[i][j].reinit(history_dof_handler.n_dofs());
           local_history_stress_values_at_qpoints[i][j].reinit(quadrature_formula.size());
@@ -5501,8 +5501,8 @@ namespace ElastoPlastic
           Assert (local_quadrature_points_history <
                   &quadrature_point_history.back(),
                   ExcInternalError());
-          for (unsigned int i=0; i<dim; i++)
-            for (unsigned int j=0; j<dim; j++)
+          for (unsigned int i=0; i<dim; ++i)
+            for (unsigned int j=0; j<dim; ++j)
               {
                 for (unsigned int q=0; q<quadrature_formula.size(); ++q)
                   {
@@ -5614,8 +5614,8 @@ namespace ElastoPlastic
     // stress
     std::vector< std::vector< Vector<double> > >
     distributed_history_stress_field (dim, std::vector< Vector<double> >(dim));
-    for (unsigned int i=0; i<dim; i++)
-      for (unsigned int j=0; j<dim; j++)
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
         {
           distributed_history_stress_field[i][j].reinit(history_dof_handler.n_dofs());
         }
@@ -5635,8 +5635,8 @@ namespace ElastoPlastic
     // strain
     std::vector< std::vector< Vector<double> > >
     distributed_history_strain_field (dim, std::vector< Vector<double> >(dim));
-    for (unsigned int i=0; i<dim; i++)
-      for (unsigned int j=0; j<dim; j++)
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
         {
           distributed_history_strain_field[i][j].reinit(history_dof_handler.n_dofs());
         }
@@ -5679,8 +5679,8 @@ namespace ElastoPlastic
           Assert (local_quadrature_points_history <
                   &quadrature_point_history.back(),
                   ExcInternalError());
-          for (unsigned int i=0; i<dim; i++)
-            for (unsigned int j=0; j<dim; j++)
+          for (unsigned int i=0; i<dim; ++i)
+            for (unsigned int j=0; j<dim; ++j)
               {
                 dg_cell->get_dof_values (history_stress_field[i][j],
                                          local_history_stress_fe_values[i][j]);
@@ -6070,8 +6070,8 @@ namespace ElastoPlastic
     history_stress_field (dim, std::vector< Vector<double> >(dim)),
                          local_history_stress_values_at_qpoints (dim, std::vector< Vector<double> >(dim)),
                          local_history_stress_fe_values (dim, std::vector< Vector<double> >(dim));
-    for (unsigned int i=0; i<dim; i++)
-      for (unsigned int j=0; j<dim; j++)
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
         {
           history_stress_field[i][j].reinit(history_dof_handler.n_dofs());
           local_history_stress_values_at_qpoints[i][j].reinit(quadrature_formula.size());
@@ -6113,8 +6113,8 @@ namespace ElastoPlastic
             {
               stress_at_qpoint = local_quadrature_points_history[q].old_stress;
 
-              for (unsigned int i=0; i<dim; i++)
-                for (unsigned int j=i; j<dim; j++)
+              for (unsigned int i=0; i<dim; ++i)
+                for (unsigned int j=i; j<dim; ++j)
                   {
                     local_history_stress_values_at_qpoints[i][j](q) = stress_at_qpoint[i][j];
                   }
@@ -6124,8 +6124,8 @@ namespace ElastoPlastic
             }
 
 
-          for (unsigned int i=0; i<dim; i++)
-            for (unsigned int j=i; j<dim; j++)
+          for (unsigned int i=0; i<dim; ++i)
+            for (unsigned int j=i; j<dim; ++j)
               {
                 qpoint_to_dof_matrix.vmult (local_history_stress_fe_values[i][j],
                                             local_history_stress_values_at_qpoints[i][j]);
@@ -6154,8 +6154,8 @@ namespace ElastoPlastic
 
     std::vector< std::vector< Vector<double> > >
     history_stress_on_vertices (dim, std::vector< Vector<double> >(dim));
-    for (unsigned int i=0; i<dim; i++)
-      for (unsigned int j=0; j<dim; j++)
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
         {
           history_stress_on_vertices[i][j].reinit(dof_handler_1.n_dofs());
         }
@@ -6175,8 +6175,8 @@ namespace ElastoPlastic
           dg_cell->get_dof_values (VM_stress_field,
                                    local_VM_stress_fe_values);
 
-          for (unsigned int i=0; i<dim; i++)
-            for (unsigned int j=0; j<dim; j++)
+          for (unsigned int i=0; i<dim; ++i)
+            for (unsigned int j=0; j<dim; ++j)
               {
                 dg_cell->get_dof_values (history_stress_field[i][j],
                                          local_history_stress_fe_values[i][j]);
@@ -6197,8 +6197,8 @@ namespace ElastoPlastic
 
               VM_stress_on_vertices (dof_1_vertex) += local_VM_stress_fe_values (v);
 
-              for (unsigned int i=0; i<dim; i++)
-                for (unsigned int j=0; j<dim; j++)
+              for (unsigned int i=0; i<dim; ++i)
+                for (unsigned int j=0; j<dim; ++j)
                   {
                     history_stress_on_vertices[i][j](dof_1_vertex) +=
                       local_history_stress_fe_values[i][j](v);
@@ -6211,8 +6211,8 @@ namespace ElastoPlastic
       {
         VM_stress_on_vertices(id) /= counter_on_vertices(id);
 
-        for (unsigned int i=0; i<dim; i++)
-          for (unsigned int j=0; j<dim; j++)
+        for (unsigned int i=0; i<dim; ++i)
+          for (unsigned int j=0; j<dim; ++j)
             {
               history_stress_on_vertices[i][j](id) /= counter_on_vertices(id);
             }
@@ -6421,8 +6421,8 @@ namespace ElastoPlastic
         history_stress_field (dim, std::vector< Vector<double> >(dim)),
                              local_history_stress_values_at_qpoints (dim, std::vector< Vector<double> >(dim)),
                              local_history_stress_fe_values (dim, std::vector< Vector<double> >(dim));
-        for (unsigned int i=0; i<dim; i++)
-          for (unsigned int j=0; j<dim; j++)
+        for (unsigned int i=0; i<dim; ++i)
+          for (unsigned int j=0; j<dim; ++j)
             {
               history_stress_field[i][j].reinit(history_dof_handler.n_dofs());
               local_history_stress_values_at_qpoints[i][j].reinit(quadrature_formula.size());
@@ -6473,8 +6473,8 @@ namespace ElastoPlastic
                   // stress in polar coordinate
                   stress_at_qpoint = rotation_matrix * stress_at_qpoint * transpose(rotation_matrix);
 
-                  for (unsigned int i=0; i<dim; i++)
-                    for (unsigned int j=i; j<dim; j++)
+                  for (unsigned int i=0; i<dim; ++i)
+                    for (unsigned int j=i; j<dim; ++j)
                       {
                         local_history_stress_values_at_qpoints[i][j](q) = stress_at_qpoint[i][j];
                       }
@@ -6482,8 +6482,8 @@ namespace ElastoPlastic
                 }
 
 
-              for (unsigned int i=0; i<dim; i++)
-                for (unsigned int j=i; j<dim; j++)
+              for (unsigned int i=0; i<dim; ++i)
+                for (unsigned int j=i; j<dim; ++j)
                   {
                     qpoint_to_dof_matrix.vmult (local_history_stress_fe_values[i][j],
                                                 local_history_stress_values_at_qpoints[i][j]);
@@ -6545,8 +6545,8 @@ namespace ElastoPlastic
 
         std::vector< std::vector< Vector<double> > >
         history_stress_on_vertices (dim, std::vector< Vector<double> >(dim));
-        for (unsigned int i=0; i<dim; i++)
-          for (unsigned int j=0; j<dim; j++)
+        for (unsigned int i=0; i<dim; ++i)
+          for (unsigned int j=0; j<dim; ++j)
             {
               history_stress_on_vertices[i][j].reinit(dof_handler_1.n_dofs());
             }
@@ -6562,8 +6562,8 @@ namespace ElastoPlastic
           if (cell->is_locally_owned())
             {
 
-              for (unsigned int i=0; i<dim; i++)
-                for (unsigned int j=0; j<dim; j++)
+              for (unsigned int i=0; i<dim; ++i)
+                for (unsigned int j=0; j<dim; ++j)
                   {
                     dg_cell->get_dof_values (history_stress_field[i][j],
                                              local_history_stress_fe_values[i][j]);
@@ -6582,8 +6582,8 @@ namespace ElastoPlastic
 
                   counter_on_vertices (dof_1_vertex) += 1;
 
-                  for (unsigned int i=0; i<dim; i++)
-                    for (unsigned int j=0; j<dim; j++)
+                  for (unsigned int i=0; i<dim; ++i)
+                    for (unsigned int j=0; j<dim; ++j)
                       {
                         history_stress_on_vertices[i][j](dof_1_vertex) +=
                           local_history_stress_fe_values[i][j](v);
@@ -6594,8 +6594,8 @@ namespace ElastoPlastic
 
         for (unsigned int id=0; id<dof_handler_1.n_dofs(); ++id)
           {
-            for (unsigned int i=0; i<dim; i++)
-              for (unsigned int j=0; j<dim; j++)
+            for (unsigned int i=0; i<dim; ++i)
+              for (unsigned int j=0; j<dim; ++j)
                 {
                   history_stress_on_vertices[i][j](id) /= counter_on_vertices(id);
                 }

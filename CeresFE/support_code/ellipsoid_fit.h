@@ -155,10 +155,10 @@ void ellipsoid_fit<dim>::compute_fit(std::vector<double> &ell, unsigned char bou
       FullMatrix<double> A_out(ind_bnry_row.size(),dim);
       Vector<double>     b_out(ind_bnry_row.size());
 
-      for (unsigned int i=0; i<dim; i++)
+      for (unsigned int i=0; i<dim; ++i)
         ind_bnry_col.push_back(i);
 
-      for (unsigned int i=0; i<ind_bnry_row.size(); i++)
+      for (unsigned int i=0; i<ind_bnry_row.size(); ++i)
         b_out(i) = 1;
 
       A_out.extract_submatrix_from(A, ind_bnry_row, ind_bnry_col);
@@ -171,7 +171,7 @@ void ellipsoid_fit<dim>::compute_fit(std::vector<double> &ell, unsigned char bou
       solver.solve (AtA, x, Atb, PreconditionIdentity());
 
       // find ellipsoidal axes
-      for (unsigned int i=0; i<dim; i++)
+      for (unsigned int i=0; i<dim; ++i)
         ell.push_back(sqrt(1.0/x[i]));
     }
   else

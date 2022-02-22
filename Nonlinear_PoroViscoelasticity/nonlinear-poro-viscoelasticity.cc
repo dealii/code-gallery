@@ -2556,9 +2556,9 @@ namespace NonLinearPoroViscoElasticity
                   {
                     const Tensor<2, dim> Grad_Nx_u =
                            scratch.fe_values_ref[u_fe].gradient(k, q);
-                    for (unsigned int dd = 0; dd < dim; dd++)
+                    for (unsigned int dd = 0; dd < dim; ++dd)
                       {
-                        for (unsigned int ee = 0; ee < dim; ee++)
+                        for (unsigned int ee = 0; ee < dim; ++ee)
                           {
                             scratch.solution_grads_u_total[q][dd][ee]
                              += scratch.local_dof_values[k] * Grad_Nx_u[dd][ee];
@@ -2573,7 +2573,7 @@ namespace NonLinearPoroViscoElasticity
 
                     scratch.solution_values_p_fluid_total[q]
                              += scratch.local_dof_values[k] * Nx_p;
-                    for (unsigned int dd = 0; dd < dim; dd++)
+                    for (unsigned int dd = 0; dd < dim; ++dd)
                       {
                         scratch.solution_grads_p_fluid_total[q][dd]
                             += scratch.local_dof_values[k] * Grad_Nx_p[dd];

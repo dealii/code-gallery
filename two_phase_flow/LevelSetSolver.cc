@@ -629,7 +629,7 @@ void LevelSetSolver<dim>::invert_ML()
 {
   // loop on locally owned i-DOFs (rows)
   IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
-  for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+  for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
     {
       int gi = *idofs_iter;
       inverse_ML_vector(gi) = 1./ML_vector(gi);
@@ -747,7 +747,7 @@ void LevelSetSolver<dim>::assemble_C_Matrix ()
               }
 
             for (unsigned int i=0; i<dofs_per_cell_LS; ++i)
-              for (unsigned int j=0; j < dofs_per_cell_LS; j++)
+              for (unsigned int j=0; j < dofs_per_cell_LS; ++j)
                 {
                   cell_Cij_x(i,j) += (shape_grads_LS[j][0])*shape_values_LS[i]*JxW;
                   cell_Cij_y(i,j) += (shape_grads_LS[j][1])*shape_values_LS[i]*JxW;
@@ -874,7 +874,7 @@ void LevelSetSolver<dim>::assemble_K_DL_DH_times_vector
   // loop on locally owned i-DOFs (rows)
   IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
 
-  for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+  for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
     {
       PetscInt gi = *idofs_iter;
       //double ith_K_times_solution = 0;
@@ -915,7 +915,7 @@ void LevelSetSolver<dim>::assemble_K_DL_DH_times_vector
       std::vector<double> dLi(ncolumns), dCi(ncolumns);
       double dLii = 0, dCii = 0;
       // loop on sparsity pattern of i-th DOF
-      for (int j =0; j < ncolumns; j++)
+      for (int j =0; j < ncolumns; ++j)
         {
           C[0] = Cxi[j];
           C[1] = Cyi[j];
@@ -1073,7 +1073,7 @@ void LevelSetSolver<dim>::assemble_EntRes_Matrix ()
               }
 
             for (unsigned int i=0; i<dofs_per_cell_LS; ++i)
-              for (unsigned int j=0; j < dofs_per_cell_LS; j++)
+              for (unsigned int j=0; j < dofs_per_cell_LS; ++j)
                 {
                   cell_EntRes (i,j) += Rk*shape_values_LS[i]*shape_values_LS[j]*JxW;
                   cell_volume (i,j) += JxW;
@@ -1113,7 +1113,7 @@ void LevelSetSolver<dim>::compute_bounds(PETScWrappers::MPI::Vector &un_solution
   umax_vector = 0;
   // loop on locally owned i-DOFs (rows)
   IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
-  for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+  for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
     {
       int gi = *idofs_iter;
 
@@ -1123,7 +1123,7 @@ void LevelSetSolver<dim>::compute_bounds(PETScWrappers::MPI::Vector &un_solution
       get_vector_values(un_solution,gj_indices,soln);
       // compute bounds, ith row of flux matrix, P vectors
       double mini=1E10, maxi=-1E10;
-      for (unsigned int j =0; j < gj_indices.size(); j++)
+      for (unsigned int j =0; j < gj_indices.size(); ++j)
         {
           // bounds
           mini = std::min(mini,soln[j]);
@@ -1152,7 +1152,7 @@ void LevelSetSolver<dim>::check_max_principle(PETScWrappers::MPI::Vector &unp1_s
     if (cell_LS->is_locally_owned() && !cell_LS->at_boundary())
       {
         cell_LS->get_dof_indices(local_dof_indices);
-        for (unsigned int i=0; i<dofs_per_cell; i++)
+        for (unsigned int i=0; i<dofs_per_cell; ++i)
           if (locally_owned_dofs_LS.is_element(local_dof_indices[i]))
             {
               double solni = unp1_solution(local_dof_indices[i]);
@@ -1212,7 +1212,7 @@ void LevelSetSolver<dim>::compute_MPP_uH
   const PetscScalar *MCi, *dLi, *dCi;
   double solni, mi, solLi, solHi;
 
-  for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+  for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
     {
       int gi = *idofs_iter;
       // read vectors at i-th DOF
@@ -1238,7 +1238,7 @@ void LevelSetSolver<dim>::compute_MPP_uH
       // compute bounds, ith row of flux matrix, P vectors
       double mini=1E10, maxi=-1E10;
       double Pposi=0 ,Pnegi=0;
-      for (int j =0; j < ncolumns; j++)
+      for (int j =0; j < ncolumns; ++j)
         {
           // bounds
           mini = std::min(mini,soln[j]);
@@ -1281,7 +1281,7 @@ void LevelSetSolver<dim>::compute_MPP_uH
   const double *Ai;
   double Rposi, Rnegi;
   idofs_iter=locally_owned_dofs_LS.begin();
-  for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+  for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
     {
       int gi = *idofs_iter;
       Rposi = R_pos_vector(gi);
@@ -1300,7 +1300,7 @@ void LevelSetSolver<dim>::compute_MPP_uH
       // Array for i-th row of A_times_L matrix
       std::vector<double> LxAi(ncolumns);
       // loop in sparsity pattern of i-th DOF
-      for (int j =0; j < ncolumns; j++)
+      for (int j =0; j < ncolumns; ++j)
         LxAi[j] = Ai[j] * ((Ai[j]>0) ? std::min(Rposi,Rneg[j]) : std::min(Rnegi,Rpos[j]));
 
       // save i-th row of LxA
@@ -1334,14 +1334,14 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
       const PetscInt *gj;
       const PetscScalar *Akp1i;
       double mi;
-      for (int iter=0; iter<NUM_ITER; iter++)
+      for (int iter=0; iter<NUM_ITER; ++iter)
         {
           MPP_uLkp1_solution_ghosted = MPP_uH_solution;
           Akp1_matrix.add(-1.0, LxAkp1_matrix); //new matrix to limit: A-LxA
 
           // loop on locally owned i-DOFs (rows)
           IndexSet::ElementIterator idofs_iter = locally_owned_dofs_LS.begin();
-          for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+          for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
             {
               int gi = *idofs_iter;
 
@@ -1359,7 +1359,7 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
               // compute bounds, ith row of flux matrix, P vectors
               double mini=1E10, maxi=-1E10;
               double Pposi=0 ,Pnegi=0;
-              for (int j =0; j < ncolumns; j++)
+              for (int j =0; j < ncolumns; ++j)
                 {
                   // bounds
                   mini = std::min(mini,soln[j]);
@@ -1390,7 +1390,7 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
           // compute limiters. NOTE: this is a different loop due to need of i- and j-th entries of R vectors
           double Rposi, Rnegi;
           idofs_iter=locally_owned_dofs_LS.begin();
-          for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+          for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
             {
               int gi = *idofs_iter;
               Rposi = R_pos_vector(gi);
@@ -1408,7 +1408,7 @@ void LevelSetSolver<dim>::compute_MPP_uH_with_iterated_FCT
 
               // Array for i-th row of LxAkp1 matrix
               std::vector<double> LxAkp1i(ncolumns);
-              for (int j =0; j < ncolumns; j++)
+              for (int j =0; j < ncolumns; ++j)
                 LxAkp1i[j] = Akp1i[j] * ((Akp1i[j]>0) ? std::min(Rposi,Rneg[j]) : std::min(Rnegi,Rpos[j]));
 
               // save i-th row of LxA
@@ -1496,7 +1496,7 @@ void LevelSetSolver<dim>::get_sparsity_pattern()
   const PetscInt *gj;
   const PetscScalar *MCi;
 
-  for (; idofs_iter!=locally_owned_dofs_LS.end(); idofs_iter++)
+  for (; idofs_iter!=locally_owned_dofs_LS.end(); ++idofs_iter)
     {
       PetscInt gi = *idofs_iter;
       // get i-th row of mass matrix (dummy, I just need the indices gj)
@@ -1595,7 +1595,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
   PetscScalar *soln;
   VecGetArray(solution_in_local_form, &soln);
 
-  for (i = 0; i < n_idx; i++)
+  for (i = 0; i < n_idx; ++i)
     {
       int index = indices[i];
       if (index >= begin && index < end)
@@ -1641,7 +1641,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
   PetscScalar *soln;
   VecGetArray(solution_in_local_form, &soln);
 
-  for (i = 0; i < n_idx; i++)
+  for (i = 0; i < n_idx; ++i)
     {
       int index = map_from_Q1_to_Q2[indices[i]];
       if (index >= begin && index < end)
