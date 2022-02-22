@@ -39,7 +39,7 @@
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
-#include <deal.II/lac/sparse_direct.h>
+#include <deal.II/lac/sparse_ilu.h>
 
 #include <deal.II/numerics/data_out.h>
 
@@ -304,9 +304,11 @@ namespace ForwardSimulator
   template <int dim>
   void PoissonSolver<dim>::solve()
   {
-    SparseDirectUMFPACK solver;
-    solver.factorize(system_matrix);
-    solver.vmult(solution, system_rhs);
+    SparseILU<double> ilu;
+    ilu.initialize(system_matrix);
+    SolverControl control(100, 1e-10*system_rhs.l2_norm());
+    SolverCG<> solver(control);
+    solver.solve(system_matrix, solution, system_rhs, ilu);
   }
 
 
