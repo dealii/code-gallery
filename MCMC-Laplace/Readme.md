@@ -451,6 +451,6 @@ time for each function evaluation) and could probably be optimized
 substantially if desired. A good starting point is the insertion of
 the local elements into the global matrix in the line
 ```
-            A[np.ix_(dof,dof)] += thet*A_loc
+            A[np.ix_(dof,dof)] += theta_loc * A_loc
 ```
 that takes up a substantial fraction of the overall run time.

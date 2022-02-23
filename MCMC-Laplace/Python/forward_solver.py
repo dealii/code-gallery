@@ -171,14 +171,14 @@ def forward_solver(theta) :
     for i in range(32) :
         for j in range (32) :
             # Find local coefficient in 8x8 grid
-            thet = theta[int(i/4)+int(j/4)*8]
+            theta_loc = theta[int(i/4)+int(j/4)*8]
 
             # Update A by including contribution from cell (i,j)
             dof = [ij_to_dof_index(i,j),
                    ij_to_dof_index(i,j+1),
                    ij_to_dof_index(i+1,j+1),
                    ij_to_dof_index(i+1,j)]
-            A[np.ix_(dof,dof)] += thet*A_loc
+            A[np.ix_(dof,dof)] += theta_loc * A_loc
 
     # Enforce boundary condition: Zero out rows and columns, then
     # put a one back into the diagonal entries.
