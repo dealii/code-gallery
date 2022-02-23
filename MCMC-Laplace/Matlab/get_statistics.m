@@ -8,7 +8,7 @@
 %OUTPUTS:
 %theta_mean = overall mean of chains
 %covars = covariance matrices of each independent chain
-%autocov = mean of autocovariance matrix over all the chains
+%autocovar = mean of autocovariance matrix over all the chains
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [theta_mean,covars,autocovar] = get_statistics(data,theta_means);
@@ -22,7 +22,7 @@ covars = zeros(64,64,N);
 autocovar = zeros(64,64,2*L-1);
 
 %compute covariance matrices and mean autocovariance matrix
-for n=1:N                            %loop over independent Markov chains
+for n=1:N   %loop over independent Markov chains
     
     %get data from chain n
     data_ = reshape(permute(data(:,:,:,n),[3 2 1]),[L 64]);
@@ -39,8 +39,3 @@ end
 
 %compute mean of autocovariance matrix
 autocovar = autocovar(1:64,1:64,L:2*L-1)/N;
-
-
-
-
-

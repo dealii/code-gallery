@@ -17,7 +17,7 @@ load precomputations.mat
 
 %define lag time and data matrix
 data = zeros(8,8,L,N);   %data matrix of samples at lag times
-theta_means = zeros(8,8,N);      %overall mean of theta
+theta_means = zeros(8,8,N);   %overall mean of theta
 
 tic
 
@@ -63,12 +63,13 @@ parfor n=1:N
 
     %update theta means
     theta_means(:,:,n) = theta_mean/N_L;
+    
 end
 
 toc
 
 %compute statistics on data set
-[theta_mean,covars,autocovars] = get_statistics(data,theta_means);
+[theta_mean,covars,autocovar] = get_statistics(data,theta_means);
 
 %save data to Matlab workspace, labeled by N and N_L
 save (['data_N_' num2str(N) '_N_L_ ' num2str(N_L) '.mat'])
