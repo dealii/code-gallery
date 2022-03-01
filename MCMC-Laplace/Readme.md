@@ -180,10 +180,6 @@ these local matrix and right hand side contributions, multiply the
 local matrix by the coefficient of the current cell, and then copy
 everything into the global matrix as usual.
 
-When solving the linear system, it turns out that the problems we
-consider are small enough that a direct solver (specifically, the
-`SparseDirectUMFPACK` class) is the fastest method.
-
 
 To run the code
 ---------------
