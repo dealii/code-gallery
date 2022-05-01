@@ -1,0 +1,1 @@
+Projection solver for the incompressible Navier-Stokes equations based on a DG spatial discretization and on the TR-BDF2 method for time discretization
