@@ -1,0 +1,39 @@
+subsection Physical data
+  # In this subsection we declare the physical data
+  # The initial and final time, and the Reynolds number
+  set initial_time = 0.0
+  set final_time   = 400.0
+  set Reynolds     = 100.0
+end
+
+subsection Time step data
+  # In this subsection we declare the data that is to be used for time discretization,
+  # i.e. the time step dt
+  set dt = 5.0e-3
+end
+
+subsection Space discretization
+  # In this subsection we declare the data that is relevant to the space discretization
+  # we set the number of global refines the triangulation must have
+  # and the degree k of the pair Q_(k+1)--Q_k of velocity--pressure finite element spaces
+  set n_of_refines = 4
+  set max_loc_refinements = 3
+  set min_loc_refinements = 1
+end
+
+subsection Data solve
+  # In this section we declare the parameters that are going to control the solution process
+  # for the velocity.
+  set max_iterations = 10000  # maximal number of iterations that linear solvers must make
+  set eps            = 1e-8  # stopping criterion
+end
+
+set saving directory = SimTest
+
+set refinement_iterations = 0
+
+#The output frequency
+set output_interval = 500
+
+#Finally we set the verbosity level
+set verbose = true
