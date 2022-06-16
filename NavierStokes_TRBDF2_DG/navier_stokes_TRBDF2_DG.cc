@@ -19,6 +19,7 @@
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
@@ -1385,7 +1386,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
   assemble_diagonal_cell_term_velocity(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
-                                       const unsigned int&                          src,
+                                       const unsigned int&                          ,
                                        const std::pair<unsigned int, unsigned int>& cell_range) const {
     if(TR_BDF2_stage == 1) {
       FEEvaluation<dim, fe_degree_v, n_q_points_1d_v, dim, Number> phi(data, 0),
@@ -1478,7 +1479,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
   assemble_diagonal_face_term_velocity(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
-                                       const unsigned int&                          src,
+                                       const unsigned int&                          ,
                                        const std::pair<unsigned int, unsigned int>& face_range) const {
     if(TR_BDF2_stage == 1) {
       FEFaceEvaluation<dim, fe_degree_v, n_q_points_1d_v, dim, Number> phi_p(data, true, 0),
@@ -1623,7 +1624,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
   assemble_diagonal_boundary_term_velocity(const MatrixFree<dim, Number>&               data,
                                            Vec&                                         dst,
-                                           const unsigned int&                          src,
+                                           const unsigned int&                          ,
                                            const std::pair<unsigned int, unsigned int>& face_range) const {
     if(TR_BDF2_stage == 1) {
       FEFaceEvaluation<dim, fe_degree_v, n_q_points_1d_v, dim, Number> phi(data, true, 0),
@@ -1814,7 +1815,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
   assemble_diagonal_cell_term_pressure(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
-                                       const unsigned int&                          src,
+                                       const unsigned int&                          ,
                                        const std::pair<unsigned int, unsigned int>& cell_range) const {
     FEEvaluation<dim, fe_degree_p, n_q_points_1d_p, 1, Number> phi(data, 1, 1);
 
@@ -1859,7 +1860,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
   assemble_diagonal_face_term_pressure(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
-                                       const unsigned int&                          src,
+                                       const unsigned int&                          ,
                                        const std::pair<unsigned int, unsigned int>& face_range) const {
     FEFaceEvaluation<dim, fe_degree_p, n_q_points_1d_p, 1, Number> phi_p(data, true, 1, 1),
                                                                    phi_m(data, false, 1, 1);
@@ -1922,7 +1923,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
   assemble_diagonal_boundary_term_pressure(const MatrixFree<dim, Number>&               data,
                                            Vec&                                         dst,
-                                           const unsigned int&                          src,
+                                           const unsigned int&                          ,
                                            const std::pair<unsigned int, unsigned int>& face_range) const {
     FEFaceEvaluation<dim, fe_degree_p, n_q_points_1d_p, 1, Number> phi(data, true, 1, 1);
 
@@ -1984,7 +1985,7 @@ namespace NS_TRBDF2 {
                        MatrixFree<dim, Number>::DataAccessOnFaces::unspecified,
                        MatrixFree<dim, Number>::DataAccessOnFaces::unspecified);
 
-      for(unsigned int i = 0; i < inverse_diagonal.local_size(); ++i) {
+      for(unsigned int i = 0; i < inverse_diagonal.locally_owned_size(); ++i) {
         Assert(inverse_diagonal.local_element(i) != 0.0,
                ExcMessage("No diagonal entry in a definite operator should be zero"));
         inverse_diagonal.local_element(i) = 1.0/inverse_diagonal.local_element(i);
@@ -2003,7 +2004,7 @@ namespace NS_TRBDF2 {
                        MatrixFree<dim, Number>::DataAccessOnFaces::unspecified,
                        MatrixFree<dim, Number>::DataAccessOnFaces::unspecified);
 
-      for(unsigned int i = 0; i < inverse_diagonal.local_size(); ++i) {
+      for(unsigned int i = 0; i < inverse_diagonal.locally_owned_size(); ++i) {
         Assert(inverse_diagonal.local_element(i) != 0.0,
                ExcMessage("No diagonal entry in a definite operator should be zero"));
         inverse_diagonal.local_element(i) = 1.0/inverse_diagonal.local_element(i);
@@ -2278,7 +2279,7 @@ namespace NS_TRBDF2 {
 
     /*--- Initialize the matrix-free structure and size properly the vectors. Here again the
           second input argument of the 'initialize_dof_vector' method depends on the order of 'dof_handlers' ---*/
-    matrix_free_storage->reinit(dof_handlers, constraints, quadratures, additional_data);
+    matrix_free_storage->reinit(MappingQ1<dim>(),dof_handlers, constraints, quadratures, additional_data);
     matrix_free_storage->initialize_dof_vector(u_star, 0);
     matrix_free_storage->initialize_dof_vector(rhs_u, 0);
     matrix_free_storage->initialize_dof_vector(u_n, 0);
@@ -2324,7 +2325,7 @@ namespace NS_TRBDF2 {
       constraints_mg.push_back(&constraints_pressure_mg);
 
       std::shared_ptr<MatrixFree<dim, float>> mg_mf_storage_level(new MatrixFree<dim, float>());
-      mg_mf_storage_level->reinit(dof_handlers_mg, constraints_mg, quadratures, additional_data_mg);
+      mg_mf_storage_level->reinit(MappingQ1<dim>(),dof_handlers_mg, constraints_mg, quadratures, additional_data_mg);
       const std::vector<unsigned int> tmp = {1};
       mg_matrices[level].initialize(mg_mf_storage_level, tmp, tmp);
       mg_matrices[level].set_dt(dt);
@@ -2633,7 +2634,7 @@ namespace NS_TRBDF2 {
     auto tmp_cell = dof_handler_pressure.begin_active();
     for(const auto& cell : dof_handler_velocity.active_cell_iterators()) {
       if(cell->is_locally_owned()) {
-        for(int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face) {
+        for(unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face) {
           if(cell->face(face)->at_boundary() && cell->face(face)->boundary_id() == 4) {
             fe_face_values_velocity.reinit(cell, face);
             fe_face_values_pressure.reinit(tmp_cell, face);
@@ -2738,9 +2739,9 @@ namespace NS_TRBDF2 {
           we clear the flags. ---*/
     parallel::distributed::GridRefinement::refine_and_coarsen_fixed_number(triangulation, estimated_error_per_cell, 0.01, 0.3);
     for(const auto& cell: triangulation.active_cell_iterators()) {
-      if(cell->refine_flag_set() && cell->level() == max_loc_refinements)
+      if(cell->refine_flag_set() && static_cast<unsigned int>(cell->level()) == max_loc_refinements)
         cell->clear_refine_flag();
-      if(cell->coarsen_flag_set() && cell->level() == min_loc_refinements)
+      if(cell->coarsen_flag_set() && static_cast<unsigned int>(cell->level()) == min_loc_refinements)
         cell->clear_coarsen_flag();
     }
     triangulation.prepare_coarsening_and_refinement();
@@ -2770,11 +2771,11 @@ namespace NS_TRBDF2 {
                                                transfer_velocity_minus_1,
                                                transfer_pressure;
     transfer_velocity.reinit(u_n);
-    transfer_velocity.zero_out_ghosts();
+    transfer_velocity.zero_out_ghost_values();
     transfer_velocity_minus_1.reinit(u_n_minus_1);
-    transfer_velocity_minus_1.zero_out_ghosts();
+    transfer_velocity_minus_1.zero_out_ghost_values();
     transfer_pressure.reinit(pres_n);
-    transfer_pressure.zero_out_ghosts();
+    transfer_pressure.zero_out_ghost_values();
 
     std::vector<LinearAlgebra::distributed::Vector<double>*> transfer_velocities;
     transfer_velocities.push_back(&transfer_velocity);
@@ -2819,12 +2820,12 @@ namespace NS_TRBDF2 {
                                                transfer_pressure;
 
     transfer_velocity.reinit(u_n);
-    transfer_velocity.zero_out_ghosts();
+    transfer_velocity.zero_out_ghost_values();
     transfer_velocity_minus_1.reinit(u_n_minus_1);
-    transfer_velocity_minus_1.zero_out_ghosts();
+    transfer_velocity_minus_1.zero_out_ghost_values();
 
     transfer_pressure.reinit(pres_n);
-    transfer_pressure.zero_out_ghosts();
+    transfer_pressure.zero_out_ghost_values();
 
     std::vector<LinearAlgebra::distributed::Vector<double>*> transfer_velocities;
 
