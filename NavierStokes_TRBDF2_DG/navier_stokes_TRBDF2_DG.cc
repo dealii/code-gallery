@@ -64,6 +64,37 @@
 #include "runtime_parameters.h"
 #include "equation_data.h"
 
+namespace MatrixFreeTools {
+  using namespace dealii;
+
+  template<int dim, typename Number, typename VectorizedArrayType>
+  void compute_diagonal(const MatrixFree<dim, Number, VectorizedArrayType>&                            matrix_free,
+                        LinearAlgebra::distributed::Vector<Number>&                                    diagonal_global,
+                        const std::function<void(const MatrixFree<dim, Number, VectorizedArrayType>&,
+                                                 LinearAlgebra::distributed::Vector<Number>&,
+                                                 const unsigned int&,
+                                                 const std::pair<unsigned int, unsigned int>&)>& 	     cell_operation,
+                        const std::function<void(const MatrixFree<dim, Number, VectorizedArrayType>&,
+                                                 LinearAlgebra::distributed::Vector<Number>&,
+                                                 const unsigned int&,
+                                                 const std::pair<unsigned int, unsigned int>&)>& 	     face_operation,
+                        const std::function<void(const MatrixFree<dim, Number, VectorizedArrayType>&,
+                                                 LinearAlgebra::distributed::Vector<Number>&,
+                                                 const unsigned int&,
+                                                 const std::pair<unsigned int, unsigned int>&)>& 	     boundary_operation,
+                        const unsigned int                                                             dof_no = 0) {
+    // initialize vector
+    matrix_free.initialize_dof_vector(diagonal_global, dof_no);
+
+    const unsigned int dummy = 0;
+
+    matrix_free.loop(cell_operation, face_operation, boundary_operation,
+                     diagonal_global, dummy, false,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::unspecified,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::unspecified);
+  }
+}
+
 // We include the code in a suitable namespace:
 //
 namespace NS_TRBDF2 {
@@ -198,9 +229,11 @@ namespace NS_TRBDF2 {
   // the number of quadrature points for integrals for the velocity step, the type of vector for storage and the type
   // of floating point data (in general double or float for preconditioners structures if desired).
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
   class NavierStokesProjectionOperator: public MatrixFreeOperators::Base<dim, Vec> {
   public:
+    using Number = typename Vec::value_type;
+
     NavierStokesProjectionOperator();
 
     NavierStokesProjectionOperator(RunTimeParameters::Data_Storage& data);
@@ -347,8 +380,8 @@ namespace NS_TRBDF2 {
   // We start with the default constructor. It is important for MultiGrid, so it is fundamental
   // to properly set the parameters of the time scheme.
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   NavierStokesProjectionOperator():
     MatrixFreeOperators::Base<dim, Vec>(), Re(), dt(), gamma(2.0 - std::sqrt(2.0)), a31((1.0 - gamma)/(2.0*(2.0 - gamma))),
                                            a32(a31), a33(1.0/(2.0 - gamma)), TR_BDF2_stage(1), NS_stage(1), u_extr() {}
@@ -356,8 +389,8 @@ namespace NS_TRBDF2 {
 
   // We focus now on the constructor with runtime parameters storage
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   NavierStokesProjectionOperator(RunTimeParameters::Data_Storage& data):
     MatrixFreeOperators::Base<dim, Vec>(), Re(data.Reynolds), dt(data.dt),
                                            gamma(2.0 - std::sqrt(2.0)), a31((1.0 - gamma)/(2.0*(2.0 - gamma))),
@@ -367,8 +400,8 @@ namespace NS_TRBDF2 {
 
   // Setter of time-step (called by Multigrid and in case a smaller time-step towards the end is needed)
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   set_dt(const double time_step) {
     dt = time_step;
   }
@@ -377,8 +410,8 @@ namespace NS_TRBDF2 {
   // Setter of TR-BDF2 stage (this can be known only during the effective execution
   // and so it has to be demanded to the class that really solves the problem)
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   set_TR_BDF2_stage(const unsigned int stage) {
     AssertIndexRange(stage, 3);
     Assert(stage > 0, ExcInternalError());
@@ -390,8 +423,8 @@ namespace NS_TRBDF2 {
   // Setter of NS stage (this can be known only during the effective execution
   // and so it has to be demanded to the class that really solves the problem)
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   set_NS_stage(const unsigned int stage) {
     AssertIndexRange(stage, 4);
     Assert(stage > 0, ExcInternalError());
@@ -402,8 +435,8 @@ namespace NS_TRBDF2 {
 
   // Setter of extrapolated velocity for different stages
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   set_u_extr(const Vec& src) {
     u_extr = src;
     u_extr.update_ghost_values();
@@ -414,8 +447,8 @@ namespace NS_TRBDF2 {
   // internal faces contributions and boundary faces contributions. We start by
   // assembling the rhs cell term for the velocity.
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_cell_term_velocity(const MatrixFree<dim, Number>&               data,
                                   Vec&                                         dst,
                                   const std::vector<Vec>&                      src,
@@ -436,13 +469,14 @@ namespace NS_TRBDF2 {
         it has to read (the proper order is clearly delegated to the user, which has to pay attention in the function
         call to be coherent). ---*/
         phi_old.reinit(cell);
-        phi_old.gather_evaluate(src[0], true, true); /*--- The 'gather_evaluate' function reads data from the vector.
+        phi_old.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
+                                                           /*--- The 'gather_evaluate' function reads data from the vector.
                                                            The second and third parameter specifies if you want to read
                                                            values and/or derivative related quantities ---*/
         phi_old_extr.reinit(cell);
-        phi_old_extr.gather_evaluate(src[1], true, false);
+        phi_old_extr.gather_evaluate(src[1], EvaluationFlags::values);
         phi_old_press.reinit(cell);
-        phi_old_press.gather_evaluate(src[2], true, false);
+        phi_old_press.gather_evaluate(src[2], EvaluationFlags::values);
         phi.reinit(cell);
 
         /*--- Now we loop over all the quadrature points to compute the integrals ---*/
@@ -462,9 +496,9 @@ namespace NS_TRBDF2 {
           phi.submit_gradient(-a21/Re*grad_u_n + a21*tensor_product_u_n + p_n_times_identity, q);
           /*--- 'submit_gradient' contains quantites that we want to test against the gradient of test function ---*/
         }
-        phi.integrate_scatter(true, true, dst); /*--- 'integrate_scatter' is the responsible of distributing into dst.
-                                                The first two boolean parameters specify if we are testing against
-                                                the test function and/or its gradient ---*/
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
+        /*--- 'integrate_scatter' is the responsible of distributing into dst.
+              The flag parameter specifies if we are testing against the test function and/or its gradient ---*/
       }
     }
     else {
@@ -477,11 +511,11 @@ namespace NS_TRBDF2 {
       /*--- We loop over the cells in the range ---*/
       for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
         phi_old.reinit(cell);
-        phi_old.gather_evaluate(src[0], true, true);
+        phi_old.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_int.reinit(cell);
-        phi_int.gather_evaluate(src[1], true, true);
+        phi_int.gather_evaluate(src[1], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_press.reinit(cell);
-        phi_old_press.gather_evaluate(src[2], true, false);
+        phi_old_press.gather_evaluate(src[2], EvaluationFlags::values);
         phi.reinit(cell);
 
         /*--- Now we loop over all the quadrature points to compute the integrals ---*/
@@ -502,7 +536,7 @@ namespace NS_TRBDF2 {
           phi.submit_gradient(a32*tensor_product_u_n_gamma + a31*tensor_product_u_n -
                               a32/Re*grad_u_n_gamma - a31/Re*grad_u_n + p_n_times_identity, q);
         }
-        phi.integrate_scatter(true, true, dst);
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
   }
@@ -510,8 +544,8 @@ namespace NS_TRBDF2 {
 
   // The followinf function assembles rhs face term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_face_term_velocity(const MatrixFree<dim, Number>&               data,
                                   Vec&                                         dst,
                                   const std::vector<Vec>&                      src,
@@ -532,17 +566,17 @@ namespace NS_TRBDF2 {
       /*--- We loop over the faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_old_p.reinit(face);
-        phi_old_p.gather_evaluate(src[0], true, true);
+        phi_old_p.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_m.reinit(face);
-        phi_old_m.gather_evaluate(src[0], true, true);
+        phi_old_m.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_extr_p.reinit(face);
-        phi_old_extr_p.gather_evaluate(src[1], true, false);
+        phi_old_extr_p.gather_evaluate(src[1], EvaluationFlags::values);
         phi_old_extr_m.reinit(face);
-        phi_old_extr_m.gather_evaluate(src[1], true, false);
+        phi_old_extr_m.gather_evaluate(src[1], EvaluationFlags::values);
         phi_old_press_p.reinit(face);
-        phi_old_press_p.gather_evaluate(src[2], true, false);
+        phi_old_press_p.gather_evaluate(src[2], EvaluationFlags::values);
         phi_old_press_m.reinit(face);
-        phi_old_press_m.gather_evaluate(src[2], true, false);
+        phi_old_press_m.gather_evaluate(src[2], EvaluationFlags::values);
         phi_p.reinit(face);
         phi_m.reinit(face);
 
@@ -560,8 +594,8 @@ namespace NS_TRBDF2 {
           phi_p.submit_value((a21/Re*avg_grad_u_old - a21*avg_tensor_product_u_n)*n_plus - avg_p_old*n_plus, q);
           phi_m.submit_value(-(a21/Re*avg_grad_u_old - a21*avg_tensor_product_u_n)*n_plus + avg_p_old*n_plus, q);
         }
-        phi_p.integrate_scatter(true, false, dst);
-        phi_m.integrate_scatter(true, false, dst);
+        phi_p.integrate_scatter(EvaluationFlags::values, dst);
+        phi_m.integrate_scatter(EvaluationFlags::values, dst);
       }
     }
     else {
@@ -578,17 +612,17 @@ namespace NS_TRBDF2 {
       /*--- We loop over the faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++ face) {
         phi_old_p.reinit(face);
-        phi_old_p.gather_evaluate(src[0], true, true);
+        phi_old_p.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_m.reinit(face);
-        phi_old_m.gather_evaluate(src[0], true, true);
+        phi_old_m.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_int_p.reinit(face);
-        phi_int_p.gather_evaluate(src[1], true, true);
+        phi_int_p.gather_evaluate(src[1], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_int_m.reinit(face);
-        phi_int_m.gather_evaluate(src[1], true, true);
+        phi_int_m.gather_evaluate(src[1], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_press_p.reinit(face);
-        phi_old_press_p.gather_evaluate(src[2], true, false);
+        phi_old_press_p.gather_evaluate(src[2], EvaluationFlags::values);
         phi_old_press_m.reinit(face);
-        phi_old_press_m.gather_evaluate(src[2], true, false);
+        phi_old_press_m.gather_evaluate(src[2], EvaluationFlags::values);
         phi_p.reinit(face);
         phi_m.reinit(face);
 
@@ -609,8 +643,8 @@ namespace NS_TRBDF2 {
           phi_m.submit_value(-(a31/Re*avg_grad_u_old + a32/Re*avg_grad_u_int -
                                a31*avg_tensor_product_u_n - a32*avg_tensor_product_u_n_gamma)*n_plus + avg_p_old*n_plus, q);
         }
-        phi_p.integrate_scatter(true, false, dst);
-        phi_m.integrate_scatter(true, false, dst);
+        phi_p.integrate_scatter(EvaluationFlags::values, dst);
+        phi_m.integrate_scatter(EvaluationFlags::values, dst);
       }
     }
   }
@@ -618,8 +652,8 @@ namespace NS_TRBDF2 {
 
   // The followinf function assembles rhs boundary term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_boundary_term_velocity(const MatrixFree<dim, Number>&               data,
                                       Vec&                                         dst,
                                       const std::vector<Vec>&                      src,
@@ -635,11 +669,11 @@ namespace NS_TRBDF2 {
       /*--- We loop over the faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_old.reinit(face);
-        phi_old.gather_evaluate(src[0], true, true);
+        phi_old.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_extr.reinit(face);
-        phi_old_extr.gather_evaluate(src[1], true, false);
+        phi_old_extr.gather_evaluate(src[1], EvaluationFlags::values);
         phi_old_press.reinit(face);
-        phi_old_press.gather_evaluate(src[2], true, false);
+        phi_old_press.gather_evaluate(src[2], EvaluationFlags::values);
         phi.reinit(face);
 
         const auto boundary_id = data.get_boundary_id(face); /*--- Get the id in order to impose the proper boundary condition ---*/
@@ -675,7 +709,7 @@ namespace NS_TRBDF2 {
           phi.submit_normal_derivative(-aux_coeff*theta_v*a22/Re*u_int_m, q); /*--- This is equivalent to multiply to the gradient
                                                                                     with outer product and use 'submit_gradient' ---*/
         }
-        phi.integrate_scatter(true, true, dst);
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
     else {
@@ -689,13 +723,13 @@ namespace NS_TRBDF2 {
       /*--- We loop over the faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++ face) {
         phi_old.reinit(face);
-        phi_old.gather_evaluate(src[0], true, true);
+        phi_old.gather_evaluate(src[0], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_int.reinit(face);
-        phi_int.gather_evaluate(src[1], true, true);
+        phi_int.gather_evaluate(src[1], EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_press.reinit(face);
-        phi_old_press.gather_evaluate(src[2], true, false);
+        phi_old_press.gather_evaluate(src[2], EvaluationFlags::values);
         phi_int_extr.reinit(face);
-        phi_int_extr.gather_evaluate(src[3], true, false);
+        phi_int_extr.gather_evaluate(src[3], EvaluationFlags::values);
         phi.reinit(face);
 
         const auto boundary_id = data.get_boundary_id(face);
@@ -731,7 +765,7 @@ namespace NS_TRBDF2 {
                            aux_coeff*a33*tensor_product_u_m*n_plus + a33*lambda*u_m, q);
           phi.submit_normal_derivative(-aux_coeff*theta_v*a33/Re*u_m, q);
         }
-        phi.integrate_scatter(true, true, dst);
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
   }
@@ -739,11 +773,11 @@ namespace NS_TRBDF2 {
 
   // Put together all the previous steps for velocity. This is done automatically by the loop function of 'MatrixFree' class
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   vmult_rhs_velocity(Vec& dst, const std::vector<Vec>& src) const {
-    for(unsigned int d = 0; d < src.size(); ++d)
-      src[d].update_ghost_values();
+    for(auto& vec : src)
+      vec.update_ghost_values();
 
     this->data->loop(&NavierStokesProjectionOperator::assemble_rhs_cell_term_velocity,
                      &NavierStokesProjectionOperator::assemble_rhs_face_term_velocity,
@@ -757,8 +791,8 @@ namespace NS_TRBDF2 {
   // Now we focus on computing the rhs for the projection step for the pressure with the same ratio.
   // The following function assembles rhs cell term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_cell_term_pressure(const MatrixFree<dim, Number>&               data,
                                   Vec&                                         dst,
                                   const std::vector<Vec>&                      src,
@@ -776,9 +810,9 @@ namespace NS_TRBDF2 {
     /*--- We loop over cells in the range ---*/
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
       phi_proj.reinit(cell);
-      phi_proj.gather_evaluate(src[0], true, false);
+      phi_proj.gather_evaluate(src[0], EvaluationFlags::values);
       phi_old.reinit(cell);
-      phi_old.gather_evaluate(src[1], true, false);
+      phi_old.gather_evaluate(src[1], EvaluationFlags::values);
       phi.reinit(cell);
 
       /*--- Now we loop over all the quadrature points to compute the integrals ---*/
@@ -789,15 +823,15 @@ namespace NS_TRBDF2 {
         phi.submit_value(1.0/coeff*p_old, q);
         phi.submit_gradient(1.0/coeff_2*u_star_star, q);
       }
-      phi.integrate_scatter(true, true, dst);
+      phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
     }
   }
 
 
   // The following function assembles rhs face term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_face_term_pressure(const MatrixFree<dim, Number>&               data,
                                   Vec&                                         dst,
                                   const std::vector<Vec>&                      src,
@@ -813,9 +847,9 @@ namespace NS_TRBDF2 {
     /*--- We loop over faces in the range ---*/
     for(unsigned int face = face_range.first; face < face_range.second; ++face) {
       phi_proj_p.reinit(face);
-      phi_proj_p.gather_evaluate(src[0], true, false);
+      phi_proj_p.gather_evaluate(src[0], EvaluationFlags::values);
       phi_proj_m.reinit(face);
-      phi_proj_m.gather_evaluate(src[0], true, false);
+      phi_proj_m.gather_evaluate(src[0], EvaluationFlags::values);
       phi_p.reinit(face);
       phi_m.reinit(face);
 
@@ -827,16 +861,16 @@ namespace NS_TRBDF2 {
         phi_p.submit_value(-coeff*scalar_product(avg_u_star_star, n_plus), q);
         phi_m.submit_value(coeff*scalar_product(avg_u_star_star, n_plus), q);
       }
-      phi_p.integrate_scatter(true, false, dst);
-      phi_m.integrate_scatter(true, false, dst);
+      phi_p.integrate_scatter(EvaluationFlags::values, dst);
+      phi_m.integrate_scatter(EvaluationFlags::values, dst);
     }
   }
 
 
   // The following function assembles rhs boundary term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_boundary_term_pressure(const MatrixFree<dim, Number>&               data,
                                       Vec&                                         dst,
                                       const std::vector<Vec>&                      src,
@@ -850,7 +884,7 @@ namespace NS_TRBDF2 {
     /*--- We loop over faces in the range ---*/
     for(unsigned int face = face_range.first; face < face_range.second; ++face) {
       phi_proj.reinit(face);
-      phi_proj.gather_evaluate(src[0], true, false);
+      phi_proj.gather_evaluate(src[0], EvaluationFlags::values);
       phi.reinit(face);
 
       /*--- Now we loop over all the quadrature points to compute the integrals ---*/
@@ -859,18 +893,18 @@ namespace NS_TRBDF2 {
 
         phi.submit_value(-coeff*scalar_product(phi_proj.get_value(q), n_plus), q);
       }
-      phi.integrate_scatter(true, false, dst);
+      phi.integrate_scatter(EvaluationFlags::values, dst);
     }
   }
 
 
   // Put together all the previous steps for pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   vmult_rhs_pressure(Vec& dst, const std::vector<Vec>& src) const {
-    for(unsigned int d = 0; d < src.size(); ++d)
-      src[d].update_ghost_values();
+    for(auto& vec : src)
+      vec.update_ghost_values();
 
     this->data->loop(&NavierStokesProjectionOperator::assemble_rhs_cell_term_pressure,
                      &NavierStokesProjectionOperator::assemble_rhs_face_term_pressure,
@@ -884,8 +918,8 @@ namespace NS_TRBDF2 {
   // Now we need to build the 'matrices', i.e. the bilinear forms. We start by
   // assembling the cell term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_cell_term_velocity(const MatrixFree<dim, Number>&               data,
                               Vec&                                         dst,
                               const Vec&                                   src,
@@ -899,9 +933,9 @@ namespace NS_TRBDF2 {
       /*--- We loop over all cells in the range ---*/
       for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
         phi.reinit(cell);
-        phi.gather_evaluate(src, true, true);
+        phi.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_extr.reinit(cell);
-        phi_old_extr.gather_evaluate(u_extr, true, false);
+        phi_old_extr.gather_evaluate(u_extr, EvaluationFlags::values);
 
         /*--- Now we loop over all quadrature points ---*/
         for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -913,7 +947,7 @@ namespace NS_TRBDF2 {
           phi.submit_value(1.0/(gamma*dt)*u_int, q);
           phi.submit_gradient(-a22*tensor_product_u_int + a22/Re*grad_u_int, q);
         }
-        phi.integrate_scatter(true, true, dst);
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
     else {
@@ -924,9 +958,9 @@ namespace NS_TRBDF2 {
       /*--- We loop over all cells in the range ---*/
       for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
         phi.reinit(cell);
-        phi.gather_evaluate(src, true, true);
+        phi.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_int_extr.reinit(cell);
-        phi_int_extr.gather_evaluate(u_extr, true, false);
+        phi_int_extr.gather_evaluate(u_extr, EvaluationFlags::values);
 
         /*--- Now we loop over all quadrature points ---*/
         for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -938,7 +972,7 @@ namespace NS_TRBDF2 {
           phi.submit_value(1.0/((1.0 - gamma)*dt)*u_curr, q);
           phi.submit_gradient(-a33*tensor_product_u_curr + a33/Re*grad_u_curr, q);
         }
-        phi.integrate_scatter(true, true, dst);
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
   }
@@ -946,8 +980,8 @@ namespace NS_TRBDF2 {
 
   // The following function assembles face term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_face_term_velocity(const MatrixFree<dim, Number>&               data,
                               Vec&                                         dst,
                               const Vec&                                   src,
@@ -962,13 +996,13 @@ namespace NS_TRBDF2 {
       /*--- We loop over all faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_p.reinit(face);
-        phi_p.gather_evaluate(src, true, true);
+        phi_p.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_m.reinit(face);
-        phi_m.gather_evaluate(src, true, true);
+        phi_m.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_extr_p.reinit(face);
-        phi_old_extr_p.gather_evaluate(u_extr, true, false);
+        phi_old_extr_p.gather_evaluate(u_extr, EvaluationFlags::values);
         phi_old_extr_m.reinit(face);
-        phi_old_extr_m.gather_evaluate(u_extr, true, false);
+        phi_old_extr_m.gather_evaluate(u_extr, EvaluationFlags::values);
 
         const auto coef_jump = C_u*0.5*(std::abs((phi_p.get_normal_vector(0)*phi_p.inverse_jacobian(0))[dim - 1]) +
                                         std::abs((phi_m.get_normal_vector(0)*phi_m.inverse_jacobian(0))[dim - 1]));
@@ -991,8 +1025,8 @@ namespace NS_TRBDF2 {
           phi_p.submit_normal_derivative(-theta_v*a22/Re*0.5*jump_u_int, q);
           phi_m.submit_normal_derivative(-theta_v*a22/Re*0.5*jump_u_int, q);
         }
-        phi_p.integrate_scatter(true, true, dst);
-        phi_m.integrate_scatter(true, true, dst);
+        phi_p.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
+        phi_m.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
     else {
@@ -1005,13 +1039,13 @@ namespace NS_TRBDF2 {
       /*--- We loop over all faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_p.reinit(face);
-        phi_p.gather_evaluate(src, true, true);
+        phi_p.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_m.reinit(face);
-        phi_m.gather_evaluate(src, true, true);
+        phi_m.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_extr_p.reinit(face);
-        phi_extr_p.gather_evaluate(u_extr, true, false);
+        phi_extr_p.gather_evaluate(u_extr, EvaluationFlags::values);
         phi_extr_m.reinit(face);
-        phi_extr_m.gather_evaluate(u_extr, true, false);
+        phi_extr_m.gather_evaluate(u_extr, EvaluationFlags::values);
 
         const auto coef_jump = C_u*0.5*(std::abs((phi_p.get_normal_vector(0)*phi_p.inverse_jacobian(0))[dim - 1]) +
                                         std::abs((phi_m.get_normal_vector(0)*phi_m.inverse_jacobian(0))[dim - 1]));
@@ -1034,8 +1068,8 @@ namespace NS_TRBDF2 {
           phi_p.submit_normal_derivative(-theta_v*a33/Re*0.5*jump_u, q);
           phi_m.submit_normal_derivative(-theta_v*a33/Re*0.5*jump_u, q);
         }
-        phi_p.integrate_scatter(true, true, dst);
-        phi_m.integrate_scatter(true, true, dst);
+        phi_p.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
+        phi_m.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
   }
@@ -1043,8 +1077,8 @@ namespace NS_TRBDF2 {
 
   // The following function assembles boundary term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_boundary_term_velocity(const MatrixFree<dim, Number>&               data,
                                   Vec&                                         dst,
                                   const Vec&                                   src,
@@ -1057,9 +1091,9 @@ namespace NS_TRBDF2 {
       /*--- We loop over all faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi.reinit(face);
-        phi.gather_evaluate(src, true, true);
+        phi.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_old_extr.reinit(face);
-        phi_old_extr.gather_evaluate(u_extr, true, false);
+        phi_old_extr.gather_evaluate(u_extr, EvaluationFlags::values);
 
         const auto boundary_id = data.get_boundary_id(face);
         const auto coef_jump   = C_u*std::abs((phi.get_normal_vector(0) * phi.inverse_jacobian(0))[dim - 1]);
@@ -1081,7 +1115,7 @@ namespace NS_TRBDF2 {
                              a22*coef_trasp*tensor_product_u_int*n_plus + a22*lambda*u_int, q);
             phi.submit_normal_derivative(-theta_v*a22/Re*u_int, q);
           }
-          phi.integrate_scatter(true, true, dst);
+          phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
         }
         else {
           /*--- Now we loop over all quadrature points ---*/
@@ -1110,7 +1144,7 @@ namespace NS_TRBDF2 {
                              a22*0.5*lambda*(u_int - u_int_m), q);
             phi.submit_normal_derivative(-theta_v*a22/Re*(u_int - u_int_m), q);
           }
-          phi.integrate_scatter(true, true, dst);
+          phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
         }
       }
     }
@@ -1122,9 +1156,9 @@ namespace NS_TRBDF2 {
       /*--- We loop over all faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi.reinit(face);
-        phi.gather_evaluate(src, true, true);
+        phi.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
         phi_extr.reinit(face);
-        phi_extr.gather_evaluate(u_extr, true, false);
+        phi_extr.gather_evaluate(u_extr, EvaluationFlags::values);
 
         const auto boundary_id = data.get_boundary_id(face);
         const auto coef_jump   = C_u*std::abs((phi.get_normal_vector(0) * phi.inverse_jacobian(0))[dim - 1]);
@@ -1144,7 +1178,7 @@ namespace NS_TRBDF2 {
                              a33*coef_trasp*tensor_product_u*n_plus + a33*lambda*u, q);
             phi.submit_normal_derivative(-theta_v*a33/Re*u, q);
           }
-          phi.integrate_scatter(true, true, dst);
+          phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
         }
         else {
           /*--- Now we loop over all quadrature points ---*/
@@ -1172,7 +1206,7 @@ namespace NS_TRBDF2 {
                              a33*outer_product(0.5*(u + u_m), phi_extr.get_value(q))*n_plus + a33*0.5*lambda*(u - u_m), q);
             phi.submit_normal_derivative(-theta_v*a33/Re*(u - u_m), q);
           }
-          phi.integrate_scatter(true, true, dst);
+          phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
         }
       }
     }
@@ -1181,8 +1215,8 @@ namespace NS_TRBDF2 {
 
   // Next, we focus on 'matrices' to compute the pressure. We first assemble cell term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_cell_term_pressure(const MatrixFree<dim, Number>&               data,
                               Vec&                                         dst,
                               const Vec&                                   src,
@@ -1195,7 +1229,7 @@ namespace NS_TRBDF2 {
     /*--- Loop over all cells in the range ---*/
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
       phi.reinit(cell);
-      phi.gather_evaluate(src, true, true);
+      phi.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
 
       /*--- Now we loop over all quadrature points ---*/
       for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1203,15 +1237,15 @@ namespace NS_TRBDF2 {
         phi.submit_value(1.0/coeff*phi.get_value(q), q);
       }
 
-      phi.integrate_scatter(true, true, dst);
+      phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
     }
   }
 
 
   // The following function assembles face term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_face_term_pressure(const MatrixFree<dim, Number>&               data,
                               Vec&                                         dst,
                               const Vec&                                   src,
@@ -1223,9 +1257,9 @@ namespace NS_TRBDF2 {
     /*--- Loop over all faces in the range ---*/
     for(unsigned int face = face_range.first; face < face_range.second; ++face) {
       phi_p.reinit(face);
-      phi_p.gather_evaluate(src, true, true);
+      phi_p.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
       phi_m.reinit(face);
-      phi_m.gather_evaluate(src, true, true);
+      phi_m.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
 
       const auto coef_jump = C_p*0.5*(std::abs((phi_p.get_normal_vector(0)*phi_p.inverse_jacobian(0))[dim - 1]) +
                                       std::abs((phi_m.get_normal_vector(0)*phi_m.inverse_jacobian(0))[dim - 1]));
@@ -1242,16 +1276,16 @@ namespace NS_TRBDF2 {
         phi_p.submit_gradient(-theta_p*0.5*jump_pres*n_plus, q);
         phi_m.submit_gradient(-theta_p*0.5*jump_pres*n_plus, q);
       }
-      phi_p.integrate_scatter(true, true, dst);
-      phi_m.integrate_scatter(true, true, dst);
+      phi_p.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
+      phi_m.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
     }
   }
 
 
   // The following function assembles boundary term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_boundary_term_pressure(const MatrixFree<dim, Number>&               data,
                                   Vec&                                         dst,
                                   const Vec&                                   src,
@@ -1259,14 +1293,14 @@ namespace NS_TRBDF2 {
     FEFaceEvaluation<dim, fe_degree_p, n_q_points_1d_p, 1, Number> phi(data, true, 1, 1);
 
     for(unsigned int face = face_range.first; face < face_range.second; ++face) {
-      phi.reinit(face);
-      phi.gather_evaluate(src, true, true);
-
-      const auto coef_jump = C_p*std::abs((phi.get_normal_vector(0)*phi.inverse_jacobian(0))[dim - 1]);
-
       const auto boundary_id = data.get_boundary_id(face);
 
       if(boundary_id == 1) {
+        phi.reinit(face);
+        phi.gather_evaluate(src, true, true);
+
+        const auto coef_jump = C_p*std::abs((phi.get_normal_vector(0)*phi.inverse_jacobian(0))[dim - 1]);
+
         for(unsigned int q = 0; q < phi.n_q_points; ++q) {
           const auto& n_plus    = phi.get_normal_vector(q);
 
@@ -1276,7 +1310,7 @@ namespace NS_TRBDF2 {
           phi.submit_value(-scalar_product(grad_pres, n_plus) + coef_jump*pres , q);
           phi.submit_normal_derivative(-theta_p*pres, q);
         }
-        phi.integrate_scatter(true, true, dst);
+        phi.integrate_scatter(EvaluationFlags::values | EvaluationFlags::gradients, dst);
       }
     }
   }
@@ -1287,8 +1321,8 @@ namespace NS_TRBDF2 {
   // The following function assembles rhs cell term for the projection of gradient of pressure. Since no
   // integration by parts is performed, only a cell term contribution is present.
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_rhs_cell_term_projection_grad_p(const MatrixFree<dim, Number>&               data,
                                            Vec&                                         dst,
                                            const Vec&                                   src,
@@ -1300,22 +1334,22 @@ namespace NS_TRBDF2 {
     /*--- Loop over all cells in the range ---*/
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
       phi_pres.reinit(cell);
-      phi_pres.gather_evaluate(src, false, true);
+      phi_pres.gather_evaluate(src, EvaluationFlags::gradients);
       phi.reinit(cell);
 
       /*--- Loop over quadrature points ---*/
       for(unsigned int q = 0; q < phi.n_q_points; ++q)
         phi.submit_value(phi_pres.get_gradient(q), q);
 
-      phi.integrate_scatter(true, false, dst);
+      phi.integrate_scatter(EvaluationFlags::values, dst);
     }
   }
 
 
   // Put together all the previous steps for porjection of pressure gradient. Here we loop only over cells
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   vmult_grad_p_projection(Vec& dst, const Vec& src) const {
     this->data->cell_loop(&NavierStokesProjectionOperator::assemble_rhs_cell_term_projection_grad_p,
                           this, dst, src, true);
@@ -1324,8 +1358,8 @@ namespace NS_TRBDF2 {
 
   // Assemble now cell term for the projection of gradient of pressure. This is nothing but a mass matrix
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_cell_term_projection_grad_p(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
                                        const Vec&                                   src,
@@ -1335,13 +1369,13 @@ namespace NS_TRBDF2 {
     /*--- Loop over all cells in the range ---*/
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
       phi.reinit(cell);
-      phi.gather_evaluate(src, true, false);
+      phi.gather_evaluate(src, EvaluationFlags::values);
 
       /*--- Loop over quadrature points ---*/
       for(unsigned int q = 0; q < phi.n_q_points; ++q)
         phi.submit_value(phi.get_value(q), q);
 
-      phi.integrate_scatter(true, false, dst);
+      phi.integrate_scatter(EvaluationFlags::values, dst);
     }
   }
 
@@ -1349,8 +1383,8 @@ namespace NS_TRBDF2 {
   // Put together all previous steps. This is the overriden function that effectively performs the
   // matrix-vector multiplication.
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   apply_add(Vec& dst, const Vec& src) const {
     if(NS_stage == 1) {
       this->data->loop(&NavierStokesProjectionOperator::assemble_cell_term_velocity,
@@ -1382,8 +1416,8 @@ namespace NS_TRBDF2 {
   // in order to compute the element i, we test the matrix against a vector which is equal to 1 in position i and 0 elsewhere.
   // This is why 'src' will result as unused.
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_diagonal_cell_term_velocity(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
                                        const unsigned int&                          ,
@@ -1475,8 +1509,8 @@ namespace NS_TRBDF2 {
 
   // The following function assembles diagonal face term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_diagonal_face_term_velocity(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
                                        const unsigned int&                          ,
@@ -1492,6 +1526,7 @@ namespace NS_TRBDF2 {
                                                                                 space ---*/
       AlignedVector<Tensor<1, dim, VectorizedArray<Number>>> diagonal_p(phi_p.dofs_per_component),
                                                              diagonal_m(phi_m.dofs_per_component);
+
       Tensor<1, dim, VectorizedArray<Number>> tmp;
       for(unsigned int d = 0; d < dim; ++d)
         tmp[d] = make_vectorized_array<Number>(1.0); /*--- We build the usal vector of ones that we will use as dof value ---*/
@@ -1620,8 +1655,8 @@ namespace NS_TRBDF2 {
 
   // The following function assembles boundary term for the velocity
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_diagonal_boundary_term_velocity(const MatrixFree<dim, Number>&               data,
                                            Vec&                                         dst,
                                            const unsigned int&                          ,
@@ -1811,8 +1846,8 @@ namespace NS_TRBDF2 {
 
   // Now we consider the pressure related bilinear forms. We first assemble diagonal cell term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_diagonal_cell_term_pressure(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
                                        const unsigned int&                          ,
@@ -1836,14 +1871,14 @@ namespace NS_TRBDF2 {
         phi.submit_dof_value(make_vectorized_array<Number>(1.0), i); /*--- Now we set the current one to 1; since it is scalar,
                                                                            we can directly use 'make_vectorized_array' without
                                                                            relying on 'Tensor' ---*/
-        phi.evaluate(true, true);
+        phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
         /*--- Loop over quadrature points ---*/
         for(unsigned int q = 0; q < phi.n_q_points; ++q) {
           phi.submit_value(1.0/coeff*phi.get_value(q), q);
           phi.submit_gradient(phi.get_gradient(q), q);
         }
-        phi.integrate(true, true);
+        phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
         diagonal[i] = phi.get_dof_value(i);
       }
       for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1856,8 +1891,8 @@ namespace NS_TRBDF2 {
 
   // The following function assembles diagonal face term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_diagonal_face_term_pressure(const MatrixFree<dim, Number>&               data,
                                        Vec&                                         dst,
                                        const unsigned int&                          ,
@@ -1887,8 +1922,8 @@ namespace NS_TRBDF2 {
         }
         phi_p.submit_dof_value(make_vectorized_array<Number>(1.0), i);
         phi_m.submit_dof_value(make_vectorized_array<Number>(1.0), i);
-        phi_p.evaluate(true, true);
-        phi_m.evaluate(true, true);
+        phi_p.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
+        phi_m.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
         /*--- Loop over all quadrature points to compute the integral ---*/
         for(unsigned int q = 0; q < phi_p.n_q_points; ++q) {
@@ -1902,9 +1937,9 @@ namespace NS_TRBDF2 {
           phi_p.submit_gradient(-theta_p*0.5*jump_pres*n_plus, q);
           phi_m.submit_gradient(-theta_p*0.5*jump_pres*n_plus, q);
         }
-        phi_p.integrate(true, true);
+        phi_p.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
         diagonal_p[i] = phi_p.get_dof_value(i);
-        phi_m.integrate(true, true);
+        phi_m.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
         diagonal_m[i] = phi_m.get_dof_value(i);
       }
       for(unsigned int i = 0; i < phi_p.dofs_per_component; ++i) {
@@ -1919,8 +1954,8 @@ namespace NS_TRBDF2 {
 
   // Eventually, we assemble diagonal boundary term for the pressure
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   assemble_diagonal_boundary_term_pressure(const MatrixFree<dim, Number>&               data,
                                            Vec&                                         dst,
                                            const unsigned int&                          ,
@@ -1930,18 +1965,18 @@ namespace NS_TRBDF2 {
     AlignedVector<VectorizedArray<Number>> diagonal(phi.dofs_per_component);
 
     for(unsigned int face = face_range.first; face < face_range.second; ++face) {
-      phi.reinit(face);
-
-      const auto coef_jump = C_p*std::abs((phi.get_normal_vector(0)*phi.inverse_jacobian(0))[dim - 1]);
-
       const auto boundary_id = data.get_boundary_id(face);
 
       if(boundary_id == 1) {
+        phi.reinit(face);
+
+        const auto coef_jump = C_p*std::abs((phi.get_normal_vector(0)*phi.inverse_jacobian(0))[dim - 1]);
+
         for(unsigned int i = 0; i < phi.dofs_per_component; ++i) {
           for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
             phi.submit_dof_value(VectorizedArray<Number>(), j);
           phi.submit_dof_value(make_vectorized_array<Number>(1.0), i);
-          phi.evaluate(true, true);
+          phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
           for(unsigned int q = 0; q < phi.n_q_points; ++q) {
             const auto& n_plus    = phi.get_normal_vector(q);
@@ -1952,7 +1987,7 @@ namespace NS_TRBDF2 {
             phi.submit_value(-scalar_product(grad_pres, n_plus) + 2.0*coef_jump*pres , q);
             phi.submit_normal_derivative(-theta_p*pres, q);
           }
-          phi.integrate(true, true);
+          phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal[i] = phi.get_dof_value(i);
         }
         for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1968,47 +2003,49 @@ namespace NS_TRBDF2 {
   // and it is saved in the field 'inverse_diagonal_entries' already present in the base class. Anyway since there is
   // only one field, we need to resize properly depending on whether we are considering the velocity or the pressure.
   //
-  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec, typename Number>
-  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec, Number>::
+  template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
+  void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
   compute_diagonal() {
     Assert(NS_stage == 1 || NS_stage == 2, ExcInternalError());
+
+    this->inverse_diagonal_entries.reset(new DiagonalMatrix<Vec>());
+    auto& inverse_diagonal = this->inverse_diagonal_entries->get_vector();
+
     if(NS_stage == 1) {
-      this->inverse_diagonal_entries.reset(new DiagonalMatrix<Vec>());
-      auto& inverse_diagonal = this->inverse_diagonal_entries->get_vector();
-      this->data->initialize_dof_vector(inverse_diagonal, 0);
-      const unsigned int dummy = 0;
-
-      this->data->loop(&NavierStokesProjectionOperator::assemble_diagonal_cell_term_velocity,
-                       &NavierStokesProjectionOperator::assemble_diagonal_face_term_velocity,
-                       &NavierStokesProjectionOperator::assemble_diagonal_boundary_term_velocity,
-                       this, inverse_diagonal, dummy, false,
-                       MatrixFree<dim, Number>::DataAccessOnFaces::unspecified,
-                       MatrixFree<dim, Number>::DataAccessOnFaces::unspecified);
-
-      for(unsigned int i = 0; i < inverse_diagonal.locally_owned_size(); ++i) {
-        Assert(inverse_diagonal.local_element(i) != 0.0,
-               ExcMessage("No diagonal entry in a definite operator should be zero"));
-        inverse_diagonal.local_element(i) = 1.0/inverse_diagonal.local_element(i);
-      }
+      MatrixFreeTools::compute_diagonal<dim, Number, VectorizedArray<Number>>
+      (*(this->data),
+       inverse_diagonal,
+       [&](const auto& data, auto& dst, const auto& src, const auto& cell_range) {
+         (this->assemble_diagonal_cell_term_velocity)(data, dst, src, cell_range);
+       },
+       [&](const auto& data, auto& dst, const auto& src, const auto& face_range) {
+         (this->assemble_diagonal_face_term_velocity)(data, dst, src, face_range);
+       },
+       [&](const auto& data, auto& dst, const auto& src, const auto& boundary_range) {
+         (this->assemble_diagonal_boundary_term_velocity)(data, dst, src, boundary_range);
+       },
+       0);
     }
     else if(NS_stage == 2) {
-      this->inverse_diagonal_entries.reset(new DiagonalMatrix<Vec>());
-      auto& inverse_diagonal = this->inverse_diagonal_entries->get_vector();
-      this->data->initialize_dof_vector(inverse_diagonal, 1);
-      const unsigned int dummy = 0;
+      MatrixFreeTools::compute_diagonal<dim, Number, VectorizedArray<Number>>
+      (*(this->data),
+       inverse_diagonal,
+       [&](const auto& data, auto& dst, const auto& src, const auto& cell_range) {
+         (this->assemble_diagonal_cell_term_pressure)(data, dst, src, cell_range);
+       },
+       [&](const auto& data, auto& dst, const auto& src, const auto& face_range) {
+         (this->assemble_diagonal_face_term_pressure)(data, dst, src, face_range);
+       },
+       [&](const auto& data, auto& dst, const auto& src, const auto& boundary_range) {
+         (this->assemble_diagonal_boundary_term_pressure)(data, dst, src, boundary_range);
+       },
+       1);
+    }
 
-      this->data->loop(&NavierStokesProjectionOperator::assemble_diagonal_cell_term_pressure,
-                       &NavierStokesProjectionOperator::assemble_diagonal_face_term_pressure,
-                       &NavierStokesProjectionOperator::assemble_diagonal_boundary_term_pressure,
-                       this, inverse_diagonal, dummy, false,
-                       MatrixFree<dim, Number>::DataAccessOnFaces::unspecified,
-                       MatrixFree<dim, Number>::DataAccessOnFaces::unspecified);
-
-      for(unsigned int i = 0; i < inverse_diagonal.locally_owned_size(); ++i) {
-        Assert(inverse_diagonal.local_element(i) != 0.0,
-               ExcMessage("No diagonal entry in a definite operator should be zero"));
-        inverse_diagonal.local_element(i) = 1.0/inverse_diagonal.local_element(i);
-      }
+    for(unsigned int i = 0; i < inverse_diagonal.locally_owned_size(); ++i) {
+      Assert(inverse_diagonal.local_element(i) != 0.0,
+             ExcMessage("No diagonal entry in a definite operator should be zero"));
+      inverse_diagonal.local_element(i) = 1.0/inverse_diagonal.local_element(i);
     }
   }
 
@@ -2092,7 +2129,7 @@ namespace NS_TRBDF2 {
 
     double get_maximal_velocity();
 
-    double get_maximal_difference();
+    double get_maximal_difference_velocity();
 
     void output_results(const unsigned int step);
 
@@ -2111,12 +2148,12 @@ namespace NS_TRBDF2 {
     /*--- Now we need an instance of the class implemented before with the weak form ---*/
     NavierStokesProjectionOperator<dim, EquationData::degree_p, EquationData::degree_p + 1,
                                    EquationData::degree_p + 1, EquationData::degree_p + 2,
-                                   LinearAlgebra::distributed::Vector<double>, double> navier_stokes_matrix;
+                                   LinearAlgebra::distributed::Vector<double>> navier_stokes_matrix;
 
     /*--- This is an instance for geometric multigrid preconditioner ---*/
     MGLevelObject<NavierStokesProjectionOperator<dim, EquationData::degree_p, EquationData::degree_p + 1,
                                                  EquationData::degree_p + 1, EquationData::degree_p + 2,
-                                                 LinearAlgebra::distributed::Vector<float>, float>> mg_matrices;
+                                                 LinearAlgebra::distributed::Vector<float>>> mg_matrices;
 
     /*--- Here we define two 'AffineConstraints' instance, one for each finite element space.
           This is just a technical issue, due to MatrixFree requirements. In general
@@ -2409,8 +2446,7 @@ namespace NS_TRBDF2 {
                                                       EquationData::degree_p + 1,
                                                       EquationData::degree_p + 1,
                                                       EquationData::degree_p + 2,
-                                                      LinearAlgebra::distributed::Vector<double>,
-                                                      double>> preconditioner;
+                                                      LinearAlgebra::distributed::Vector<double>>> preconditioner;
     navier_stokes_matrix.compute_diagonal();
     preconditioner.initialize(navier_stokes_matrix);
 
@@ -2449,8 +2485,7 @@ namespace NS_TRBDF2 {
                                                                               EquationData::degree_p + 1,
                                                                               EquationData::degree_p + 1,
                                                                               EquationData::degree_p + 2,
-                                                                              LinearAlgebra::distributed::Vector<float>,
-                                                                              float>,
+                                                                              LinearAlgebra::distributed::Vector<float>>,
                                                LinearAlgebra::distributed::Vector<float>>;
     mg::SmootherRelaxation<SmootherType, LinearAlgebra::distributed::Vector<float>> mg_smoother;
     MGLevelObject<typename SmootherType::AdditionalData> smoother_data;
@@ -2480,8 +2515,7 @@ namespace NS_TRBDF2 {
                                                                EquationData::degree_p + 1,
                                                                EquationData::degree_p + 1,
                                                                EquationData::degree_p + 2,
-                                                               LinearAlgebra::distributed::Vector<float>,
-                                                               float>,
+                                                               LinearAlgebra::distributed::Vector<float>>,
                                 PreconditionIdentity> mg_coarse(cg_mg, mg_matrices[0], identity);
 
     mg::Matrix<LinearAlgebra::distributed::Vector<float>> mg_matrix(mg_matrices);
@@ -2538,29 +2572,19 @@ namespace NS_TRBDF2 {
   //
   template<int dim>
   double NavierStokesProjection<dim>::get_maximal_velocity() {
-    VectorTools::integrate_difference(dof_handler_velocity, u_n, ZeroFunction<dim>(dim),
-                                      Linfty_error_per_cell_vel, quadrature_velocity, VectorTools::Linfty_norm);
-    const double res = VectorTools::compute_global_error(triangulation, Linfty_error_per_cell_vel, VectorTools::Linfty_norm);
-
-    return res;
+    return u_n.linfty_norm();
   }
 
 
   // The following function is used in determining the maximal nodal difference
-  // in order to see if we have reched steady-state. We simply use integrate_difference testing
-  // u_n - u_n_minus_1 against the zero function.
+  // between old and current velocity value in order to see if we have reched steady-state.
   //
   template<int dim>
-  double NavierStokesProjection<dim>::get_maximal_difference() {
+  double NavierStokesProjection<dim>::get_maximal_difference_velocity() {
     u_tmp = u_n;
     u_tmp -= u_n_minus_1;
 
-    VectorTools::integrate_difference(dof_handler_velocity, u_tmp, ZeroFunction<dim>(dim),
-                                      Linfty_error_per_cell_vel, quadrature_velocity, VectorTools::Linfty_norm);
-    const double res = VectorTools::compute_global_error(triangulation, Linfty_error_per_cell_vel, VectorTools::Linfty_norm);
-    pcout << "Maximum nodal difference = " << res <<std::endl;
-
-    return res;
+    return u_tmp.linfty_norm();
   }
 
 
@@ -2665,8 +2689,8 @@ namespace NS_TRBDF2 {
 
     /*--- At the end, each processor has computed the contribution to the boundary cells it owns and, therefore,
           we need to sum up all the contributions. ---*/
-    double lift = Utilities::MPI::sum(local_lift, MPI_COMM_WORLD);
-    double drag = Utilities::MPI::sum(local_drag, MPI_COMM_WORLD);
+    const double lift = Utilities::MPI::sum(local_lift, MPI_COMM_WORLD);
+    const double drag = Utilities::MPI::sum(local_drag, MPI_COMM_WORLD);
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0) {
       output_lift << lift << std::endl;
       output_drag << drag << std::endl;
@@ -2697,9 +2721,9 @@ namespace NS_TRBDF2 {
 
     /*--- This is basically the indicator per cell computation (see step-50). Since it is not so complciated
           we implement it through a lambda expression ---*/
-    auto cell_worker = [&](const Iterator&   cell,
-                           ScratchData<dim>& scratch_data,
-                           CopyData&         copy_data) {
+    const auto cell_worker = [&](const Iterator&   cell,
+                                 ScratchData<dim>& scratch_data,
+                                 CopyData&         copy_data) {
       FEValues<dim>& fe_values = scratch_data.fe_values; /*--- Here we finally use the 'FEValues' inside ScratchData ---*/
       fe_values.reinit(cell);
 
@@ -2719,13 +2743,13 @@ namespace NS_TRBDF2 {
 
     const UpdateFlags cell_flags = update_gradients | update_quadrature_points | update_JxW_values;
 
-    auto copier = [&](const CopyData &copy_data) {
+    const auto copier = [&](const CopyData &copy_data) {
       if(copy_data.cell_index != numbers::invalid_unsigned_int)
         estimated_error_per_cell[copy_data.cell_index] += copy_data.value;
     };
 
     /*--- Now everything is 'automagically' handled by 'mesh_loop' ---*/
-    ScratchData scratch_data(fe_velocity, EquationData::degree_p + 2, cell_flags);
+    ScratchData<dim> scratch_data(fe_velocity, EquationData::degree_p + 2, cell_flags);
     CopyData copy_data;
     MeshWorker::mesh_loop(dof_handler_velocity.begin_active(),
                           dof_handler_velocity.end(),
