@@ -30,7 +30,7 @@ $$
 \end{align*}
 $$
 
-where $Re$ denotes the Reynolds number. In the case of projection methods, difficulties arise in choosing the boundary conditions to be imposed for the Poisson equation which is to be solved at each time step to compute the pressure. An alternative that allows to avoid or reduce some of these problems is the so-called artificial compressibility formulation. In this formulation, the incompressibility constraint is relaxed and a time evolution equation for the pressure is introduced, which is characterized by an artificial sound speed $c,$ so as to obtain:
+where $Re$ denotes the Reynolds number. In the case of projection methods, difficulties arise in choosing the boundary conditions to be imposed for the Poisson equation which is to be solved at each time step to compute the pressure. An alternative that allows to avoid or reduce some of these problems is the so-called artificial compressibility formulation. In this formulation, the incompressibility constraint is relaxed and a time evolution equation for the pressure is introduced, which is characterized by an artificial sound speed $c$, so as to obtain:
 
 $$
 \begin{align*}
