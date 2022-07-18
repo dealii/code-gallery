@@ -2087,7 +2087,7 @@ namespace Cook_Membrane
         const int boundary_id = 1;
         VectorTools::interpolate_boundary_values(dof_handler_ref,
                                                 boundary_id,
-                                                ZeroFunction<dim>(n_components),
+                                                Functions::ZeroFunction<dim>(n_components),
                                                 constraints,
                                                 fe.component_mask(u_fe));
       }
@@ -2100,7 +2100,7 @@ namespace Cook_Membrane
         const FEValuesExtractors::Scalar z_displacement(2);
         VectorTools::interpolate_boundary_values(dof_handler_ref,
                                                 boundary_id,
-                                                ZeroFunction<dim>(n_components),
+                                                Functions::ZeroFunction<dim>(n_components),
                                                 constraints,
                                                 fe.component_mask(z_displacement));
       }

@@ -2012,7 +2012,7 @@ namespace NS_TRBDF2 {
     auto& inverse_diagonal = this->inverse_diagonal_entries->get_vector();
 
     if(NS_stage == 1) {
-      MatrixFreeTools::compute_diagonal<dim, Number, VectorizedArray<Number>>
+      ::MatrixFreeTools::compute_diagonal<dim, Number, VectorizedArray<Number>>
       (*(this->data),
        inverse_diagonal,
        [&](const auto& data, auto& dst, const auto& src, const auto& cell_range) {
@@ -2027,7 +2027,7 @@ namespace NS_TRBDF2 {
        0);
     }
     else if(NS_stage == 2) {
-      MatrixFreeTools::compute_diagonal<dim, Number, VectorizedArray<Number>>
+        ::MatrixFreeTools::compute_diagonal<dim, Number, VectorizedArray<Number>>
       (*(this->data),
        inverse_diagonal,
        [&](const auto& data, auto& dst, const auto& src, const auto& cell_range) {

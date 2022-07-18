@@ -1039,7 +1039,7 @@ namespace LMM
         {
           Point<dim> operator() (const Point<dim> &in) const
           {
-            static const Tensor<2,dim> rot_mat = Physics::Transformations::Rotations::rotation_matrix_3d(Point<dim>(0,1,0), M_PI/2.0);
+            static const Tensor<2,dim> rot_mat = Physics::Transformations::Rotations::rotation_matrix_3d(Tensor<1,dim>({0,1,0}), M_PI/2.0);
             return Point<dim>(rot_mat*in);
           }
         };
@@ -1439,7 +1439,7 @@ namespace LMM
           component_mask_x.set(0, true);
           VectorTools::interpolate_boundary_values (dof_handler,
                                                     parameters.bid_CC_dirichlet_symm_X,
-                                                    ZeroFunction<dim>(dim),
+                                                    Functions::ZeroFunction<dim>(dim),
                                                     boundary_values,
                                                     component_mask_x);
         }
@@ -1449,7 +1449,7 @@ namespace LMM
           component_mask_z.set(2, true);
           VectorTools::interpolate_boundary_values (dof_handler,
                                                     parameters.bid_CC_dirichlet_symm_Z,
-                                                    ZeroFunction<dim>(dim),
+                                                    Functions::ZeroFunction<dim>(dim),
                                                     boundary_values,
                                                     component_mask_z);
         }
@@ -1504,7 +1504,7 @@ namespace LMM
               component_mask_x.set(0, true);
               VectorTools::interpolate_boundary_values (dof_handler,
                                                         parameters.bid_BB_dirichlet_X,
-                                                        ZeroFunction<dim>(dim),
+                                                        Functions::ZeroFunction<dim>(dim),
                                                         boundary_values,
                                                         component_mask_x);
             }
@@ -1562,7 +1562,7 @@ namespace LMM
               ComponentMask component_mask_x (dim, true);
               VectorTools::interpolate_boundary_values (dof_handler,
                                                         parameters.bid_BB_dirichlet_X,
-                                                        ZeroFunction<dim>(dim),
+                                                        Functions::ZeroFunction<dim>(dim),
                                                         boundary_values,
                                                         component_mask_x);
             }
@@ -1573,7 +1573,7 @@ namespace LMM
               component_mask_x.set(2, true);
               VectorTools::interpolate_boundary_values (dof_handler,
                                                         parameters.bid_BB_neumann,
-                                                        ZeroFunction<dim>(dim),
+                                                        Functions::ZeroFunction<dim>(dim),
                                                         boundary_values,
                                                         component_mask_x);
             }

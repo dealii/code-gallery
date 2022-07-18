@@ -553,7 +553,7 @@ namespace nsp
     H1_error = difference_per_cell.l2_norm();
 
     // compute W1infty error (save to difference_per_cell)
-    const QTrapez<1> q_trapez;
+    const QTrapezoid<1> q_trapez;
     const QIterated<dim> q_iterated (q_trapez, 5);
     VectorTools::integrate_difference (dof_handler,present_solution,Solution<dim>(),
                                        difference_per_cell,q_iterated,VectorTools::W1infty_seminorm);
@@ -746,7 +746,7 @@ namespace nsp
     std::map<types::global_dof_index,double> boundary_values;
     VectorTools::interpolate_boundary_values (dof_handler,
                                               0,
-                                              ZeroFunction<dim>(),
+                                              Functions::ZeroFunction<dim>(),
                                               boundary_values);
     MatrixTools::apply_boundary_values (boundary_values,
                                         system_matrix,
@@ -958,7 +958,7 @@ namespace nsp
   double ElastoplasticTorsion<dim>::dual_infty_error () const
   {
     double obj = 0.0;
-    const QTrapez<1> q_trapez;
+    const QTrapezoid<1> q_trapez;
     const QIterated<dim> quadrature_formula (q_trapez, 10);
 
     FEValues<dim> fe_values (fe, quadrature_formula,

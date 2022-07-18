@@ -4040,21 +4040,21 @@ namespace NonLinearPoroViscoElasticity
             {
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        2,
-                                                       ZeroFunction<dim>(this->n_components),
+                                                       Functions::ZeroFunction<dim>(this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
             }
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       0,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       (this->fe.component_mask(this->x_displacement)|
                                                        this->fe.component_mask(this->y_displacement)  ) );
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       1,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       (this->fe.component_mask(this->x_displacement) |
                                                        this->fe.component_mask(this->y_displacement) |
@@ -4233,38 +4233,38 @@ namespace NonLinearPoroViscoElasticity
             {
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        101,
-                                                       ZeroFunction<dim>(this->n_components),
+                                                       Functions::ZeroFunction<dim>(this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
             }
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       0,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       this->fe.component_mask(this->x_displacement));
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       1,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       this->fe.component_mask(this->x_displacement));
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       2,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       this->fe.component_mask(this->y_displacement));
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       3,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       this->fe.component_mask(this->y_displacement));
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       4,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       ( this->fe.component_mask(this->x_displacement) |
                                                         this->fe.component_mask(this->y_displacement) |
@@ -4415,27 +4415,27 @@ namespace NonLinearPoroViscoElasticity
             {
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        1,
-                                                       ZeroFunction<dim>(this->n_components),
+                                                       Functions::ZeroFunction<dim>(this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
 
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        2,
-                                                       ZeroFunction<dim>(this->n_components),
+                                                       Functions::ZeroFunction<dim>(this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
             }
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       0,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       (this->fe.component_mask(this->x_displacement)|
                                                        this->fe.component_mask(this->y_displacement)  ) );
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       1,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       (this->fe.component_mask(this->x_displacement) |
                                                        this->fe.component_mask(this->y_displacement) |
@@ -4443,7 +4443,7 @@ namespace NonLinearPoroViscoElasticity
 
             VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                       2,
-                                                      ZeroFunction<dim>(this->n_components),
+                                                      Functions::ZeroFunction<dim>(this->n_components),
                                                       constraints,
                                                       (this->fe.component_mask(this->x_displacement) |
                                                        this->fe.component_mask(this->y_displacement) ));
@@ -4614,13 +4614,13 @@ namespace NonLinearPoroViscoElasticity
               {
                   VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                             100,
-                                                            ZeroFunction<dim>(this->n_components),
+                                                            Functions::ZeroFunction<dim>(this->n_components),
                                                             constraints,
                                                             (this->fe.component_mask(this->pressure)));
               }
               VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                         4,
-                                                        ZeroFunction<dim>(this->n_components),
+                                                        Functions::ZeroFunction<dim>(this->n_components),
                                                         constraints,
                                                         this->fe.component_mask(this->z_displacement) );
 
@@ -4770,14 +4770,14 @@ namespace NonLinearPoroViscoElasticity
               {
                   VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                             100,
-                                                            ZeroFunction<dim>(this->n_components),
+                                                            Functions::ZeroFunction<dim>(this->n_components),
                                                             constraints,
                                                             (this->fe.component_mask(this->pressure)));
               }
 
               VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                         4,
-                                                        ZeroFunction<dim>(this->n_components),
+                                                        Functions::ZeroFunction<dim>(this->n_components),
                                                         constraints,
                                                       (this->fe.component_mask(this->x_displacement) |
                                                        this->fe.component_mask(this->y_displacement) |
@@ -4798,7 +4798,7 @@ namespace NonLinearPoroViscoElasticity
 
                VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                           5,
-                                                          ZeroFunction<dim>(this->n_components),
+                                                          Functions::ZeroFunction<dim>(this->n_components),
                                                           constraints,
                                                           (this->fe.component_mask(this->x_displacement) |
                                                            this->fe.component_mask(this->y_displacement) ));
@@ -4920,14 +4920,14 @@ namespace NonLinearPoroViscoElasticity
               {
                   VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                             100,
-                                                            ZeroFunction<dim>(this->n_components),
+                                                            Functions::ZeroFunction<dim>(this->n_components),
                                                             constraints,
                                                             (this->fe.component_mask(this->pressure)));
               }
 
               VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                         5,
-                                                        ZeroFunction<dim>(this->n_components),
+                                                        Functions::ZeroFunction<dim>(this->n_components),
                                                         constraints,
                                                       (this->fe.component_mask(this->x_displacement) |
                                                        this->fe.component_mask(this->y_displacement) |
@@ -4948,7 +4948,7 @@ namespace NonLinearPoroViscoElasticity
 
                VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                           4,
-                                                          ZeroFunction<dim>(this->n_components),
+                                                          Functions::ZeroFunction<dim>(this->n_components),
                                                           constraints,
                                                           (this->fe.component_mask(this->y_displacement) |
                                                            this->fe.component_mask(this->z_displacement) ));

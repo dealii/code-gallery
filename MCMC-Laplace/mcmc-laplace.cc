@@ -255,7 +255,7 @@ namespace ForwardSimulator
 
       VectorTools::interpolate_boundary_values(dof_handler,
                                                0,
-                                               ZeroFunction<dim>(),
+                                               Functions::ZeroFunction<dim>(),
                                                boundary_values);
     }
   }

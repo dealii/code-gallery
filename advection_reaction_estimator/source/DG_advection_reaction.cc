@@ -330,8 +330,8 @@ void AdvectionReaction<dim>::assemble_system()
 			{
 				for (unsigned int j = 0; j < n_dofs; ++j)
 				{
-					copy_data_face.cell_matrix(i, j) += (beta(q_points[qpoint]) * normals[qpoint] * fe_iv.average(j, qpoint) * fe_iv.jump(i, qpoint) +
-														 theta * std::abs(beta_dot_n) * fe_iv.jump(j, qpoint) * fe_iv.jump(i, qpoint)) *
+					copy_data_face.cell_matrix(i, j) += (beta(q_points[qpoint]) * normals[qpoint] * fe_iv.average_of_shape_values(j, qpoint) * fe_iv.jump_in_shape_values(i, qpoint) +
+														 theta * std::abs(beta_dot_n) * fe_iv.jump_in_shape_values(j, qpoint) * fe_iv.jump_in_shape_values(i, qpoint)) *
 														JxW[qpoint];
 				}
 			}

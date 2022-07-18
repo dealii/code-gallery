@@ -359,7 +359,7 @@ void TestLevelSet<dim>::initial_condition()
   completely_distributed_solution_phi = 0;
   VectorTools::interpolate(dof_handler_LS,
                            InitialPhi<dim>(PROBLEM, sharpness),
-                           //ZeroFunction<dim>(),
+                           //Functions::ZeroFunction<dim>(),
                            completely_distributed_solution_phi);
   constraints.distribute (completely_distributed_solution_phi);
   locally_relevant_solution_phi = completely_distributed_solution_phi;

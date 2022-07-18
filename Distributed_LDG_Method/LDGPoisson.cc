@@ -330,8 +330,8 @@ make_dofs()
   DoFTools::extract_locally_relevant_dofs(dof_handler,
                                           locally_relevant_dofs);
 
-  std::vector<types::global_dof_index> dofs_per_component(dim+1);
-  DoFTools::count_dofs_per_component(dof_handler, dofs_per_component);
+  const std::vector<types::global_dof_index> dofs_per_component =
+    DoFTools::count_dofs_per_fe_component(dof_handler);
 
   // Discontinuous Galerkin methods are fantanistic methods in part because
   // many of the limitations of traditional finite element methods no longer
@@ -360,7 +360,7 @@ make_dofs()
                                        dsp);
 
   SparsityTools::distribute_sparsity_pattern(dsp,
-                                             dof_handler.n_locally_owned_dofs_per_processor(),
+                                             dof_handler.locally_owned_dofs(),
                                              MPI_COMM_WORLD,
                                              locally_relevant_dofs);
 
@@ -641,7 +641,7 @@ assemble_system()
                       // compute the interior fluxes across the children faces
                       // and the neighbor's face.
                       for (unsigned int subface_no=0;
-                           subface_no < face->number_of_children();
+                           subface_no < face->n_children();
                            ++subface_no)
                         {
                           // We then get the neighbor cell's subface that
