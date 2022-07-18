@@ -26,25 +26,25 @@ In this section, we briefly describe the problem and the approach employed. A de
 $$
 \begin{align*}
 \frac{\partial \mathbf{u}}{\partial t} + \nabla\cdot\left(\mathbf{u} \otimes\mathbf{u}\right) + \nabla p &= \frac{1}{Re}\Delta\mathbf{u} + \mathbf{f} \\
-\nabla\cdot\mathbf{u} &= 0,   
+\nabla\cdot\mathbf{u} &= 0,
 \end{align*}
 $$
 
-where $Re$ denotes the Reynolds number. In the case of projection methods, difficulties arise in choosing the boundary conditions to be imposed for the Poisson equation which is to be solved at each time step to compute the pressure. An alternative that allows to avoid or reduce some of these problems is the so-called artificial compressibility formulation. In this formulation, the incompressibility constraint is relaxed and a time evolution equation for the pressure is introduced, which is characterized by an artificial sound speed $ c, $ so as to obtain:
+where $Re$ denotes the Reynolds number. In the case of projection methods, difficulties arise in choosing the boundary conditions to be imposed for the Poisson equation which is to be solved at each time step to compute the pressure. An alternative that allows to avoid or reduce some of these problems is the so-called artificial compressibility formulation. In this formulation, the incompressibility constraint is relaxed and a time evolution equation for the pressure is introduced, which is characterized by an artificial sound speed $c$, so as to obtain:
 
 $$
 \begin{align*}
 \frac{\partial\mathbf{u}}{\partial t} + \nabla\cdot\left(\mathbf{u}\otimes\mathbf{u}\right) + \nabla p &= \frac{1}{Re}\Delta\mathbf{u} + \mathbf{f} \\
-\frac{1}{c^2}\frac{\partial p}{\partial t} + \nabla\cdot\mathbf{u} &= 0.   
+\frac{1}{c^2}\frac{\partial p}{\partial t} + \nabla\cdot\mathbf{u} &= 0.
 \end{align*}
 $$
 
-For the sake of simplicity, we shall only consider $\mathbf{f} = \mathbf{0}$. The numerical scheme is an extension of the projection method introduced in [2] based on the TR-BDF2 method. For a generic time-dependent problem $\bm{u}^{'} = \mathcal{N}(\bm{u})$, the TR-BDF2 method can be described in terms of two stages as follows:
+For the sake of simplicity, we shall only consider $\mathbf{f} = \mathbf{0}$. The numerical scheme is an extension of the projection method introduced in [2] based on the TR-BDF2 method. For a generic time-dependent problem $u^{'} = \mathcal{N}(u)$, the TR-BDF2 method can be described in terms of two stages as follows:
 
 $$
 \begin{align*}
-\frac{\bm{u}^{n+\gamma} - \bm{u}^{n}}{\gamma\Delta t} &= \frac{1}{2}\mathcal{N}\left(\bm{u}^{n+\gamma}\right) + \frac{1}{2}\mathcal{N}\left(\bm{u}^{n}\right) \\
-\frac{\bm{u}^{n+1} - \bm{u}^{n + \gamma}}{\left(1 - \gamma\right)\Delta t} &= \frac{1}{2 - \gamma}\mathcal{N}\left(\bm{u}^{n+1}\right) + \frac{1 - \gamma}{2\left(2 - \gamma\right)}\mathcal{N}\left(\bm{u}^{n+\gamma}\right) + \frac{1 - \gamma}{2\left(2 - \gamma\right)}\mathcal{N}\left(\bm{u}^{n}\right).
+\frac{u^{n+\gamma} - u^{n}}{\gamma\Delta t} &= \frac{1}{2}\mathcal{N}\left(u^{n+\gamma}\right) + \frac{1}{2}\mathcal{N}\left(u^{n}\right) \\
+\frac{u^{n+1} - u^{n + \gamma}}{\left(1 - \gamma\right)\Delta t} &= \frac{1}{2 - \gamma}\mathcal{N}\left(u^{n+1}\right) + \frac{1 - \gamma}{2\left(2 - \gamma\right)}\mathcal{N}\left(u^{n+\gamma}\right) + \frac{1 - \gamma}{2\left(2 - \gamma\right)}\mathcal{N}\left(u^{n}\right).
 \end{align*}
 $$
 
@@ -61,15 +61,18 @@ $$
 Notice that, in order to avoid solving a nonlinear system at each time step, an approximation is introduced in the nonlinear momentum advection term, so that $\mathbf{u}^{n + \frac{\gamma}{2}}$ is defined by extrapolation as
 
 $$
+\begin{align*}
 \mathbf{u}^{n + \frac{\gamma}{2}} = \left(1 + \frac{\gamma}{2\left(1-\gamma\right)}\right)\mathbf{u}^{n} - \frac{\gamma}{2\left(1-\gamma\right)}\mathbf{u}^{n-1}.
+\end{align*}
 $$
 
 For what concerns the pressure, we introduce the intermediate update
 $\mathbf{u}^{n+\gamma,\*\*} = \mathbf{u}^{n+\gamma,\*} + \gamma\Delta t\nabla  p^{n}$, and we solve the following Helmholtz equation
 
 $$
-\frac{1}{c^2}\frac{p^{n+\gamma}}{\gamma^2\Delta t^2} -\Delta p^{n+\gamma} =
-- \frac{1}{\gamma\Delta t} \nabla\cdot\mathbf{u}^{n+\gamma,\*\*}  + \frac{1}{c^2}\frac{p^{n }}{\gamma^2\Delta t^2}
+\begin{align*}
+\frac{1}{c^2}\frac{p^{n+\gamma}}{\gamma^2\Delta t^2} -\Delta p^{n+\gamma} = - \frac{1}{\gamma\Delta t} \nabla\cdot\mathbf{u}^{n+\gamma,\*\*}  + \frac{1}{c^2}\frac{p^{n }}{\gamma^2\Delta t^2}
+\end{align*}
 $$
 
 and, finally, we set $\mathbf{u}^{n+\gamma} = \mathbf{u}^{n+\gamma,\*\*} - \gamma\Delta t\nabla  p^{n+\gamma}$.
@@ -89,7 +92,7 @@ A Jacobi preconditioner is used for the two momentum predictors, whereas a Geome
 
 #### Test case ####
 
-We test the code with a classical benchmark case, namely the flow past a cylinder in 2D at $Re = 100$ (see [1] for all the details). The image shows the contour plot of the velocity magnitude at $ t = T_{f} = 400 $. The evolution of the lift and drag coefficients from $ t = 385 $ to $ t = T_{f} $ are also reported and the expected periodic behaviour is retrieved.
+We test the code with a classical benchmark case, namely the flow past a cylinder in 2D at $Re = 100$ (see [1] for all the details). The image shows the contour plot of the velocity magnitude at $t = T_{f} = 400$. The evolution of the lift and drag coefficients from $t = 385$ to $t = T_{f}$ are also reported and the expected periodic behaviour is retrieved.
 
 ![contour](./doc/velocity_magnitude.png)
 
