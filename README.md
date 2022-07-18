@@ -21,4 +21,3 @@ tutorial and the code gallery.
 
 The examples in the code-gallery of periodically adjusted so that they maintain compatibility with a "recent" version of the `deal.II`. This means that their implementation may be modified slightly in the process, breaking compatibility with older versions of `deal.II`. Older version of each contributed code may be attained by checking out the appropriate git commit of the code-gallery repository.
 
-The minimum required version of `deal.II` for all code-gallery examples is `9.1`.
