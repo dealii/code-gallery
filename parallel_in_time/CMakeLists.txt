@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0)
 
 # Set the name of the project and target:
 SET(TARGET "parallel_in_time")
