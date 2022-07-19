@@ -4,8 +4,8 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
-#include <deal.II/lac/petsc_parallel_vector.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/lac/petsc_solver.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/grid/grid_generator.h>
@@ -25,7 +25,7 @@
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/lac/petsc_parallel_vector.h>
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/base/parameter_handler.h>
@@ -551,39 +551,44 @@ void NavierStokesSolver<dim>::setup_VECTORS()
   DynamicSparsityPattern dsp_Matrix(locally_relevant_dofs_U);
   DoFTools::make_sparsity_pattern(dof_handler_U,dsp_Matrix,constraints,false);
   SparsityTools::distribute_sparsity_pattern(dsp_Matrix,
-                                             dof_handler_U.n_locally_owned_dofs_per_processor(),mpi_communicator,
+                                             dof_handler_U.locally_owned_dofs(),
+                                             mpi_communicator,
                                              locally_relevant_dofs_U);
-  system_Matrix_u.reinit(mpi_communicator,dsp_Matrix,
-                         dof_handler_U.n_locally_owned_dofs_per_processor(),
-                         dof_handler_U.n_locally_owned_dofs_per_processor(),
-                         Utilities::MPI::this_mpi_process(mpi_communicator));
-  system_Matrix_v.reinit(mpi_communicator,dsp_Matrix,
-                         dof_handler_U.n_locally_owned_dofs_per_processor(),
-                         dof_handler_U.n_locally_owned_dofs_per_processor(),
-                         Utilities::MPI::this_mpi_process(mpi_communicator));
-  system_Matrix_w.reinit(mpi_communicator,dsp_Matrix,
-                         dof_handler_U.n_locally_owned_dofs_per_processor(),
-                         dof_handler_U.n_locally_owned_dofs_per_processor(),
-                         Utilities::MPI::this_mpi_process(mpi_communicator));
+  system_Matrix_u.reinit(dof_handler_U.locally_owned_dofs(),
+                         dof_handler_U.locally_owned_dofs(),
+                         dsp_Matrix,
+                         mpi_communicator);
+  system_Matrix_v.reinit(dof_handler_U.locally_owned_dofs(),
+                         dof_handler_U.locally_owned_dofs(),
+                         dsp_Matrix,
+                         mpi_communicator);
+  system_Matrix_w.reinit(dof_handler_U.locally_owned_dofs(),
+                         dof_handler_U.locally_owned_dofs(),
+                         dsp_Matrix,
+                         mpi_communicator);
   rebuild_Matrix_U=true;
   // sparsity pattern for S
   DynamicSparsityPattern dsp_S(locally_relevant_dofs_P);
   DoFTools::make_sparsity_pattern(dof_handler_P,dsp_S,constraints_psi,false);
   SparsityTools::distribute_sparsity_pattern(dsp_S,
-                                             dof_handler_P.n_locally_owned_dofs_per_processor(),mpi_communicator,
+                                             dof_handler_P.locally_owned_dofs(),
+                                             mpi_communicator,
                                              locally_relevant_dofs_P);
-  system_S.reinit(mpi_communicator,dsp_S,dof_handler_P.n_locally_owned_dofs_per_processor(),
-                  dof_handler_P.n_locally_owned_dofs_per_processor(),
-                  Utilities::MPI::this_mpi_process(mpi_communicator));
+  system_S.reinit(dof_handler_P.locally_owned_dofs(),
+                  dof_handler_P.locally_owned_dofs(),
+                  dsp_S,
+                  mpi_communicator);
   // sparsity pattern for M
   DynamicSparsityPattern dsp_M(locally_relevant_dofs_P);
   DoFTools::make_sparsity_pattern(dof_handler_P,dsp_M,constraints_psi,false);
   SparsityTools::distribute_sparsity_pattern(dsp_M,
-                                             dof_handler_P.n_locally_owned_dofs_per_processor(),mpi_communicator,
+                                             dof_handler_P.locally_owned_dofs(),
+                                             mpi_communicator,
                                              locally_relevant_dofs_P);
-  system_M.reinit(mpi_communicator,dsp_M,dof_handler_P.n_locally_owned_dofs_per_processor(),
-                  dof_handler_P.n_locally_owned_dofs_per_processor(),
-                  Utilities::MPI::this_mpi_process(mpi_communicator));
+  system_M.reinit(dof_handler_P.locally_owned_dofs(),
+                  dof_handler_P.locally_owned_dofs(),
+                  dsp_M,
+                  mpi_communicator);
   rebuild_S_M=true;
 }
 

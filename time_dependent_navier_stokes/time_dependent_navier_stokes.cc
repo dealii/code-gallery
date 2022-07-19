@@ -17,9 +17,9 @@
 #include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparsity_tools.h>
 
-#include <deal.II/lac/petsc_parallel_block_sparse_matrix.h>
-#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
-#include <deal.II/lac/petsc_parallel_vector.h>
+#include <deal.II/lac/petsc_block_sparse_matrix.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/lac/petsc_solver.h>
 
@@ -645,9 +645,7 @@ namespace fluid
     std::vector<unsigned int> block_component(dim + 1, 0);
     block_component[dim] = 1;
     DoFRenumbering::component_wise(dof_handler, block_component);
-    dofs_per_block.resize(2);
-    DoFTools::count_dofs_per_block(
-      dof_handler, dofs_per_block, block_component);
+    dofs_per_block = DoFTools::count_dofs_per_fe_block(dof_handler, block_component);
     // Partitioning.
     unsigned int dof_u = dofs_per_block[0];
     unsigned int dof_p = dofs_per_block[1];
@@ -720,7 +718,7 @@ namespace fluid
     sparsity_pattern.copy_from(dsp);
     SparsityTools::distribute_sparsity_pattern(
       dsp,
-      dof_handler.locally_owned_dofs_per_processor(),
+      dof_handler.locally_owned_dofs(),
       mpi_communicator,
       locally_relevant_dofs);
 
@@ -1074,7 +1072,7 @@ namespace fluid
     FEValuesExtractors::Vector velocity(0);
     KellyErrorEstimator<dim>::estimate(dof_handler,
                                        face_quad_formula,
-                                       typename FunctionMap<dim>::type(),
+                                       {},
                                        present_solution,
                                        estimated_error_per_cell,
                                        fe.component_mask(velocity));

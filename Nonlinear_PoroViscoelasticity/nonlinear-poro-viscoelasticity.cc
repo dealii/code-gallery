@@ -49,7 +49,6 @@
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_boundary_lib.h>
 #include <deal.II/grid/tria_iterator.h>
 
 #include <deal.II/fe/fe_dgp_monomial.h>
@@ -2006,9 +2005,7 @@ namespace NonLinearPoroViscoElasticity
         DoFRenumbering::component_wise(dof_handler_ref, block_component);
 
         // Count the number of DoFs in each block
-        dofs_per_block.clear();
-        dofs_per_block.resize(n_blocks);
-        DoFTools::count_dofs_per_block(dof_handler_ref, dofs_per_block, block_component);
+        dofs_per_block = DoFTools::count_dofs_per_fe_block(dof_handler_ref, block_component);
 
         // Setup the sparsity pattern and tangent matrix
         all_locally_owned_dofs = DoFTools::locally_owned_dofs_per_subdomain (dof_handler_ref);
@@ -3763,7 +3760,7 @@ namespace NonLinearPoroViscoElasticity
             for (unsigned int d=0; d<(solution_p_vector.size()); ++d)
                 solution_vector[solution_u_vector.size()+d] = solution_p_vector[d];
 
-            Functions::FEFieldFunction<dim,DoFHandler<dim>,Vector<double>>
+            Functions::FEFieldFunction<dim,Vector<double>>
             find_solution(dof_handler_ref, solution_vector);
 
             for (unsigned int p=0; p<tracked_vertices_IN.size(); ++p)
@@ -4005,7 +4002,7 @@ namespace NonLinearPoroViscoElasticity
                                      0.5);
 
             const double rot_angle = 3.0*numbers::PI/2.0;
-            GridTools::rotate( rot_angle, 1, this->triangulation);
+            GridTools::rotate( Point<3>::unit_vector(1), rot_angle, this->triangulation);
 
             this->triangulation.reset_manifold(0);
             static const CylindricalManifold<dim> manifold_description_3d(2);
@@ -4032,7 +4029,7 @@ namespace NonLinearPoroViscoElasticity
             {
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        2,
-                                                       ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                       Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
             }
@@ -4225,7 +4222,7 @@ namespace NonLinearPoroViscoElasticity
             {
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        101,
-                                                       ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                       Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
             }
@@ -4401,13 +4398,13 @@ namespace NonLinearPoroViscoElasticity
             {
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        1,
-                                                       ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                       Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
 
               VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                        2,
-                                                       ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                       Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                        constraints,
                                                        (this->fe.component_mask(this->pressure)));
             }
@@ -4606,7 +4603,7 @@ namespace NonLinearPoroViscoElasticity
               {
                   VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                            100,
-                                                           ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                           Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                            constraints,
                                                            (this->fe.component_mask(this->pressure)));
               }
@@ -4647,7 +4644,7 @@ namespace NonLinearPoroViscoElasticity
 
                 VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                            5,
-                                                           ConstantFunction<dim>(value[2],this->n_components),
+                                                           Functions::ConstantFunction<dim>(value[2],this->n_components),
                                                            constraints,
                                                            this->fe.component_mask(direction));
             }
@@ -4762,7 +4759,7 @@ namespace NonLinearPoroViscoElasticity
               {
                   VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                            100,
-                                                           ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                           Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                            constraints,
                                                            (this->fe.component_mask(this->pressure)));
               }
@@ -4792,7 +4789,7 @@ namespace NonLinearPoroViscoElasticity
 
                 VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                            5,
-                                                           ConstantFunction<dim>(value[2],this->n_components),
+                                                           Functions::ConstantFunction<dim>(value[2],this->n_components),
                                                            constraints,
                                                            this->fe.component_mask(direction) );
 
@@ -4912,7 +4909,7 @@ namespace NonLinearPoroViscoElasticity
               {
                   VectorTools::interpolate_boundary_values(this->dof_handler_ref,
                                                            100,
-                                                           ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
+                                                           Functions::ConstantFunction<dim>(this->parameters.drained_pressure,this->n_components),
                                                            constraints,
                                                            (this->fe.component_mask(this->pressure)));
               }
@@ -4942,7 +4939,7 @@ namespace NonLinearPoroViscoElasticity
 
                 VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                            4,
-                                                           ConstantFunction<dim>(value[0],this->n_components),
+                                                           Functions::ConstantFunction<dim>(value[0],this->n_components),
                                                            constraints,
                                                            this->fe.component_mask(direction));
 
@@ -4968,7 +4965,7 @@ namespace NonLinearPoroViscoElasticity
                     const double current_time = this->time.get_current();
                     const double final_time   = this->time.get_end();
                     const double num_cycles   = 3.0;
-                    const Point< 3, double> axis (0.0,1.0,0.0);
+                    const Tensor<1,3> axis ({0.0,1.0,0.0});
                     const double angle = numbers::PI;
                     static const Tensor< 2, dim, double> R(Physics::Transformations::Rotations::rotation_matrix_3d(axis,angle));
 

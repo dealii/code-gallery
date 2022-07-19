@@ -4,9 +4,9 @@
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
 #include <deal.II/lac/petsc_sparse_matrix.h>
-#include <deal.II/lac/petsc_parallel_vector.h>
+#include <deal.II/lac/petsc_sparse_matrix.h>
+#include <deal.II/lac/petsc_vector.h>
 #include <deal.II/lac/petsc_solver.h>
 #include <deal.II/lac/petsc_precondition.h>
 #include <deal.II/grid/grid_generator.h>
@@ -490,87 +490,57 @@ void LevelSetSolver<dim>::setup()
   DynamicSparsityPattern dsp (locally_relevant_dofs_LS);
   DoFTools::make_sparsity_pattern (dof_handler_LS,dsp,constraints,false);
   SparsityTools::distribute_sparsity_pattern (dsp,
-                                              dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                                              dof_handler_LS.locally_owned_dofs(),
                                               mpi_communicator,
                                               locally_relevant_dofs_LS);
-  MC_matrix.reinit (mpi_communicator,
-                    dsp,
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    Utilities::MPI::this_mpi_process(mpi_communicator));
-  Cx_matrix.reinit (mpi_communicator,
-                    dsp,
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    Utilities::MPI::this_mpi_process(mpi_communicator));
-  CTx_matrix.reinit (mpi_communicator,
-                     dsp,
-                     dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                     dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                     Utilities::MPI::this_mpi_process(mpi_communicator));
-  Cy_matrix.reinit (mpi_communicator,
-                    dsp,
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    Utilities::MPI::this_mpi_process(mpi_communicator));
-  CTy_matrix.reinit (mpi_communicator,
-                     dsp,
-                     dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                     dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                     Utilities::MPI::this_mpi_process(mpi_communicator));
+  MC_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                    dof_handler_LS.locally_owned_dofs(),
+                    dsp, mpi_communicator);
+  Cx_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                    dof_handler_LS.locally_owned_dofs(),
+                    dsp, mpi_communicator);
+  CTx_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                     dof_handler_LS.locally_owned_dofs(),
+                     dsp, mpi_communicator);
+  Cy_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                    dof_handler_LS.locally_owned_dofs(),
+                    dsp, mpi_communicator);
+  CTy_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                     dof_handler_LS.locally_owned_dofs(),
+                     dsp, mpi_communicator);
   if (dim==3)
     {
-      Cz_matrix.reinit (mpi_communicator,
-                        dsp,
-                        dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                        dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                        Utilities::MPI::this_mpi_process(mpi_communicator));
-      CTz_matrix.reinit (mpi_communicator,
-                         dsp,
-                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                         Utilities::MPI::this_mpi_process(mpi_communicator));
+      Cz_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                        dof_handler_LS.locally_owned_dofs(),
+                        dsp, mpi_communicator);
+      CTz_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                         dof_handler_LS.locally_owned_dofs(),
+                         dsp, mpi_communicator);
     }
-  dLij_matrix.reinit (mpi_communicator,
-                      dsp,
-                      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                      Utilities::MPI::this_mpi_process(mpi_communicator));
-  EntRes_matrix.reinit (mpi_communicator,
-                        dsp,
-                        dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                        dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                        Utilities::MPI::this_mpi_process(mpi_communicator));
-  SuppSize_matrix.reinit (mpi_communicator,
-                          dsp,
-                          dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                          dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                          Utilities::MPI::this_mpi_process(mpi_communicator));
-  dCij_matrix.reinit (mpi_communicator,
-                      dsp,
-                      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                      Utilities::MPI::this_mpi_process(mpi_communicator));
-  A_matrix.reinit (mpi_communicator,
-                   dsp,
-                   dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                   dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                   Utilities::MPI::this_mpi_process(mpi_communicator));
-  LxA_matrix.reinit (mpi_communicator,
-                     dsp,
-                     dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                     dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                     Utilities::MPI::this_mpi_process(mpi_communicator));
-  Akp1_matrix.reinit (mpi_communicator,
-                      dsp,
-                      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                      dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                      Utilities::MPI::this_mpi_process(mpi_communicator));
-  LxAkp1_matrix.reinit (mpi_communicator,
-                        dsp,
-                        dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                        dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                        Utilities::MPI::this_mpi_process(mpi_communicator));
+  dLij_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                      dof_handler_LS.locally_owned_dofs(),
+                      dsp, mpi_communicator);
+  EntRes_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                        dof_handler_LS.locally_owned_dofs(),
+                        dsp, mpi_communicator);
+  SuppSize_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                          dof_handler_LS.locally_owned_dofs(),
+                          dsp, mpi_communicator);
+  dCij_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                      dof_handler_LS.locally_owned_dofs(),
+                      dsp, mpi_communicator);
+  A_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                   dof_handler_LS.locally_owned_dofs(),
+                   dsp, mpi_communicator);
+  LxA_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                     dof_handler_LS.locally_owned_dofs(),
+                     dsp, mpi_communicator);
+  Akp1_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                      dof_handler_LS.locally_owned_dofs(),
+                      dsp, mpi_communicator);
+  LxAkp1_matrix.reinit (dof_handler_LS.locally_owned_dofs(),
+                        dof_handler_LS.locally_owned_dofs(),
+                        dsp, mpi_communicator);
   //COMPUTE MASS MATRICES (AND OTHERS) FOR FIRST TIME STEP //
   assemble_ML();
   invert_ML();
