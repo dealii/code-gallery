@@ -177,7 +177,7 @@ void CDRProblem<dim>::setup_system()
   DoFTools::make_sparsity_pattern(dof_handler, dynamic_sparsity_pattern,
                                   constraints, /*keep_constrained_dofs*/true);
   SparsityTools::distribute_sparsity_pattern
-  (dynamic_sparsity_pattern, dof_handler.n_locally_owned_dofs_per_processor(),
+  (dynamic_sparsity_pattern, dof_handler.locally_owned_dofs(),
    mpi_communicator, locally_relevant_dofs);
 
   system_rhs.reinit(locally_owned_dofs, mpi_communicator);

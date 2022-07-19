@@ -235,21 +235,21 @@ void MultiPhase<dim>::initial_condition()
   // init condition for u=0
   completely_distributed_solution_u = 0;
   VectorTools::interpolate(dof_handler_U,
-                           ZeroFunction<dim>(),
+                           Functions::ZeroFunction<dim>(),
                            completely_distributed_solution_u);
   constraints.distribute (completely_distributed_solution_u);
   locally_relevant_solution_u = completely_distributed_solution_u;
   // init condition for v
   completely_distributed_solution_v = 0;
   VectorTools::interpolate(dof_handler_U,
-                           ZeroFunction<dim>(),
+                           Functions::ZeroFunction<dim>(),
                            completely_distributed_solution_v);
   constraints.distribute (completely_distributed_solution_v);
   locally_relevant_solution_v = completely_distributed_solution_v;
   // init condition for p
   completely_distributed_solution_p = 0;
   VectorTools::interpolate(dof_handler_P,
-                           ZeroFunction<dim>(),
+                           Functions::ZeroFunction<dim>(),
                            completely_distributed_solution_p);
   constraints.distribute (completely_distributed_solution_p);
   locally_relevant_solution_p = completely_distributed_solution_p;
@@ -275,45 +275,45 @@ void MultiPhase<dim>::get_boundary_values_U()
   if (PROBLEM==BREAKING_DAM || PROBLEM==FALLING_DROP)
     {
       //LEFT
-      VectorTools::interpolate_boundary_values (dof_handler_U,0,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,0,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,0,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,0,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       // RIGHT
-      VectorTools::interpolate_boundary_values (dof_handler_U,1,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,1,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,1,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,1,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       // BOTTOM
-      VectorTools::interpolate_boundary_values (dof_handler_U,2,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,2,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,2,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,2,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       // TOP
-      VectorTools::interpolate_boundary_values (dof_handler_U,3,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,3,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,3,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,3,Functions::ZeroFunction<dim>(),map_boundary_values_v);
     }
   else if (PROBLEM==SMALL_WAVE_PERTURBATION)
     {
       // no slip in bottom and top and slip in left and right
       //LEFT
-      VectorTools::interpolate_boundary_values (dof_handler_U,0,ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,0,Functions::ZeroFunction<dim>(),map_boundary_values_u);
       // RIGHT
-      VectorTools::interpolate_boundary_values (dof_handler_U,1,ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,1,Functions::ZeroFunction<dim>(),map_boundary_values_u);
       // BOTTOM
-      VectorTools::interpolate_boundary_values (dof_handler_U,2,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,2,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,2,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,2,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       // TOP
-      VectorTools::interpolate_boundary_values (dof_handler_U,3,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,3,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,3,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,3,Functions::ZeroFunction<dim>(),map_boundary_values_v);
     }
   else if (PROBLEM==FILLING_TANK)
     {
       //LEFT: entry in x, zero in y
       VectorTools::interpolate_boundary_values (dof_handler_U,0,BoundaryU<dim>(PROBLEM),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,0,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,0,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       //RIGHT: no-slip condition
-      VectorTools::interpolate_boundary_values (dof_handler_U,1,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,1,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,1,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,1,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       //BOTTOM: non-slip
-      VectorTools::interpolate_boundary_values (dof_handler_U,2,ZeroFunction<dim>(),map_boundary_values_u);
-      VectorTools::interpolate_boundary_values (dof_handler_U,2,ZeroFunction<dim>(),map_boundary_values_v);
+      VectorTools::interpolate_boundary_values (dof_handler_U,2,Functions::ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,2,Functions::ZeroFunction<dim>(),map_boundary_values_v);
       //TOP: exit in y, zero in x
-      VectorTools::interpolate_boundary_values (dof_handler_U,3,ZeroFunction<dim>(),map_boundary_values_u);
+      VectorTools::interpolate_boundary_values (dof_handler_U,3,Functions::ZeroFunction<dim>(),map_boundary_values_u);
       VectorTools::interpolate_boundary_values (dof_handler_U,3,BoundaryV<dim>(PROBLEM),map_boundary_values_v);
     }
   else

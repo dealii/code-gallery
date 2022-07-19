@@ -50,20 +50,20 @@ double InitialPhi<dim>::value (const Point<dim> &p,
 //////////////////// FORCE TERMS ///// ////////////////
 ///////////////////////////////////////////////////////
 template <int dim>
-class ForceTerms : public ConstantFunction <dim>
+class ForceTerms : public Functions::ConstantFunction <dim>
 {
 public:
-  ForceTerms (const std::vector<double> values) : ConstantFunction<dim>(values) {}
+  ForceTerms (const std::vector<double> values) : Functions::ConstantFunction<dim>(values) {}
 };
 
 /////////////////////////////////////////////////////
 //////////////////// BOUNDARY PHI ///////////////////
 /////////////////////////////////////////////////////
 template <int dim>
-class BoundaryPhi : public ConstantFunction <dim>
+class BoundaryPhi : public Functions::ConstantFunction <dim>
 {
 public:
-  BoundaryPhi (const double value, const unsigned int n_components=1) : ConstantFunction<dim>(value,n_components) {}
+  BoundaryPhi (const double value, const unsigned int n_components=1) : Functions::ConstantFunction<dim>(value,n_components) {}
 };
 
 //////////////////////////////////////////////////////////

@@ -542,8 +542,8 @@ namespace MFMFE
 
     dof_handler.distribute_dofs(fe);
     DoFRenumbering::component_wise (dof_handler);
-    std::vector<types::global_dof_index> dofs_per_component (dim+1);
-    DoFTools::count_dofs_per_component (dof_handler, dofs_per_component);
+    const std::vector<types::global_dof_index> dofs_per_component
+      = DoFTools::count_dofs_per_fe_component (dof_handler);
 
     QGaussLobatto<dim> quad(degree+1);
     QGauss<dim-1> face_quad(degree);
@@ -858,7 +858,7 @@ namespace MFMFE
 
     Vector<double> cellwise_errors (triangulation.n_active_cells());
 
-    QTrapez<1> q_trapez;
+    QTrapezoid<1> q_trapez;
     QIterated<dim> quadrature(q_trapez,degree+2);
     QGauss<dim> quadrature_super(degree);
 

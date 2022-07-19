@@ -1339,10 +1339,7 @@ namespace ViscoElasStripHole
     DoFRenumbering::component_wise(dof_handler, block_component);
 
     // Count DoFs in each block
-    dofs_per_block.clear();
-    dofs_per_block.resize(n_blocks);
-    DoFTools::count_dofs_per_block(dof_handler, dofs_per_block,
-                                   block_component);
+    dofs_per_block = DoFTools::count_dofs_per_fe_block(dof_handler, block_component);
 
     all_locally_owned_dofs = DoFTools::locally_owned_dofs_per_subdomain (dof_handler);
     std::vector<IndexSet> all_locally_relevant_dofs
@@ -1860,13 +1857,13 @@ namespace ViscoElasStripHole
       if (apply_dirichlet_bc == true)
         VectorTools::interpolate_boundary_values(dof_handler,
                                                  boundary_id,
-                                                 ZeroFunction<dim>(n_components),
+                                                 Functions::ZeroFunction<dim>(n_components),
                                                  constraints,
                                                  fe.component_mask(x_displacement));
       else
         VectorTools::interpolate_boundary_values(dof_handler,
                                                  boundary_id,
-                                                 ZeroFunction<dim>(n_components),
+                                                 Functions::ZeroFunction<dim>(n_components),
                                                  constraints,
                                                  fe.component_mask(x_displacement));
     }
@@ -1875,13 +1872,13 @@ namespace ViscoElasStripHole
       if (apply_dirichlet_bc == true)
         VectorTools::interpolate_boundary_values(dof_handler,
                                                  boundary_id,
-                                                 ZeroFunction<dim>(n_components),
+                                                 Functions::ZeroFunction<dim>(n_components),
                                                  constraints,
                                                  fe.component_mask(y_displacement));
       else
         VectorTools::interpolate_boundary_values(dof_handler,
                                                  boundary_id,
-                                                 ZeroFunction<dim>(n_components),
+                                                 Functions::ZeroFunction<dim>(n_components),
                                                  constraints,
                                                  fe.component_mask(y_displacement));
     }
@@ -1893,13 +1890,13 @@ namespace ViscoElasStripHole
           if (apply_dirichlet_bc == true)
             VectorTools::interpolate_boundary_values(dof_handler,
                                                      boundary_id,
-                                                     ZeroFunction<dim>(n_components),
+                                                     Functions::ZeroFunction<dim>(n_components),
                                                      constraints,
                                                      fe.component_mask(z_displacement));
           else
             VectorTools::interpolate_boundary_values(dof_handler,
                                                      boundary_id,
-                                                     ZeroFunction<dim>(n_components),
+                                                     Functions::ZeroFunction<dim>(n_components),
                                                      constraints,
                                                      fe.component_mask(z_displacement));
         }
@@ -1908,13 +1905,13 @@ namespace ViscoElasStripHole
           if (apply_dirichlet_bc == true)
             VectorTools::interpolate_boundary_values(dof_handler,
                                                      boundary_id,
-                                                     ZeroFunction<dim>(n_components),
+                                                     Functions::ZeroFunction<dim>(n_components),
                                                      constraints,
                                                      fe.component_mask(z_displacement));
           else
             VectorTools::interpolate_boundary_values(dof_handler,
                                                      boundary_id,
-                                                     ZeroFunction<dim>(n_components),
+                                                     Functions::ZeroFunction<dim>(n_components),
                                                      constraints,
                                                      fe.component_mask(z_displacement));
         }
@@ -1932,21 +1929,21 @@ namespace ViscoElasStripHole
                 const double delta_u_y = delta_length/2.0/n_stretch_steps;
                 VectorTools::interpolate_boundary_values(dof_handler,
                                                          boundary_id,
-                                                         ConstantFunction<dim>(delta_u_y,n_components),
+                                                         Functions::ConstantFunction<dim>(delta_u_y,n_components),
                                                          constraints,
                                                          fe.component_mask(y_displacement));
               }
             else
               VectorTools::interpolate_boundary_values(dof_handler,
                                                        boundary_id,
-                                                       ZeroFunction<dim>(n_components),
+                                                       Functions::ZeroFunction<dim>(n_components),
                                                        constraints,
                                                        fe.component_mask(y_displacement));
           }
         else
           VectorTools::interpolate_boundary_values(dof_handler,
                                                    boundary_id,
-                                                   ZeroFunction<dim>(n_components),
+                                                   Functions::ZeroFunction<dim>(n_components),
                                                    constraints,
                                                    fe.component_mask(y_displacement));
       }
@@ -2042,8 +2039,8 @@ namespace ViscoElasStripHole
       }
   }
 
-  template<int dim, class DH=DoFHandler<dim> >
-  class FilteredDataOut : public DataOut<dim, DH>
+  template<int dim>
+  class FilteredDataOut : public DataOut<dim>
   {
   public:
     FilteredDataOut (const unsigned int subdomain_id)
@@ -2053,7 +2050,7 @@ namespace ViscoElasStripHole
 
     virtual ~FilteredDataOut() {}
 
-    virtual typename DataOut<dim, DH>::cell_iterator
+    virtual typename DataOut<dim>::cell_iterator
     first_cell ()
     {
       auto cell = this->dofs->begin_active();
@@ -2063,15 +2060,15 @@ namespace ViscoElasStripHole
       return cell;
     }
 
-    virtual typename DataOut<dim, DH>::cell_iterator
-    next_cell (const typename DataOut<dim, DH>::cell_iterator &old_cell)
+    virtual typename DataOut<dim>::cell_iterator
+    next_cell (const typename DataOut<dim>::cell_iterator &old_cell)
     {
       if (old_cell != this->dofs->end())
         {
           const IteratorFilters::SubdomainEqualTo predicate(subdomain_id);
           return
             ++(FilteredIterator
-               <typename DataOut<dim, DH>::cell_iterator>
+               <typename DataOut<dim>::cell_iterator>
                (predicate,old_cell));
         }
       else

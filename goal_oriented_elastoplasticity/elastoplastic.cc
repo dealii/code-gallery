@@ -853,7 +853,7 @@ namespace ElastoPlastic
     // For the purposes of this program, we choose a simple form of boundary
     // displacement: we displace the top boundary with constant velocity
     // downwards. The rest of the boundary is either going to be fixed (and is
-    // then described using an object of type <code>ZeroFunction</code>) or free
+    // then described using an object of type <code>Functions::ZeroFunction</code>) or free
     // (Neumann-type, in which case nothing special has to be done).  The
     // implementation of the class describing the constant downward motion
     // should then be obvious using the knowledge we gained through all the
@@ -1010,10 +1010,10 @@ namespace ElastoPlastic
 
 
     template <int dim>
-    class BodyForce :  public ZeroFunction<dim>
+    class BodyForce :  public Functions::ZeroFunction<dim>
     {
     public:
-      BodyForce () : ZeroFunction<dim> (dim) {}
+      BodyForce () : Functions::ZeroFunction<dim> (dim) {}
     };
 
     template <int dim>
@@ -1189,10 +1189,10 @@ namespace ElastoPlastic
 
 
       template <int dim>
-      class BodyForce :  public ZeroFunction<dim>
+      class BodyForce :  public Functions::ZeroFunction<dim>
       {
       public:
-        BodyForce () : ZeroFunction<dim> (dim) {}
+        BodyForce () : Functions::ZeroFunction<dim> (dim) {}
       };
 
 
@@ -1328,10 +1328,10 @@ namespace ElastoPlastic
 
 
     template <int dim>
-    class BodyForce :  public ZeroFunction<dim>
+    class BodyForce :  public Functions::ZeroFunction<dim>
     {
     public:
-      BodyForce () : ZeroFunction<dim> (dim) {}
+      BodyForce () : Functions::ZeroFunction<dim> (dim) {}
     };
 
 
@@ -1493,10 +1493,10 @@ namespace ElastoPlastic
 
 
     template <int dim>
-    class BodyForce :  public ZeroFunction<dim>
+    class BodyForce :  public Functions::ZeroFunction<dim>
     {
     public:
-      BodyForce () : ZeroFunction<dim> (dim) {}
+      BodyForce () : Functions::ZeroFunction<dim> (dim) {}
     };
 
 
