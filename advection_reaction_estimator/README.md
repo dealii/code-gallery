@@ -35,7 +35,7 @@ classical DG theory, we need to ensure that
 @f[
 c(x) - \frac{1}{2}\nabla \cdot b \geq \gamma_0 >0
 @f]
-for some positive $\gamma_0$ so that we have coercivity in $L^2$ at the continuous level. Discrete coercivity is achieved by using a stronger norm which takes care of jumps, see Di-Pietro Ern [1] for details.
+for some positive $\gamma_0$ so that we have coercivity in $L^2$ at the continuous level. Discrete coercivity is achieved by using a stronger norm which takes care of jumps, see Di Pietro and Ern [2] for details.
 
 
 ## The weak formulation:
