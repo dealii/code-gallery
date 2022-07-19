@@ -2,7 +2,7 @@
 #  CMake script for the MCMC-laplace program:
 ##
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0)
 
 FIND_PACKAGE(deal.II 9.1 QUIET
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
