@@ -24,13 +24,13 @@ the same folder of the executable, following the same structure employed in step
 In this section, we briefly describe the problem and the approach employed. A detailed explanation of the numerical scheme is reported in [1]. We consider the classical unsteady incompressible Navier-Stokes equations, written in non-dimensional form as:
 @f{align*}{
 \frac{\partial \mathbf{u}}{\partial t} + \nabla\cdot\left(\mathbf{u} \otimes\mathbf{u}\right) + \nabla p &= \frac{1}{Re}\Delta\mathbf{u} + \mathbf{f} \\
-\nabla\cdot\mathbf{u} = 0,
+\nabla\cdot\mathbf{u} &= 0,
 @f}
 where $Re$ denotes the Reynolds number. In the case of projection methods, difficulties arise in choosing the boundary conditions to be imposed for the Poisson equation which is to be solved at each time step to compute the pressure. An alternative that allows to avoid or reduce some of these problems is the so-called artificial compressibility formulation. In this formulation, the incompressibility constraint is relaxed and a time evolution equation for the pressure is introduced, which is characterized by an artificial sound speed $c$, so as to obtain:
 
 @f{align*}{
 \frac{\partial\mathbf{u}}{\partial t} + \nabla\cdot\left(\mathbf{u}\otimes\mathbf{u}\right) + \nabla p &= \frac{1}{Re}\Delta\mathbf{u} + \mathbf{f} \\
-\frac{1}{c^2}\frac{\partial p}{\partial t} + \nabla\cdot\mathbf{u} = 0.
+\frac{1}{c^2}\frac{\partial p}{\partial t} + \nabla\cdot\mathbf{u} &= 0.
 @f}
 
 For the sake of simplicity, we shall only consider $\mathbf{f} =
