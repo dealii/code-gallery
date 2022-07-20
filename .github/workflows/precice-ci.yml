@@ -31,5 +31,5 @@ jobs:
          
          echo $command
          
-         docker pull dealii/dealii:v9.2.0-focal
-         docker run -t dealii/dealii:v9.2.0-focal /bin/sh -c "$command";
+         docker pull dealii/dealii:v9.4.0-focal
+         docker run -t dealii/dealii:v9.4.0-focal /bin/sh -c "$command";
