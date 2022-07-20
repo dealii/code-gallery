@@ -133,15 +133,15 @@ This solution has an internal layer along the line $y=\frac{1}{2} -x$, hence we 
 
 The next image is the 3D view of the numerical solution:
 
-![Screenshot](doc/images/warp_by_scalar_solution_layer.png)
+![Screenshot](./doc/images/warp_by_scalar_solution_layer.png)
 
 More interestingly, we see that the estimator has been able to capture the layer. Here a bulk-chasing criterion is used, with bottom fraction ´0.5´ and no coarsening. This mesh is obtained after 12 refinement cycles.
-![Screenshot](doc/images/refined_mesh_internal_layer.png)
+![Screenshot](./doc/images/refined_mesh_internal_layer.png)
 
 
 If we look at the decrease of the energy norm of the error in the globally refined case and in the adaptively case, with respect to the DoFs, we obtain:
 
-![Screenshot](doc/images/adaptive_vs_global_refinement.png)
+![Screenshot](./doc/images/adaptive_vs_global_refinement.png)
 
 ## References 
 * [1] Emmanuil H. Georgoulis, Edward Hall and Charalambos Makridakis (2013), Error Control for Discontinuous Galerkin Methods for First Order Hyperbolic Problems. DOI: [10.1007/978-3-319-01818-8_8
