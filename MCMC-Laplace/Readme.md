@@ -11,7 +11,7 @@ Motivation for project
 ----------------------
 
 Inverse problems are problems in which one (typically) wants to infer
-something about the internal properties of body by measuring how it
+something about the internal properties of a body by measuring how it
 reacts to an external stimulus. An example would be that you want to
 determine the stiffness parameters of a membrane by applying an
 external force to it and measuring how it deforms. A more complicated
