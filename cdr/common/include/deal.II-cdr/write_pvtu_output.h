@@ -12,14 +12,16 @@ namespace CDR
   public:
     WritePVTUOutput(const unsigned int patch_level);
 
-    template<int dim, typename VectorType>
-    void write_output(const DoFHandler<dim> &dof_handler,
-                      const VectorType      &solution,
-                      const unsigned int     time_step_n,
-                      const double           current_time);
+    template <int dim, typename VectorType>
+    void
+    write_output(const DoFHandler<dim> &dof_handler,
+                 const VectorType &     solution,
+                 const unsigned int     time_step_n,
+                 const double           current_time);
+
   private:
     const unsigned int patch_level;
     const unsigned int this_mpi_process;
   };
-}
+} // namespace CDR
 #endif
