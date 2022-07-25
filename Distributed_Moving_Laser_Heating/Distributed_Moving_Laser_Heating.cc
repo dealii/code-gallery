@@ -283,7 +283,7 @@ void LaserHeating<dim>::assemble_system_matrix_init (double time_step)
   cell = dof_handler.begin_active(),
   endc = dof_handler.end();
 
-  for (; cell!=endc; ++cell)
+  for (const auto cell : dof_handler.active_cell_iterator())
       if(cell->is_locally_owned())
     {
 
