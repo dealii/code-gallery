@@ -2796,76 +2796,6 @@ namespace NonLinearPoroViscoElasticity
            timerfile.leave_subsection();
      }
 
-    //Class to be able to output results correctly when using Paraview
-    template<int dim, class DH=DoFHandler<dim> >
-    class FilteredDataOut : public DataOut<dim, DH>
-    {
-        public:
-          FilteredDataOut ()
-          {}
-
-          virtual ~FilteredDataOut() {}
-
-          virtual typename DataOut<dim, DH>::cell_iterator
-          first_cell ()
-          {
-            typename DataOut<dim, DH>::active_cell_iterator
-            cell = this->dofs->begin_active();
-            while ((cell != this->dofs->end()) &&
-                   (!cell->is_locally_owned()))
-              ++cell;
-            return cell;
-          }
-
-          virtual typename DataOut<dim, DH>::cell_iterator
-          next_cell (const typename DataOut<dim, DH>::cell_iterator &old_cell)
-          {
-            if (old_cell != this->dofs->end())
-              {
-                const IteratorFilters::LocallyOwnedCell predicate{};
-                return
-                  ++(FilteredIterator<typename DataOut<dim, DH>::active_cell_iterator>
-                     (predicate,old_cell));
-              }
-            else
-              return old_cell;
-          }
-    };
-
-    template<int dim, class DH=DoFHandler<dim> >
-     class FilteredDataOutFaces : public DataOutFaces<dim,DH>
-     {
-         public:
-           FilteredDataOutFaces ()
-           {}
-
-           virtual ~FilteredDataOutFaces() {}
-
-           virtual typename DataOutFaces<dim,DH>::cell_iterator
-           first_cell ()
-           {
-             typename DataOutFaces<dim,DH>::active_cell_iterator
-             cell = this->dofs->begin_active();
-             while ((cell!=this->dofs->end()) && (!cell->is_locally_owned()))
-               ++cell;
-             return cell;
-           }
-
-           virtual typename DataOutFaces<dim,DH>::cell_iterator
-           next_cell (const typename DataOutFaces<dim, DH>::cell_iterator &old_cell)
-           {
-             if (old_cell!=this->dofs->end())
-             {
-                 const IteratorFilters::LocallyOwnedCell predicate{};
-                 return
-                   ++(FilteredIterator<typename DataOutFaces<dim,DH>::active_cell_iterator>
-                      (predicate,old_cell));
-             }
-             else
-               return old_cell;
-           }
-     };
-
     //Class to compute gradient of the pressure
     template <int dim>
     class GradientPostprocessor : public DataPostprocessorVector<dim>
@@ -3268,7 +3198,7 @@ namespace NonLinearPoroViscoElasticity
         }
 
         // Add the results to the solution to create the output file for Paraview
-        FilteredDataOut<dim> data_out;
+        DataOut<dim> data_out;
         std::vector<DataComponentInterpretation::DataComponentInterpretation>
           comp_type(dim,
                     DataComponentInterpretation::component_is_part_of_vector);
