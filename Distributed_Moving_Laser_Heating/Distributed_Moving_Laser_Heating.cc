@@ -222,12 +222,6 @@ void LaserHeating<dim>::setup_system ()
   constraints_T.clear();
   constraints_T.reinit (locally_relevant_dofs);
   DoFTools::make_hanging_node_constraints (dof_handler, constraints_T);
-/*
-  VectorTools::interpolate_boundary_values (dof_handler,
-                                            BOUNDARY_NUM,
-                                            BoundaryValues<dim>(),
-                                            constraints_T);                                      
-*/
   constraints_T.close();
 
   DynamicSparsityPattern dsp_T(locally_relevant_dofs);
