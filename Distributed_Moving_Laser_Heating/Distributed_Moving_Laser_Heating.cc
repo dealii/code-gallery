@@ -37,16 +37,6 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 
-// the following files are for petsc, if you want to use
-// pesct instead of trilinos, you can uncomment the following
-
-/*
-#include <deal.II/lac/petsc_parallel_vector.h>
-#include <deal.II/lac/petsc_parallel_sparse_matrix.h>
-#include <deal.II/lac/petsc_solver.h>
-#include <deal.II/lac/petsc_precondition.h>
-*/
-
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/lac/trilinos_vector.h>
