@@ -18,16 +18,17 @@ namespace CDR
 {
   using namespace dealii;
 
-  template<int dim, typename VectorType>
-  void create_system_rhs
-  (const DoFHandler<dim>                                 &dof_handler,
-   const QGauss<dim>                                     &quad,
-   const std::function<Tensor<1, dim>(const Point<dim>)> &convection_function,
-   const std::function<double(double, const Point<dim>)> &forcing_function,
-   const CDR::Parameters                                 &parameters,
-   const VectorType                                      &previous_solution,
-   const AffineConstraints<double>                       &constraints,
-   const double                                           current_time,
-   VectorType                                            &system_rhs);
-}
+  template <int dim, typename VectorType>
+  void
+  create_system_rhs(
+    const DoFHandler<dim> &                                dof_handler,
+    const QGauss<dim> &                                    quad,
+    const std::function<Tensor<1, dim>(const Point<dim>)> &convection_function,
+    const std::function<double(double, const Point<dim>)> &forcing_function,
+    const CDR::Parameters &                                parameters,
+    const VectorType &                                     previous_solution,
+    const AffineConstraints<double> &                      constraints,
+    const double                                           current_time,
+    VectorType &                                           system_rhs);
+} // namespace CDR
 #endif

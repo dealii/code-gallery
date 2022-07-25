@@ -23,22 +23,25 @@ namespace CDR
 
     double diffusion_coefficient;
     double reaction_coefficient;
-    bool time_dependent_forcing;
+    bool   time_dependent_forcing;
 
     unsigned int initial_refinement_level;
     unsigned int max_refinement_level;
     unsigned int fe_order;
 
-    double start_time;
-    double stop_time;
+    double       start_time;
+    double       stop_time;
     unsigned int n_time_steps;
 
     unsigned int save_interval;
     unsigned int patch_level;
 
-    void read_parameter_file(const std::string &file_name);
+    void
+    read_parameter_file(const std::string &file_name);
+
   private:
-    void configure_parameter_handler(ParameterHandler &parameter_handler);
+    void
+    configure_parameter_handler(ParameterHandler &parameter_handler);
   };
-}
+} // namespace CDR
 #endif

@@ -1,43 +1,30 @@
 ## Overview
 I started this project with the intent of better understanding adaptive mesh
-refinement, parallel computing, and <code>CMake</code>. In particular, I started
-by writing a uniform mesh, single process solver and then ultimately expanded it
-into <code>solver/cdr.cc</code>. This example program might be useful to look at
-if you want to see:
-<ul>
-  <li>A more complex `CMake` setup, which builds a shared object library and an
-  executable</li>
-  <li>A simple parallel time stepping problem</li>
-  <li>Use of `C++11` lambda functions</li>
-</ul>
+refinement, parallel computing, and CMake. In particular, I started by writing a
+uniform mesh, single process solver and then ultimately expanded it into
+`solver/cdr.cc`. This example program might be useful to look at if you want to see:
+
+* A more complex `CMake` setup, which builds a shared object library and an
+  executable
+* A simple parallel time stepping problem
+* Use of `C++11` lambda functions
 
 The other solvers are available [here](http://www.github.com/drwells/dealii-cdr).
 
 Unlike the other tutorial programs, I have split this solver into a number of
 files in nested directories. In particular, I used the following strategy
 (more-or-less copied [ASPECT](http://aspect.dealii.org)):
-<ul>
-  <li>The <code>common</code> directory, which hosts files common to the four
-  solvers I wrote along the way. Most of the source files in
-  <code>common/source/</code> are just <i>template specializations</i>; they
-  compile the template code for specific dimensions and linear algebra (matrix
-  or vector) types. The <code>common/include/deal.II-cdr/</code> directory
-  contains both templates and plain header files.</li>
-  <li>The <code>solver/</code> directory contains the actual solver class and
-  strongly resembles a tutorial program. The file <code>solver/cdr.cc</code>
-  just sets up data structures and then calls routines in
-  <code>libdeal.II-cdr-common</code> to populate them and produce output.</li>
-</ul>
 
-
-
-
-## Requirements
-<ul>
-  <li>A <code>C++-11</code> compliant compiler</li>
-  <li>Version 8.4 of <code>deal.II</code></li>
-</ul>
-
+* The `common` directory, which hosts files common to the four solvers I wrote
+  along the way. Most of the source files in `common/source/` are just
+  *template specializations*; they compile the template code for specific
+  dimensions and linear algebra (matrix or vector) types. The
+  `common/include/deal.II-cdr/` directory contains both templates and plain
+  header files.
+* The `solver/` directory contains the actual solver class and strongly 
+  resembles a tutorial program. The file `solver/cdr.cc` just sets up data 
+  structures and then calls routines in `libdeal.II-cdr-common` to populate them
+  and produce output.
 
 ## Compiling and running
 Like the example programs, run
