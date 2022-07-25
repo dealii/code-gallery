@@ -28,8 +28,6 @@ template <int dim>
 double RightHandside<dim>::value_v2 (const Point<dim> &p)
 {
 
-    double Rnp_inter;
-
     double alpha_abs = 1e4;
 
 
