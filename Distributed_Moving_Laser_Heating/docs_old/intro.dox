@@ -27,7 +27,7 @@ F^n_i &= \int T^{'}_i f^n(\mathbf x) dV
 where $n$ is the time step number, and $dt$ is the time step.
 
 <h3> The initial condition </h3>
-Deall.II has provide an interpolation function (VectorTools::interpolate) to distribute initial conditions. However, in this tutorial,
+deall.II provides an interpolation function (VectorTools::interpolate) to distribute initial conditions. However, in this tutorial,
 we are going to initialize in another way. The mechanism is based on the general form of solution as series of test functions
 @f{align*}
 T &= \sum_i u_i T^'_i = g_0(\mathbf x)\\
