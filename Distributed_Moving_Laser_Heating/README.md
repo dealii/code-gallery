@@ -6,7 +6,7 @@ In this tutorial, the studied problem is to simulate temperature distributions o
 
 ![illustration](./images/structure-2d.png)
 
-## numerical results
+## Numerical results
 ![animation](./images/animation.gif)
 
 # Discretization of the non-uniform isotropic heat equation
