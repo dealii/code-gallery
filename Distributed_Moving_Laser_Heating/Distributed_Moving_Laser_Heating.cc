@@ -58,8 +58,6 @@
 
 
 #include <deal.II/base/logstream.h>
-// this library is deprecated. use affine_constraints.h instead
-//#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/base/timer.h>
 
