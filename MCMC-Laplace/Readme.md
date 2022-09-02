@@ -200,7 +200,7 @@ to get an idea of what the program does. For real simulations, such as
 those discussed in the paper referenced at the top, one of course
 wants to have many many more samples; if you select `testing = false`
 at the top of `main()`, the program will create
-250*60*60*24*30=648,000,000 samples, which will take around a month to
+100,000,000 samples, which will take around a day and a half to
 run in release mode. That may be more than you've bargained for, but
 you can always terminate the program, or just select a smaller number
 of samples at the bottom of `main()`.
