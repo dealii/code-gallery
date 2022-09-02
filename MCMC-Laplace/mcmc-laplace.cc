@@ -856,8 +856,8 @@ int main()
   for (auto &el : starting_coefficients)
     el = 1.;
   sampler.sample(starting_coefficients,
-                 (testing ? 250 * 40 /* takes 40 seconds */
+                 (testing ? 250 * 40 /* takes 10 seconds */
                             :
-                            100000000 /* takes 6 days */
+                            100000000 /* takes 1.5 days */
                   ));
 }
