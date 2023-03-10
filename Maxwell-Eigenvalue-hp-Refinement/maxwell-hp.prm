@@ -1,0 +1,15 @@
+# Listing of Parameters
+# ---------------------
+
+#The type of eigenpairs to find (0 - smallest, 1 - target)
+set Eigenpair selection scheme = 1
+
+#The number of eigenvalues/eigenfunctions to be computed.
+set Number of eigenvalues/eigenfunctions = 1
+
+#The target eigenvalue (if scheme == 1)
+set Target eigenvalue = 23.344371957137
+
+#The number of cycles in refinement
+set Cycles number = 20
+
