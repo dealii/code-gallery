@@ -13,9 +13,9 @@ $$ \nabla\times(\mu_r^{-1}\nabla\times\mathbf{E})-k_0^2\varepsilon_r\mathbf{E} =
  In the remainder of this project, we assume $d=2$, though the methodology is largely unaffected by this choice. We further assume perfect electrical conductor (PEC) boundary conditions: $\hat{\textbf{n}}\times\textbf{E}=0 \textrm{ on }\partial\Omega$, $\hat{\textbf{n}}$ being the outward normal vector.
 
  In the standard way, we consider *weak* solutions by solving the variational form of the eigenvalue problem, which, in the 2-D case, is found to be the following after Galerkin testing:
- $$ \textrm{Find } U_{hp}=\left\{ \mathbf{u}_{hp},\,\lambda_{hp}\right\}\in V_{hp}\times \mathbb{R}_{>0} \textrm{ such that} $$
+ $$ \textrm{Find } U_{hp}=\left\{ \mathbf{u}_{hp},\,\lambda_{hp}\right\}\in V_{hp}\times \mathbb{R}_{>0} \textrm{ such that}
  $$ a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \lambda_{hp} m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) \quad \forall\boldsymbol{\phi}\in V_{hp}, $$
- with $a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \nabla_t\times\textbf{u}_{hp},\,\nabla_t\times\boldsymbol{\phi}_{hp}\rangle$ (note: $\nabla_t$ represents the transversal gradient operator and $\langle \cdot ,\, \cdot \rangle$ represents the $L^2$ inner-product), and $m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \textbf{u}_{hp},\,\boldsymbol{\phi}_{hp} \rangle,$ for a finite dimensional subspace $V_{hp}$ to be further specified below along with its infinite dimensional analog $V$ associated with an exact solution $U=\left\{ \textbf{u},\, \lambda \right\}$.
+ with $a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \nabla_t\times\textbf{u}_{hp},\,\nabla_t\times\boldsymbol{\phi}_{hp}\rangle$ (note: $\nabla_t$ represents the transversal gradient operator and $\langle \cdot ,\, \cdot \rangle$ represents the $L^2$ inner-product), and $m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \textbf{u}_{hp},\,\boldsymbol{\phi}_{hp} \rangle$. The finite dimensional subspace $V_{hp}$ will be further specified below along with its infinite dimensional analog $V$ associated with an exact solution $U=\left\{ \textbf{u},\, \lambda \right\}$.
 
 
 
@@ -24,14 +24,14 @@ $$ e_{\lambda_{hp}} := \lambda-\lambda_{hp}. $$
 
 Some comments on the discretization of Maxwell's equations
 ----------------------------------------------------------
-In the proper solution of variational problem, $V_{hp}$ is not arbitrary, but is instead a subspace of $H(\mathrm{curl};\,\Omega)$ or, with the boundary conditions indicated above, $H_{0}(\mathrm{curl};\,\Omega)$, where
-$$ H(\mathrm{curl};\,\Omega) = \left\{\textbf{u}\in \left[ L_2(\Omega)\right]^d \, \mathrm{s.t.} \, \nabla\times\textbf{u}\in \left[ L_2(\Omega)\right]^{2d-3} \right\}$$
+In the proper solution of variational problem, $V_{hp}$ is not arbitrary, but should instead a subspace of $H(\mathrm{curl};\,\Omega)$ or, with the boundary conditions indicated above, $H_{0}(\mathrm{curl};\,\Omega)$, where
+$$ H(\mathrm{curl};\,\Omega) = \left\{\textbf{u}\in \left[ L_2(\Omega)\right]^d \, \mathrm{s.t.} \, \nabla\times\textbf{u}\in \left[ L_2(\Omega)\right]^{d} \right\}$$
 and 
 $$
-H_{0}(\mathrm{curl};\,\Omega) = \left\{ \textbf{u}\in H(\mathrm{curl};\,\Omega) \, \mathrm{s.t.} \, \hat{\textbf{n}}\times\textbf{u} = 0 \right\}.
+H_{0}(\mathrm{curl};\,\Omega) = \left\{ \textbf{u}\in H(\mathrm{curl};\,\Omega) \, \mathrm{s.t.} \, \hat{\textbf{n}}\times\textbf{u} = 0 \text{on $\partial\Omega$}\right\}.
 $$
 
-The convergence of the discrete problem (e.g., as $h\rightarrow 0$) to the continuous one may be proved via a discrete compactness property [3]. It also possible for other choices of finite element spaces to *converge*, just not necessarily to the *correct* solution, which was the case for discretizations (which typically treated the components of $\textbf{u}$ as belonging to $H^1$) of the Maxwell PDE prior to the work of Nédélec.
+The convergence of the discrete problem (e.g., as $h\rightarrow 0$) to the continuous one may be proved via a discrete compactness property [3]. It is also possible for other choices of finite element spaces to *converge*, just not necessarily to the *correct* solution, which was the case for discretizations (which typically treated the components of $\textbf{u}$ as belonging to $H^1$) of the Maxwell PDE prior to the work of Nédélec.
 
 It should be noted that while the choice of the appropriate finite element space eliminates most spurious solutions to the generalized eigenvalue problem above, not all are absent. Specifically, those which do not satisfy the source free divergence condition on the electric field $\textbf{E}$ $$\nabla\cdot\textbf{E} = 0$$ still cluster around $\lambda = 0$. For $\lambda > 0$, corresponding to physical eigenpairs, the divergence condition is automatically satisfied.
 
@@ -41,7 +41,7 @@ On the adaptivity
 -----------------
 While adaptive refinement based on pure error indicators may perform (surprisingly) well, in many cases we are interested in stricter interpretations of the mesh adaption problem that rely on error estimates and error contribution estimates. When the relationship between the accuracy of the goal-functional and the error indicator weakens (if it ever existed), refinement instructions may yield useless changes, even, as  we will see, to the extent of converging to the wrong value.
 
-Galerkin projection, being a global process, is *not* interpolation. The question, then, is how to relate the accuracy of our QoI, which may formally be a global quantity (e.g., the radar cross section of a target from a certain look angle) or a local one (e.g., value of the solution at a point), on the approximation quality throughout the discretization. Solving a secondary *global* problem, the adjoint (or dual) problem, provides exactly the mechanism we need via the adjoint solution, a generalized Green's function. Specifically, we study a goal-oriented error estimate based on the Dual Weighted Residual (DWR), similar to that  studied in Step-14.
+Galerkin projection, being a global process, is *not* interpolation. The question, then, is how to relate the accuracy of our QoI, which may formally be a global quantity (e.g., the radar cross section of a target from a certain look angle) or a local one (e.g., value of the solution at a point), on the approximation quality throughout the discretization. Solving a secondary *global* problem, the adjoint (or dual) problem, provides exactly the mechanism we need via the adjoint solution, a generalized Green's function. Specifically, we study a goal-oriented error estimate based on the Dual Weighted Residual (DWR), similar to that  studied in step-14.
 
 <strong>For this section of project, we strongly recommended the following readings: [4] (W. Bangerth and R. Rannacher; 2003), Chapter 3, 7; [5] (V. Heuveline and R. Rannacher; 2001).</strong>
 
@@ -88,7 +88,7 @@ The starting discretization is shown below, consisting of three unit squares arr
 The first nine eigenfunctions for this problem group equally into three classes: singular (unbounded electric field at the reentrant corner), sharp (nonsmooth but bounded at the reentrant corner), and globally smooth. The globally smooth eigenpairs may be resolved relatively easily and sufficiently accurately to determine that the eigenvalues are multiples of $\pi^2$. As such, we focus exclusively on the first two classes of eigenfunctions.
 
 The adaption pipeline is summarized as follows:
-1. Solve the forward problem (DWR/Kelly) and the adjoint problem (DWR)
+1. Solve the forward problem (when using either the DWR or Kelly refinement strategies) and the adjoint problem (when using the DWR estimator)
 2. Generate error contribution estimates (DWR) or error indicators (Kelly)
 3. Mark the top 20% elements with the largest refinement indicators by magnitude
 4. For those cells marked for refinement, estimate the local smoothness of the forward solution (Legendre decay rate)
