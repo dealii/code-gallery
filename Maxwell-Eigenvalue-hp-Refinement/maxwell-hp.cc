@@ -2212,19 +2212,27 @@ main(int argc, char **argv)
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
 
 
-      AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
-                  ExcMessage(
-                    "This program can only be run in serial, use ./maxwell-hp"));
+      AssertThrow(
+        Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+        ExcMessage("This program can only be run in serial, use ./maxwell-hp"));
 
       Triangulation<2> triangulation_DWR, triangulation_Kelly;
       Structures::create_L_waveguide(triangulation_DWR, 2.0);
       Structures::create_L_waveguide(triangulation_Kelly, 2.0);
 
       Refiner<2, KellyErrorIndicator<2>, LegendreIndicator<2>> problem_Kelly(
-        "maxwell-hp.prm", triangulation_Kelly, 2, 12, 2);
+        "maxwell-hp.prm",
+        triangulation_Kelly,
+        /*Minimum Degree*/ 2,
+        /*Maximum Degree*/ 5,
+        /*Starting Degree*/ 2);
 
       Refiner<2, DualWeightedResidual<2, false>, LegendreIndicator<2>>
-        problem_DWR("maxwell-hp.prm", triangulation_DWR, 2, 12, 2);
+        problem_DWR("maxwell-hp.prm",
+                    triangulation_DWR,
+                    /*Minimum Degree*/ 2,
+                    /*Maximum Degree*/ 5,
+                    /*Starting Degree*/ 2);
 
       // The threshold for the hp-decision: too small -> not enough
       // $h$-refinement, too large -> not enough $p$-refinement

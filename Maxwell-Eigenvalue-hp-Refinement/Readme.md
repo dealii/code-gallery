@@ -25,10 +25,10 @@ $$ e_{\lambda_{hp}} := \lambda-\lambda_{hp}. $$
 Some comments on the discretization of Maxwell's equations
 ----------------------------------------------------------
 In the proper solution of variational problem, $V_{hp}$ is not arbitrary, but should instead a subspace of $H(\mathrm{curl};\,\Omega)$ or, with the boundary conditions indicated above, $H_{0}(\mathrm{curl};\,\Omega)$, where
-$$ H(\mathrm{curl};\,\Omega) = \left\{\textbf{u}\in \left[ L_2(\Omega)\right]^d \, \mathrm{s.t.} \, \nabla\times\textbf{u}\in \left[ L_2(\Omega)\right]^{d} \right\}$$
+$$ H(\mathrm{curl};\,\Omega) = \left\{\textbf{u}\in \left[ L_2(\Omega)\right]^d \, \mathrm{s.t.} \, \nabla\times\textbf{u}\in \left[ L_2(\Omega)\right]^{2d-3} \right\}$$
 and 
 $$
-H_{0}(\mathrm{curl};\,\Omega) = \left\{ \textbf{u}\in H(\mathrm{curl};\,\Omega) \, \mathrm{s.t.} \, \hat{\textbf{n}}\times\textbf{u} = 0 \text{on $\partial\Omega$}\right\}.
+H_{0}(\mathrm{curl};\,\Omega) = \left\{ \textbf{u}\in H(\mathrm{curl};\,\Omega) \, \mathrm{s.t.} \, \hat{\textbf{n}}\times\textbf{u} = 0 \text{ on $\partial\Omega$}\right\}.
 $$
 
 The convergence of the discrete problem (e.g., as $h\rightarrow 0$) to the continuous one may be proved via a discrete compactness property [3]. It is also possible for other choices of finite element spaces to *converge*, just not necessarily to the *correct* solution, which was the case for discretizations (which typically treated the components of $\textbf{u}$ as belonging to $H^1$) of the Maxwell PDE prior to the work of Nédélec.
