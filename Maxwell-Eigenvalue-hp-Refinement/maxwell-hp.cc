@@ -2155,7 +2155,7 @@ namespace Refinement
                 if (cell->refine_flag_set() &&
                     smoothness_indicators[cell->active_cell_index()] >
                       threshold_smoothness &&
-                    cell->active_fe_index() + 1 <
+                    static_cast<unsigned int>(cell->active_fe_index() + 1) <
                       ErrorIndicator::get_FECollection()->size())
                   {
                     cell->clear_refine_flag();
@@ -2174,7 +2174,7 @@ namespace Refinement
                 else if (cell->refine_flag_set() && cell->diameter() < 5.0e-6)
                   {
                     cell->clear_refine_flag();
-                    if (cell->active_fe_index() + 1 <
+                    if (static_cast<unsigned int>(cell->active_fe_index() + 1) <
                         ErrorIndicator::get_FECollection()->size())
                       cell->set_active_fe_index(cell->active_fe_index() + 1);
                   }
