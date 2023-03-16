@@ -250,15 +250,17 @@ contains a vector of coefficients (_theta_) for which the corresponding
 `testing/output.X.z.txt` contains the corresponding output at the evaluation
 points (the _z_ vector that corresponds to the _theta_ vector, as described 
 in the paper linked to at the very top of this page). Furthermore, the
-`testing/output.X.likelihood.txt` file contains the corresponding likelihood 
+`testing/output.X.loglikelihood.txt` file contains the corresponding log likelihood
 value for this _theta_ vector that can be computed from the _z_ vector, and
-the `testing/output.X.prior.txt` file contains the prior associated with
+the `testing/output.X.logprior.txt` file contains the log prior associated with
 this _theta_ vector. The values in these last two files are not normalized,
 and so care must be taken when comparing these values between implementations:
 An implementation (or a patched version of this program) may compute a different
-value, but the ratio of the values between different inputs must be the
+value, but the difference of the values between different inputs must be the
 same -- in other words, the outputs must be like the ones stored in these
-files *up to a constant* for an implementation to be correct.
+files *up to an additive constant* for an implementation to be correct. (It is
+the *ratio* of probabilities that matters, but because the files contain logarithms,
+it is the *difference* of log probabilities).
 
 The ten inputs are chosen as follows:
 
@@ -400,11 +402,11 @@ int main()
 
       // ...and then also evaluate prior and likelihood for these
       // theta vectors:
-      std::ofstream test_output_likelihood ("output." + std::to_string(test) + ".likelihood.txt");
+      std::ofstream test_output_likelihood ("output." + std::to_string(test) + ".loglikelihood.txt");
       test_output_likelihood.precision(12);
       test_output_likelihood << log_likelihood.log_likelihood(z) << std::endl;
 
-      std::ofstream test_output_prior ("output." + std::to_string(test) + ".prior.txt");
+      std::ofstream test_output_prior ("output." + std::to_string(test) + ".logprior.txt");
       test_output_prior.precision(12);
       test_output_prior << log_prior.log_prior(theta) << std::endl;
     }
