@@ -334,7 +334,7 @@ HeatEquation<dim>::process_solution(double a_time,
                                                             difference_per_cell,
                                                             VectorTools::H1_seminorm);
 
-  const QTrapez<1> q_trapez;
+  const QTrapezoid<1> q_trapez;
   const QIterated<dim> q_iterated (q_trapez, 5);
   VectorTools::integrate_difference (dof_handler,
                                      a_vector,
