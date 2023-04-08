@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-  - cron:  '0 0 * * 0'
+  - cron: '0 0 * * 0'
 
 jobs:
   build:
@@ -24,13 +24,16 @@ jobs:
       options: --user root
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Install preCICE
+        run: |
+          sudo apt-get -y update
+          wget https://github.com/precice/precice/releases/download/v2.4.0/libprecice2_2.4.0_focal.deb
+          sudo apt-get -y install ./libprecice2_2.4.0_focal.deb
+
+      - uses: actions/checkout@v3
 
       - name: Compile
         run: |
-          sudo apt-get -y update
-          wget https://github.com/precice/precice/releases/download/v2.3.0/libprecice2_2.3.0_focal.deb
-          sudo apt-get -y install ./libprecice2_2.3.0_focal.deb
           cd coupled_laplace_problem
           cmake .
           make
