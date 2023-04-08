@@ -105,7 +105,7 @@ public:
   {}
 
   virtual double value (const Point<dim> &p,
-                        const unsigned int component = 0) const;
+                        const unsigned int component = 0) const override;
 
 private:
   const double period;
@@ -118,7 +118,7 @@ class BoundaryValues : public Function<dim>
 {
 public:
   virtual double value (const Point<dim>  &p,
-                        const unsigned int component = 0) const;
+                        const unsigned int component = 0) const override;
 };
 
 // The RightHandSideMFG class describes the right hand side
@@ -128,7 +128,7 @@ class RightHandSideMFG : public Function<dim>
 {
 public:
   virtual double value (const Point<dim>  &p,
-                        const unsigned int component = 0) const;
+                        const unsigned int component = 0) const override;
 };
 
 // The InitialValuesMFG class describes the initial values
@@ -138,7 +138,7 @@ class InitialValuesMFG : public Function<dim>
 {
 public:
   virtual double value (const Point<dim> &p,
-                        const unsigned int component = 0) const;
+                        const unsigned int component = 0) const override;
 };
 
 // Provides the exact value for the manufactured solution. This
@@ -159,7 +159,7 @@ public:
    *  \return double The exact value that was computed
    */
   virtual double value (const Point<dim> &p,
-                        const unsigned int component = 0) const;
+                        const unsigned int component = 0) const override;
 
   /**
    *  \brief Computes the gradient of the exact solution at the given point
@@ -174,7 +174,7 @@ public:
    *  in each spatial dimension
    */
   virtual Tensor<1,dim> gradient (const Point<dim>   &p,
-                                  const unsigned int  component = 0) const;
+                                  const unsigned int  component = 0) const override;
 };
 
 
