@@ -542,7 +542,7 @@ namespace ProposalGenerator
 
     virtual
     std::pair<Vector<double>,double>
-    perturb(const Vector<double> &current_sample) const;
+    perturb(const Vector<double> &current_sample) const override;
 
   private:
     const double         log_sigma;
