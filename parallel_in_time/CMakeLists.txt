@@ -3,8 +3,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0)
 # Set the name of the project and target:
 SET(TARGET "parallel_in_time")
 
-SET(CMAKE_CXX_STANDARD 14)
-
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
 SET(PROJECT_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
