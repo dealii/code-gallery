@@ -421,10 +421,10 @@ namespace LMM
     virtual ~BodyForce () {}
 
     virtual void vector_value (const Point<dim> &p,
-                               Vector<double>   &values) const;
+                               Vector<double>   &values) const override;
 
     virtual void vector_value_list (const std::vector<Point<dim> > &points,
-                                    std::vector<Vector<double> >   &value_list) const;
+                                    std::vector<Vector<double> >   &value_list) const override;
 
     const double rho;
     const double g;
@@ -483,10 +483,10 @@ namespace LMM
     virtual ~Traction () {}
 
     virtual void vector_value (const Point<dim> &p,
-                               Vector<double>   &values) const;
+                               Vector<double>   &values) const override;
 
     virtual void vector_value_list (const std::vector<Point<dim> > &points,
-                                    std::vector<Vector<double> >   &value_list) const;
+                                    std::vector<Vector<double> >   &value_list) const override;
 
     const double t;
   };

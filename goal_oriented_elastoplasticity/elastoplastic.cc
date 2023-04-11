@@ -716,11 +716,11 @@ namespace ElastoPlastic
 
       virtual
       double value (const Point<dim> &p,
-                    const unsigned int component = 0) const;
+                    const unsigned int component = 0) const override;
 
       virtual
       void vector_value (const Point<dim> &p,
-                         Vector<double> &values) const;
+                         Vector<double> &values) const override;
     };
 
     template <int dim>
@@ -782,12 +782,12 @@ namespace ElastoPlastic
       virtual
       void
       vector_value (const Point<dim> &p,
-                    Vector<double>   &values) const;
+                    Vector<double>   &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
     };
 
 
@@ -868,12 +868,12 @@ namespace ElastoPlastic
       virtual
       void
       vector_value (const Point<dim> &p,
-                    Vector<double>   &values) const;
+                    Vector<double>   &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
 
     private:
       const double velocity;
@@ -937,12 +937,12 @@ namespace ElastoPlastic
 
       virtual
       void vector_value (const Point<dim> &p,
-                         Vector<double> &values) const;
+                         Vector<double> &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
     private:
       const double present_time,
                    end_time,
@@ -1026,12 +1026,12 @@ namespace ElastoPlastic
       virtual
       void
       vector_value (const Point<dim> &p,
-                    Vector<double>   &values) const;
+                    Vector<double>   &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
 
     private:
       const double present_time,
@@ -1120,12 +1120,12 @@ namespace ElastoPlastic
 
         virtual
         void vector_value (const Point<dim> &p,
-                           Vector<double> &values) const;
+                           Vector<double> &values) const override;
 
         virtual
         void
         vector_value_list (const std::vector<Point<dim> > &points,
-                           std::vector<Vector<double> >   &value_list) const;
+                           std::vector<Vector<double> >   &value_list) const override;
       private:
         const double present_time,
                      end_time,
@@ -1206,12 +1206,12 @@ namespace ElastoPlastic
         virtual
         void
         vector_value (const Point<dim> &p,
-                      Vector<double>   &values) const;
+                      Vector<double>   &values) const override;
 
         virtual
         void
         vector_value_list (const std::vector<Point<dim> > &points,
-                           std::vector<Vector<double> >   &value_list) const;
+                           std::vector<Vector<double> >   &value_list) const override;
 
       private:
         const double present_time,
@@ -1273,12 +1273,12 @@ namespace ElastoPlastic
 
       virtual
       void vector_value (const Point<dim> &p,
-                         Vector<double> &values) const;
+                         Vector<double> &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
     private:
       const double present_time,
                    end_time;
@@ -1345,12 +1345,12 @@ namespace ElastoPlastic
       virtual
       void
       vector_value (const Point<dim> &p,
-                    Vector<double>   &values) const;
+                    Vector<double>   &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
 
     private:
       const double present_time,
@@ -1426,12 +1426,12 @@ namespace ElastoPlastic
 
       virtual
       void vector_value (const Point<dim> &p,
-                         Vector<double> &values) const;
+                         Vector<double> &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
 
     private:
       const double present_time,
@@ -1510,12 +1510,12 @@ namespace ElastoPlastic
       virtual
       void
       vector_value (const Point<dim> &p,
-                    Vector<double>   &values) const;
+                    Vector<double>   &values) const override;
 
       virtual
       void
       vector_value_list (const std::vector<Point<dim> > &points,
-                         std::vector<Vector<double> >   &value_list) const;
+                         std::vector<Vector<double> >   &value_list) const override;
 
     private:
       const double present_time,
@@ -1596,7 +1596,7 @@ namespace ElastoPlastic
                     const Vector<double>       &solution,
                     const ConstitutiveLaw<dim> &constitutive_law,
                     const DoFHandler<dim>      &dof_handler_dual,
-                    Vector<double>             &rhs_dual) const;
+                    Vector<double>             &rhs_dual) const override;
 
       DeclException1 (ExcEvaluationPointNotFound,
                       Point<dim>,
@@ -1661,7 +1661,7 @@ namespace ElastoPlastic
                     const Vector<double>       &solution,
                     const ConstitutiveLaw<dim> &constitutive_law,
                     const DoFHandler<dim>      &dof_handler_dual,
-                    Vector<double>             &rhs_dual) const;
+                    Vector<double>             &rhs_dual) const override;
 
       DeclException1 (ExcEvaluationPointNotFound,
                       Point<dim>,
@@ -1755,7 +1755,7 @@ namespace ElastoPlastic
                     const Vector<double>       &solution,
                     const ConstitutiveLaw<dim> &constitutive_law,
                     const DoFHandler<dim>      &dof_handler_dual,
-                    Vector<double>             &rhs_dual) const;
+                    Vector<double>             &rhs_dual) const override;
 
     protected:
       const unsigned int face_id;
@@ -1883,7 +1883,7 @@ namespace ElastoPlastic
                     const Vector<double>       &solution,
                     const ConstitutiveLaw<dim> &constitutive_law,
                     const DoFHandler<dim>      &dof_handler_dual,
-                    Vector<double>             &rhs_dual) const;
+                    Vector<double>             &rhs_dual) const override;
 
     protected:
       const unsigned int face_id;
@@ -2029,7 +2029,7 @@ namespace ElastoPlastic
                     const Vector<double>       &solution,
                     const ConstitutiveLaw<dim> &constitutive_law,
                     const DoFHandler<dim>      &dof_handler_dual,
-                    Vector<double>             &rhs_dual) const;
+                    Vector<double>             &rhs_dual) const override;
 
     protected:
       const std::string base_mesh;
