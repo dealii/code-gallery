@@ -19,6 +19,7 @@
 
 
 #include <deal.II/base/numbers.h>
+#include <deal.II/base/thread_management.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/grid/grid_generator.h>
