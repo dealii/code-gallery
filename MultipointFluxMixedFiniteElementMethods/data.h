@@ -31,7 +31,7 @@ namespace MFMFE
     RightHandSide () : Function<dim>(1) {}
 
     virtual double value (const Point<dim>   &p,
-                          const unsigned int component = 0) const;
+                          const unsigned int component = 0) const override;
   };
 
   template <int dim>
@@ -62,7 +62,7 @@ namespace MFMFE
     PressureBoundaryValues () : Function<dim>(1) {}
 
     virtual double value (const Point<dim>   &p,
-                          const unsigned int component = 0) const;
+                          const unsigned int component = 0) const override;
   };
 
   template <int dim>
@@ -90,10 +90,10 @@ namespace MFMFE
     ExactSolution () : Function<dim>(dim+1) {}
 
     virtual void vector_value (const Point<dim> &p,
-                               Vector<double> &value) const;
+                               Vector<double> &value) const override;
 
     virtual void vector_gradient (const Point<dim> &p,
-                                  std::vector<Tensor<1,dim,double>>  &grads) const;
+                                  std::vector<Tensor<1,dim,double>>  &grads) const override;
   };
 
   template <int dim>
@@ -158,7 +158,7 @@ namespace MFMFE
     KInverse () : TensorFunction<2,dim>() {}
 
     virtual void value_list (const std::vector<Point<dim> > &points,
-                             std::vector<Tensor<2,dim> >    &values) const;
+                             std::vector<Tensor<2,dim> >    &values) const override;
   };
 
   template <int dim>

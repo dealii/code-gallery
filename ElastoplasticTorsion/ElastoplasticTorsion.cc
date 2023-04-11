@@ -186,8 +186,8 @@ namespace nsp
   {
   public:
     Solution () : Function<dim>() {}
-    virtual double value (const Point<dim> &pto, const unsigned int component = 0) const;
-    virtual Tensor<1,dim> gradient (const Point<dim> &pto, const unsigned int component = 0) const;
+    virtual double value (const Point<dim> &pto, const unsigned int component = 0) const override;
+    virtual Tensor<1,dim> gradient (const Point<dim> &pto, const unsigned int component = 0) const override;
   };
 
   template <int dim>
@@ -237,12 +237,13 @@ namespace nsp
       std::vector< Vector< double > > &
     ) const;
 
-    virtual std::vector<std::string> get_names () const;
+    virtual std::vector<std::string> get_names () const override;
 
     virtual
     std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    get_data_component_interpretation () const;
-    virtual UpdateFlags get_needed_update_flags () const;
+    get_data_component_interpretation () const override;
+
+    virtual UpdateFlags get_needed_update_flags () const override;
   };
 
 
@@ -385,7 +386,7 @@ namespace nsp
     BoundaryValues () : Function<dim>() {}
 
     virtual double value (const Point<dim>   &p,
-                          const unsigned int  component = 0) const;
+                          const unsigned int  component = 0) const override;
   };
 
 
@@ -426,7 +427,7 @@ namespace nsp
   public:
     RightHandSide () : Function<dim>() {}
     virtual double value (const Point<dim> &p,
-                          const unsigned int component = 0) const;
+                          const unsigned int component = 0) const override;
   };
 
   template <int dim>

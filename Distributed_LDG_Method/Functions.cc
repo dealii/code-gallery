@@ -18,7 +18,7 @@ public:
   {}
 
   virtual double value(const Point<dim> &p,
-                       const unsigned int component = 0 ) const;
+                       const unsigned int component = 0 ) const override;
 };
 
 template <int dim>
@@ -29,7 +29,7 @@ public:
   {}
 
   virtual double value(const Point<dim> &p,
-                       const unsigned int component = 0 ) const;
+                       const unsigned int component = 0 ) const override;
 };
 
 template<int dim>
@@ -40,7 +40,7 @@ public:
   {}
 
   virtual void vector_value(const Point<dim> &p,
-                            Vector<double> &valuess) const;
+                            Vector<double> &valuess) const override;
 };
 
 template <int dim>

@@ -8,7 +8,7 @@ public:
   InitialPhi (unsigned int PROBLEM, double sharpness=0.005) : Function<dim>(),
     sharpness(sharpness),
     PROBLEM(PROBLEM) {}
-  virtual double value (const Point<dim> &p, const unsigned int component=0) const;
+  virtual double value (const Point<dim> &p, const unsigned int component=0) const override;
   double sharpness;
   unsigned int PROBLEM;
 };
@@ -74,7 +74,7 @@ class BoundaryU : public Function <dim>
 {
 public:
   BoundaryU (unsigned int PROBLEM, double t=0) : Function<dim>(), PROBLEM(PROBLEM) {this->set_time(t);}
-  virtual double value (const Point<dim> &p, const unsigned int component=0) const;
+  virtual double value (const Point<dim> &p, const unsigned int component=0) const override;
   unsigned PROBLEM;
 };
 template <int dim>
@@ -106,7 +106,7 @@ class BoundaryV : public Function <dim>
 {
 public:
   BoundaryV (unsigned int PROBLEM, double t=0) : Function<dim>(), PROBLEM(PROBLEM) {this->set_time(t);}
-  virtual double value (const Point<dim> &p, const unsigned int component=0) const;
+  virtual double value (const Point<dim> &p, const unsigned int component=0) const override;
   unsigned int PROBLEM;
 };
 template <int dim>
@@ -144,7 +144,7 @@ public:
   virtual
   void
   evaluate_scalar_field (const DataPostprocessorInputs::Scalar<dim> &input_data,
-                         std::vector<Vector<double> >               &computed_quantities) const;
+                         std::vector<Vector<double> >               &computed_quantities) const override;
 
   double eps;
   double rho_air;

@@ -806,7 +806,7 @@ namespace NonLinearPoroViscoElasticity
           {}
 
            double
-           get_viscous_dissipation() const
+           get_viscous_dissipation() const override
            {
                return 0.0;
            }
@@ -815,7 +815,7 @@ namespace NonLinearPoroViscoElasticity
           const double mu;
 
           SymmetricTensor<2, dim, NumberType>
-          get_tau_E_base(const Tensor<2,dim, NumberType> &F) const
+          get_tau_E_base(const Tensor<2,dim, NumberType> &F) const override
           {
              static const SymmetricTensor< 2, dim, double>
                 I (Physics::Elasticity::StandardTensors<dim>::I);
@@ -864,7 +864,7 @@ namespace NonLinearPoroViscoElasticity
           {}
 
            double
-           get_viscous_dissipation() const
+           get_viscous_dissipation() const override
            {
                return 0.0;
            }
@@ -874,7 +874,7 @@ namespace NonLinearPoroViscoElasticity
           std::vector<double> alpha;
 
           SymmetricTensor<2, dim, NumberType>
-          get_tau_E_base(const Tensor<2,dim, NumberType> &F) const
+          get_tau_E_base(const Tensor<2,dim, NumberType> &F) const override
           {
             const SymmetricTensor<2, dim, NumberType>
              B = symmetrize(F * transpose(F));
@@ -936,7 +936,7 @@ namespace NonLinearPoroViscoElasticity
             {}
 
           void
-          update_internal_equilibrium( const Tensor<2, dim, NumberType> &F )
+          update_internal_equilibrium( const Tensor<2, dim, NumberType> &F ) override
           {
               Material_Hyperelastic < dim, NumberType >::update_internal_equilibrium(F);
 
@@ -1048,13 +1048,13 @@ namespace NonLinearPoroViscoElasticity
                       this->Cinv_v_1[a][b]= Tensor<0,dim,double>(Cinv_v_1_AD[a][b]);
           }
 
-          void update_end_timestep()
+          void update_end_timestep() override
           {
               Material_Hyperelastic < dim, NumberType >::update_end_timestep();
               this->Cinv_v_1_converged = this->Cinv_v_1;
           }
 
-           double get_viscous_dissipation() const
+           double get_viscous_dissipation() const override
            {
                NumberType dissipation_term = get_tau_E_neq() * get_tau_E_neq(); //Double contract the two SymmetricTensor
                dissipation_term /= (2*viscosity_mode_1);
@@ -1073,7 +1073,7 @@ namespace NonLinearPoroViscoElasticity
           SymmetricTensor<2, dim, NumberType> tau_neq_1;
 
           SymmetricTensor<2, dim, NumberType>
-          get_tau_E_base(const Tensor<2,dim, NumberType> &F) const
+          get_tau_E_base(const Tensor<2,dim, NumberType> &F) const override
           {
               return ( get_tau_E_neq() + get_tau_E_eq(F) );
           }
@@ -2813,7 +2813,7 @@ namespace NonLinearPoroViscoElasticity
           virtual void
           evaluate_vector_field
                (const DataPostprocessorInputs::Vector<dim> &input_data,
-                std::vector<Vector<double> >               &computed_quantities) const
+                std::vector<Vector<double> >               &computed_quantities) const override
           {
             AssertDimension (input_data.solution_gradients.size(),
                              computed_quantities.size());
@@ -3925,7 +3925,7 @@ namespace NonLinearPoroViscoElasticity
           virtual ~VerificationEhlers1999TubeBase () {}
 
         private:
-          virtual void make_grid()
+          virtual void make_grid() override
           {
             GridGenerator::cylinder( this->triangulation,
                                      0.1,
@@ -3942,7 +3942,7 @@ namespace NonLinearPoroViscoElasticity
             this->triangulation.reset_manifold(0);
           }
 
-          virtual void define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices)
+          virtual void define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices) override
           {
             tracked_vertices[0][0] = 0.0*this->parameters.scale;
             tracked_vertices[0][1] = 0.0*this->parameters.scale;
@@ -3953,7 +3953,7 @@ namespace NonLinearPoroViscoElasticity
             tracked_vertices[1][2] = -0.5*this->parameters.scale;
           }
 
-          virtual void make_dirichlet_constraints(AffineConstraints<double> &constraints)
+          virtual void make_dirichlet_constraints(AffineConstraints<double> &constraints) override
           {
             if (this->time.get_timestep() < 2)
             {
@@ -3990,7 +3990,7 @@ namespace NonLinearPoroViscoElasticity
 
           virtual double
           get_prescribed_fluid_flow (const types::boundary_id &boundary_id,
-                                     const Point<dim>         &pt) const
+                                     const Point<dim>         &pt) const override
           {
               (void)pt;
               (void)boundary_id;
@@ -3998,20 +3998,20 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual types::boundary_id
-          get_reaction_boundary_id_for_output() const
+          get_reaction_boundary_id_for_output() const override
           {
               return 2;
           }
 
           virtual  std::pair<types::boundary_id,types::boundary_id>
-          get_drained_boundary_id_for_output() const
+          get_drained_boundary_id_for_output() const override
           {
               return std::make_pair(2,2);
           }
 
           virtual std::vector<double>
           get_dirichlet_load(const types::boundary_id   &boundary_id,
-                             const int                  &direction) const
+                             const int                  &direction) const override
           {
               std::vector<double> displ_incr(dim, 0.0);
               (void)boundary_id;
@@ -4038,7 +4038,7 @@ namespace NonLinearPoroViscoElasticity
             virtual Tensor<1,dim>
             get_neumann_traction (const types::boundary_id &boundary_id,
                                   const Point<dim>         &pt,
-                                  const Tensor<1,dim>      &N) const
+                                  const Tensor<1,dim>      &N) const override
             {
               if (this->parameters.load_type == "pressure")
               {
@@ -4070,7 +4070,7 @@ namespace NonLinearPoroViscoElasticity
             virtual Tensor<1,dim>
             get_neumann_traction (const types::boundary_id &boundary_id,
                                   const Point<dim>         &pt,
-                                  const Tensor<1,dim>      &N) const
+                                  const Tensor<1,dim>      &N) const override
             {
               if (this->parameters.load_type == "pressure")
               {
@@ -4106,7 +4106,7 @@ namespace NonLinearPoroViscoElasticity
 
         private:
           virtual void
-          make_grid()
+          make_grid() override
           {
              GridGenerator::hyper_rectangle(this->triangulation,
                                             Point<dim>(0.0, 0.0, 0.0),
@@ -4134,7 +4134,7 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual void
-          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices)
+          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices) override
           {
             tracked_vertices[0][0] = 0.0*this->parameters.scale;
             tracked_vertices[0][1] = 0.0*this->parameters.scale;
@@ -4146,7 +4146,7 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual void
-          make_dirichlet_constraints(AffineConstraints<double> &constraints)
+          make_dirichlet_constraints(AffineConstraints<double> &constraints) override
           {
             if (this->time.get_timestep() < 2)
             {
@@ -4201,7 +4201,7 @@ namespace NonLinearPoroViscoElasticity
           virtual Tensor<1,dim>
           get_neumann_traction (const types::boundary_id &boundary_id,
                                 const Point<dim>         &pt,
-                                const Tensor<1,dim>      &N) const
+                                const Tensor<1,dim>      &N) const override
           {
             if (this->parameters.load_type == "pressure")
             {
@@ -4218,7 +4218,7 @@ namespace NonLinearPoroViscoElasticity
 
           virtual double
           get_prescribed_fluid_flow (const types::boundary_id &boundary_id,
-                                     const Point<dim>         &pt) const
+                                     const Point<dim>         &pt) const override
           {
               (void)pt;
               (void)boundary_id;
@@ -4226,20 +4226,20 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual types::boundary_id
-          get_reaction_boundary_id_for_output() const
+          get_reaction_boundary_id_for_output() const override
           {
               return 100;
           }
 
           virtual  std::pair<types::boundary_id,types::boundary_id>
-          get_drained_boundary_id_for_output() const
+          get_drained_boundary_id_for_output() const override
           {
               return std::make_pair(101,101);
           }
 
           virtual std::vector<double>
           get_dirichlet_load(const types::boundary_id   &boundary_id,
-                             const int                  &direction) const
+                             const int                  &direction) const override
           {
               std::vector<double> displ_incr(dim, 0.0);
               (void)boundary_id;
@@ -4263,7 +4263,7 @@ namespace NonLinearPoroViscoElasticity
           virtual ~Franceschini2006Consolidation () {}
 
         private:
-          virtual void make_grid()
+          virtual void make_grid() override
           {
             const Point<dim-1> mesh_center(0.0, 0.0);
             const double radius = 0.5;
@@ -4310,7 +4310,7 @@ namespace NonLinearPoroViscoElasticity
             this->triangulation.refine_global(std::max (1U, this->parameters.global_refinement));
           }
 
-          virtual void define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices)
+          virtual void define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices) override
           {
             tracked_vertices[0][0] = 0.0*this->parameters.scale;
             tracked_vertices[0][1] = 0.0*this->parameters.scale;
@@ -4322,7 +4322,7 @@ namespace NonLinearPoroViscoElasticity
             tracked_vertices[1][2] = 0.0*this->parameters.scale;
           }
 
-          virtual void make_dirichlet_constraints(AffineConstraints<double> &constraints)
+          virtual void make_dirichlet_constraints(AffineConstraints<double> &constraints) override
           {
             if (this->time.get_timestep() < 2)
             {
@@ -4378,7 +4378,7 @@ namespace NonLinearPoroViscoElasticity
 
           virtual double
           get_prescribed_fluid_flow (const types::boundary_id &boundary_id,
-                                     const Point<dim>         &pt) const
+                                     const Point<dim>         &pt) const override
           {
               (void)pt;
               (void)boundary_id;
@@ -4386,20 +4386,20 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual types::boundary_id
-          get_reaction_boundary_id_for_output() const
+          get_reaction_boundary_id_for_output() const override
           {
               return 2;
           }
 
           virtual  std::pair<types::boundary_id,types::boundary_id>
-          get_drained_boundary_id_for_output() const
+          get_drained_boundary_id_for_output() const override
           {
               return std::make_pair(1,2);
           }
 
           virtual std::vector<double>
           get_dirichlet_load(const types::boundary_id   &boundary_id,
-                             const int                  &direction) const
+                             const int                  &direction) const override
           {
               std::vector<double> displ_incr(dim, 0.0);
               (void)boundary_id;
@@ -4412,7 +4412,7 @@ namespace NonLinearPoroViscoElasticity
           virtual Tensor<1,dim>
           get_neumann_traction (const types::boundary_id &boundary_id,
                                 const Point<dim>         &pt,
-                                const Tensor<1,dim>      &N) const
+                                const Tensor<1,dim>      &N) const override
           {
             if (this->parameters.load_type == "pressure")
             {
@@ -4459,7 +4459,7 @@ namespace NonLinearPoroViscoElasticity
 
         private:
           virtual void
-          make_grid()
+          make_grid() override
           {
             GridGenerator::hyper_cube(this->triangulation,
                                       0.0,
@@ -4487,7 +4487,7 @@ namespace NonLinearPoroViscoElasticity
 
           virtual double
           get_prescribed_fluid_flow (const types::boundary_id &boundary_id,
-                                     const Point<dim>         &pt) const
+                                     const Point<dim>         &pt) const override
           {
               (void)pt;
               (void)boundary_id;
@@ -4495,7 +4495,7 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual  std::pair<types::boundary_id,types::boundary_id>
-          get_drained_boundary_id_for_output() const
+          get_drained_boundary_id_for_output() const override
           {
               return std::make_pair(100,100);
           }
@@ -4515,7 +4515,7 @@ namespace NonLinearPoroViscoElasticity
 
         private:
           virtual void
-          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices)
+          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices) override
           {
             tracked_vertices[0][0] = 0.5*this->parameters.scale;
             tracked_vertices[0][1] = 0.5*this->parameters.scale;
@@ -4527,7 +4527,7 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual void
-          make_dirichlet_constraints(AffineConstraints<double> &constraints)
+          make_dirichlet_constraints(AffineConstraints<double> &constraints) override
           {
               if (this->time.get_timestep() < 2)
               {
@@ -4583,7 +4583,7 @@ namespace NonLinearPoroViscoElasticity
           virtual Tensor<1,dim>
           get_neumann_traction (const types::boundary_id &boundary_id,
                                 const Point<dim>         &pt,
-                                const Tensor<1,dim>      &N) const
+                                const Tensor<1,dim>      &N) const override
           {
               if (this->parameters.load_type == "pressure")
               {
@@ -4604,14 +4604,14 @@ namespace NonLinearPoroViscoElasticity
             }
 
           virtual types::boundary_id
-          get_reaction_boundary_id_for_output() const
+          get_reaction_boundary_id_for_output() const override
           {
               return 5;
           }
 
           virtual std::vector<double>
           get_dirichlet_load(const types::boundary_id   &boundary_id,
-                             const int                  &direction) const
+                             const int                  &direction) const override
           {
                 std::vector<double> displ_incr(dim,0.0);
 
@@ -4671,7 +4671,7 @@ namespace NonLinearPoroViscoElasticity
 
         private:
           virtual void
-          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices)
+          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices) override
           {
             tracked_vertices[0][0] = 0.5*this->parameters.scale;
             tracked_vertices[0][1] = 0.5*this->parameters.scale;
@@ -4683,7 +4683,7 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual void
-          make_dirichlet_constraints(AffineConstraints<double> &constraints)
+          make_dirichlet_constraints(AffineConstraints<double> &constraints) override
           {
               if (this->time.get_timestep() < 2)
               {
@@ -4735,7 +4735,7 @@ namespace NonLinearPoroViscoElasticity
           virtual Tensor<1,dim>
           get_neumann_traction (const types::boundary_id &boundary_id,
                                 const Point<dim>         &pt,
-                                const Tensor<1,dim>      &N) const
+                                const Tensor<1,dim>      &N) const override
           {
               if (this->parameters.load_type == "pressure")
               {
@@ -4756,14 +4756,14 @@ namespace NonLinearPoroViscoElasticity
             }
 
           virtual types::boundary_id
-          get_reaction_boundary_id_for_output() const
+          get_reaction_boundary_id_for_output() const override
           {
               return 5;
           }
 
           virtual std::vector<double>
           get_dirichlet_load(const types::boundary_id   &boundary_id,
-                             const int                  &direction) const
+                             const int                  &direction) const override
           {
                 std::vector<double> displ_incr(dim,0.0);
 
@@ -4821,7 +4821,7 @@ namespace NonLinearPoroViscoElasticity
 
         private:
           virtual void
-          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices)
+          define_tracked_vertices(std::vector<Point<dim> > &tracked_vertices) override
           {
             tracked_vertices[0][0] = 0.75*this->parameters.scale;
             tracked_vertices[0][1] = 0.5*this->parameters.scale;
@@ -4833,7 +4833,7 @@ namespace NonLinearPoroViscoElasticity
           }
 
           virtual void
-          make_dirichlet_constraints(AffineConstraints<double> &constraints)
+          make_dirichlet_constraints(AffineConstraints<double> &constraints) override
           {
               if (this->time.get_timestep() < 2)
               {
@@ -4885,7 +4885,7 @@ namespace NonLinearPoroViscoElasticity
           virtual Tensor<1,dim>
           get_neumann_traction (const types::boundary_id &boundary_id,
                                 const Point<dim>         &pt,
-                                const Tensor<1,dim>      &N) const
+                                const Tensor<1,dim>      &N) const override
           {
               if (this->parameters.load_type == "pressure")
               {
@@ -4909,14 +4909,14 @@ namespace NonLinearPoroViscoElasticity
             }
 
           virtual types::boundary_id
-          get_reaction_boundary_id_for_output() const
+          get_reaction_boundary_id_for_output() const override
           {
               return 4;
           }
 
           virtual std::vector<double>
           get_dirichlet_load(const types::boundary_id   &boundary_id,
-                             const int                  &direction) const
+                             const int                  &direction) const override
           {
                 std::vector<double> displ_incr (dim, 0.0);
 
