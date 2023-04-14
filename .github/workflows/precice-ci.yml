@@ -44,3 +44,13 @@ jobs:
           (./coupled_laplace_problem 2>&1 & ./fancy_boundary_condition >fbc.log)
           sed -i '2d' solution-10.vtk
           numdiff solution-10.vtk test_data/reference-10.vtk
+
+      - name: Create issue about failure
+        if: ${{ failure() && (github.event_name == 'schedule') }}
+        uses: JasonEtco/create-an-issue@v2.9.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/action-issue-template.md
+          update_existing: true
+          search_existing: open
