@@ -5,31 +5,42 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+  - cron: '0 0 * * 0'
 
 jobs:
   build:
-
+    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: ["Debug"]
+        dealii_version: ["master", "v9.4.0"]
+
+    container:
+      image: dealii/dealii:${{ matrix.dealii_version }}-focal
+      options: --user root
+
     steps:
-    - uses: actions/checkout@v2
-    - name: setup
-      run: |
-         command="sudo apt-get -y update && \
-                  wget https://github.com/precice/precice/releases/download/v2.1.1/libprecice2_2.1.1_focal.deb && \
-                  sudo apt-get -y install ./libprecice2_2.1.1_focal.deb && \
-                  git clone https://github.com/${{ github.repository }} && \
-                  cd code-gallery && \
-                  git fetch origin ${{ github.ref }} && \
-                  git checkout FETCH_HEAD && \
-                  cd coupled_laplace_problem && \
-                  cmake . && \
-                  make && \
-                  (./coupled_laplace_problem 2>&1 & ./fancy_boundary_condition >fbc.log) && \
-                  sed -i '2d' solution-10.vtk && \
-                  numdiff solution-10.vtk test_data/reference-10.vtk";
-         
-         echo $command
-         
-         docker pull dealii/dealii:v9.4.0-focal
-         docker run -t dealii/dealii:v9.4.0-focal /bin/sh -c "$command";
+      - name: Install preCICE
+        run: |
+          sudo apt-get -y update
+          wget https://github.com/precice/precice/releases/download/v2.4.0/libprecice2_2.4.0_focal.deb
+          sudo apt-get -y install ./libprecice2_2.4.0_focal.deb
+
+      - uses: actions/checkout@v3
+
+      - name: Compile
+        run: |
+          cd coupled_laplace_problem
+          cmake .
+          make
+
+      - name: Test
+        run: |
+          cd coupled_laplace_problem
+          (./coupled_laplace_problem 2>&1 & ./fancy_boundary_condition >fbc.log)
+          sed -i '2d' solution-10.vtk
+          numdiff solution-10.vtk test_data/reference-10.vtk
