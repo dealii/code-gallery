@@ -423,7 +423,7 @@ CoupledLaplaceProblem<dim>::make_grid()
   triangulation.refine_global(4);
 
   for (const auto &cell : triangulation.active_cell_iterators())
-    for (const auto face : cell->face_iterators())
+    for (const auto &face : cell->face_iterators())
       {
         // We choose the boundary in positive x direction for the
         // interface coupling.
