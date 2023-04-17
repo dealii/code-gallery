@@ -27,8 +27,8 @@ jobs:
       - name: Install preCICE
         run: |
           sudo apt-get -y update
-          wget https://github.com/precice/precice/releases/download/v2.4.0/libprecice2_2.4.0_focal.deb
-          sudo apt-get -y install ./libprecice2_2.4.0_focal.deb
+          wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
+          sudo apt-get -y install ./libprecice2_2.5.0_focal.deb
 
       - uses: actions/checkout@v3
 
