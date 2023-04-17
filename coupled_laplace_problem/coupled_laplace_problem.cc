@@ -177,10 +177,9 @@ Adapter<dim, ParameterClass>::initialize(
 
   // The `ComponentMask()` might be important in case we deal with vector valued
   // problems, because vector valued problems have a DoF for each component.
-  DoFTools::extract_boundary_dofs(dof_handler,
-                                  ComponentMask(),
-                                  coupling_dofs,
-                                  couplingBoundary);
+  coupling_dofs = DoFTools::extract_boundary_dofs(dof_handler,
+                                                  ComponentMask(),
+                                                  couplingBoundary);
 
   // The coupling DoFs are used to set up the `boundary_data` map. At the end,
   // we associate here each DoF with a respective boundary value.
