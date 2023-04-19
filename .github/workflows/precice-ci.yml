@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}
+    name: Build ${{ matrix.build_type }}-dealii:${{ matrix.dealii_version }}-${{ matrix.ubuntu_version }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -18,17 +18,18 @@ jobs:
       matrix:
         build_type: ["Debug"]
         dealii_version: ["master", "v9.4.0"]
+        ubuntu_version: ["jammy"]
 
     container:
-      image: dealii/dealii:${{ matrix.dealii_version }}-focal
+      image: dealii/dealii:${{ matrix.dealii_version }}-${{ matrix.ubuntu_version }}
       options: --user root
 
     steps:
       - name: Install preCICE
         run: |
           sudo apt-get -y update
-          wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
-          sudo apt-get -y install ./libprecice2_2.5.0_focal.deb
+          wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_${{ matrix.ubuntu_version }}.deb
+          sudo apt-get -y install ./libprecice2_2.5.0_${{ matrix.ubuntu_version }}.deb
 
       - uses: actions/checkout@v3
 
