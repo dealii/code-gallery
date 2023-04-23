@@ -48,24 +48,16 @@ IF(NOT ${deal.II_FOUND})
 ENDIF()
 
 # Find braid details
-IF(NOT "$ENV{BRAID_DIR}" STREQUAL "")
-    SET(BRAID_DIR "$ENV{BRAID_DIR}" CACHE INTERNAL "Copied BRAID_DIR from environment variable")
-ENDIF()
-
-IF("${CMAKE_FIND_LIBRARY_PREFIXES}" STREQUAL "")
-    SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
-ENDIF()
+SET(BRAID_DIR "$ENV{BRAID_DIR}" CACHE INTERNAL "Copied BRAID_DIR from environment variable")
 
 FIND_PATH(BRAID_INCLUDE_DIR
   NAMES braid.h
   HINTS ${BRAID_DIR}
-  PATH_SUFFIXES include
   )
 
 FIND_LIBRARY(BRAID_LIBRARY
-  NAMES braid.a
+  NAMES libbraid.a
   HINTS ${BRAID_DIR}
-  PATH_SUFFIXES lib64 lib
   )
 
 MESSAGE(STATUS "Braid include directory: ${BRAID_INCLUDE_DIR}")
