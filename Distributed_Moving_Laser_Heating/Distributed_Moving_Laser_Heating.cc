@@ -224,10 +224,12 @@ void LaserHeating<dim>::setup_system ()
   DoFTools::make_hanging_node_constraints (dof_handler, constraints_T);
   constraints_T.close();
 
+  const unsigned int myid = Utilities::MPI::this_mpi_process (mpi_communicator);
   DynamicSparsityPattern dsp_T(locally_relevant_dofs);
-  DoFTools::make_sparsity_pattern (dof_handler, dsp_T,constraints_T,false);
+  DoFTools::make_sparsity_pattern (dof_handler, dsp_T, constraints_T, false, myid);
+
   SparsityTools::distribute_sparsity_pattern (dsp_T,
-                                              dof_handler.n_locally_owned_dofs_per_processor(),
+                                              locally_owned_dofs,
                                               mpi_communicator,
                                               locally_relevant_dofs);
 
@@ -279,11 +281,7 @@ void LaserHeating<dim>::assemble_system_matrix_init (double time_step)
 
   system_rhs_T = 0;
 
-  typename DoFHandler<dim>::active_cell_iterator
-  cell = dof_handler.begin_active(),
-  endc = dof_handler.end();
-
-  for (const auto cell : dof_handler.active_cell_iterator())
+  for (const auto &cell : dof_handler.active_cell_iterators())
       if(cell->is_locally_owned())
     {
 
@@ -688,9 +686,29 @@ int main (int argc, char *argv[])
     }
     catch (std::exception &exc)
     {
-        std::cerr << std::endl << std::endl
-            << "--------------------------------------------"
-            <<std::endl;
+      std::cerr << std::endl
+                << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+      std::cerr << "Exception on processing: " << std::endl
+                << exc.what() << std::endl
+                << "Aborting!" << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+
+      return 1;
+    }
+    catch (...)
+    {
+      std::cerr << std::endl
+                << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+      std::cerr << "Unknown exception!" << std::endl
+                << "Aborting!" << std::endl
+                << "----------------------------------------------------"
+                << std::endl;
+      return 1;
     }
 
 
