@@ -214,9 +214,9 @@ namespace Step22
     }
 
     virtual double value(const Point<dim> &p,
-                         const unsigned int component = 0) const;
+                         const unsigned int component = 0) const override;
 
-    virtual void vector_value(const Point<dim> &p, Vector<double> &value) const;
+    virtual void vector_value(const Point<dim> &p, Vector<double> &value) const override;
   };
 
   template<int dim>
