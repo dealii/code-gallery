@@ -1,4 +1,4 @@
-name: PreCICE CI
+name: github-linux
 
 on:
   push:
@@ -29,21 +29,44 @@ jobs:
       options: --user root
 
     steps:
+      - name: Install dependencies from repository
+        run: |
+          apt-get -y update
+          apt-get -y install libarmadillo-dev libconfig++-dev
+
       - name: Install preCICE
         run: |
-          sudo apt-get -y update
-          wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_${{ matrix.ubuntu_version }}.deb
-          sudo apt-get -y install ./libprecice2_2.5.0_${{ matrix.ubuntu_version }}.deb
+          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_${{ matrix.ubuntu_version }}.deb
+          apt-get -y install ./libprecice.deb
+
+      - name: Install XBraid
+        run: |
+          wget -O xbraid.tar.gz https://github.com/XBraid/xbraid/archive/refs/tags/v3.1.0.tar.gz
+          mkdir /opt/xbraid
+          tar xf xbraid.tar.gz -C /opt/xbraid --strip-components 1
+          cd /opt/xbraid/braid
+          make
+          echo "BRAID_DIR=${PWD}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v3
 
-      - name: Compile
+      - name: Compile all projects
         run: |
-          cd coupled_laplace_problem
-          cmake .
-          make
+          for dir in */
+          do
+            cd ${dir}
+            if [ -e CMakeLists.txt ]
+            then
+              echo "Current project: ${dir}"
+              cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .
+              make
+            else
+              echo "Skipping project: ${dir}"
+            fi
+            cd ..
+          done
 
-      - name: Test
+      - name: Test coupled_laplace_problem
         run: |
           cd coupled_laplace_problem
           (./coupled_laplace_problem 2>&1 & ./fancy_boundary_condition >fbc.log)
