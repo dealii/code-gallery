@@ -214,9 +214,9 @@ namespace Step22
     }
 
     virtual double value(const Point<dim> &p,
-                         const unsigned int component = 0) const;
+                         const unsigned int component = 0) const override;
 
-    virtual void vector_value(const Point<dim> &p, Vector<double> &value) const;
+    virtual void vector_value(const Point<dim> &p, Vector<double> &value) const override;
   };
 
   template<int dim>
@@ -426,9 +426,7 @@ namespace Step22
 
     constraints.close();
 
-    std::vector<types::global_dof_index> dofs_per_block(2);
-    DoFTools::count_dofs_per_block(dof_handler, dofs_per_block,
-                                   block_component);
+    std::vector<types::global_dof_index> dofs_per_block = DoFTools::count_dofs_per_fe_block(dof_handler, block_component);
     n_u = dofs_per_block[0];
     n_p = dofs_per_block[1];
 
