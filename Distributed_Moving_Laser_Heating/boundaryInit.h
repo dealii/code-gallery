@@ -20,7 +20,7 @@ public:
   BoundaryValues () : Function<dim>() {}
 
   virtual double value (const Point<dim>   &p,
-                        const unsigned int  component = 0) const;
+                        const unsigned int  component = 0) const override;
 };
 
 template <int dim>
@@ -30,7 +30,7 @@ public:
   InitialValues () : Function<dim>() {}
 
   virtual double value (const Point<dim>   &p,
-                        const unsigned int  component = 0) const;
+                        const unsigned int  component = 0) const override;
 };
 
 
@@ -67,7 +67,7 @@ public:
   RhoC () : Function<dim>() {}
 
   virtual double value (const Point<dim>   &p,
-                        const unsigned int  component = 0) const;
+                        const unsigned int  component = 0) const override;
 };
 
 template <int dim>
@@ -98,7 +98,7 @@ public:
   K_T () : Function<dim>() {}
 
   virtual double value (const Point<dim>   &p,
-                        const unsigned int  component = 0) const;
+                        const unsigned int  component = 0) const override;
 };
 
 template <int dim>
