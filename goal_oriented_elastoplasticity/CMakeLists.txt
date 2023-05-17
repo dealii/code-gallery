@@ -18,7 +18,7 @@ SET(CLEAN_UP_FILES *.vtu *.pvtu *.visit)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0)
 
-FIND_PACKAGE(deal.II 9.4 QUIET
+FIND_PACKAGE(deal.II 9.4
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
