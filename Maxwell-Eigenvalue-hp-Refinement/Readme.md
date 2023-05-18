@@ -13,7 +13,7 @@ $$ \nabla\times(\mu_r^{-1}\nabla\times\mathbf{E})-k_0^2\varepsilon_r\mathbf{E} =
  In the remainder of this project, we assume $d=2$, though the methodology is largely unaffected by this choice. We further assume perfect electrical conductor (PEC) boundary conditions: $\hat{\textbf{n}}\times\textbf{E}=0 \textrm{ on }\partial\Omega$, $\hat{\textbf{n}}$ being the outward normal vector.
 
  In the standard way, we consider *weak* solutions by solving the variational form of the eigenvalue problem, which, in the 2-D case, is found to be the following after Galerkin testing:
- $$ \textrm{Find } U_{hp}=\left\{ \mathbf{u}_{hp},\,\lambda_{hp}\right\}\in V_{hp}\times \mathbb{R}_{>0} \textrm{ such that}
+ $$ \textrm{Find } U_{hp}=\left\{ \mathbf{u}_{hp},\,\lambda_{hp}\right\}\in V_{hp}\times \mathbb{R}_{>0} \textrm{ such that} $$
  $$ a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \lambda_{hp} m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) \quad \forall\boldsymbol{\phi}\in V_{hp}, $$
  with $a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \nabla_t\times\textbf{u}_{hp},\,\nabla_t\times\boldsymbol{\phi}_{hp}\rangle$ (note: $\nabla_t$ represents the transversal gradient operator and $\langle \cdot ,\, \cdot \rangle$ represents the $L^2$ inner-product), and $m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \textbf{u}_{hp},\,\boldsymbol{\phi}_{hp} \rangle$. The finite dimensional subspace $V_{hp}$ will be further specified below along with its infinite dimensional analog $V$ associated with an exact solution $U=\left\{ \textbf{u},\, \lambda \right\}$.
 
