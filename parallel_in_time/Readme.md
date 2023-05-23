@@ -113,29 +113,21 @@ where $\Delta \epsilon_n$ is the convergence rate of error $\epsilon$ between a 
 Shown in Table 1 are the errors of the $\textrm{L}^2$, $\textrm{H}^1$, and $\textrm{L}^\infty$ norms as the mesh is refined, and shown in Table 2 is the convergence rate.
 The $\Delta t$ is reduced by a factor of 2 for every global refinement of the mesh.
 
-@f{align}
-  \begin{tabular}{|c|c|c|c|c|c|} \hline
-	  cycles & \# cells & \# dofs & $\textrm{L}^2$-error & $\textrm{H}^1$-error & $\textrm{L}^\infty$-error \\ \hline
-	  125 & 48 & 65 & 6.036e-03 & 6.970e-02 & 7.557e-03\\ \hline
-	  250 & 192 & 225 & 1.735e-03 & 3.414e-02 & 2.721e-03 \\ \hline
-	  500 & 768 & 833 & 4.513e-04 & 1.690e-02 & 7.410e-04 \\ \hline
-	  1000 & 3072 & 3201 & 1.140e-04 & 8.426e-03 & 1.877e-04 \\ \hline
-	  2000 & 12288 & 12545 & 2.859e-05 & 4.209e-03 & 4.715e-05 \\ \hline
-  \end{tabular}
-@f}
+| cycles | # cells | # dofs | $\textrm{L}^2$-error | $\textrm{H}^1$-error | $\textrm{L}^\infty$-error |
+| :----: | :-----: | :----: | :------------------: | :------------------: | :-----------------------: |
+| 125    | 48      | 65     | 6.036e-03            | 6.970e-02            | 7.557e-03                 |
+| 250    | 192     | 225    | 1.735e-03            | 3.414e-02            | 2.721e-03                 |
+| 500    | 768     | 833    | 4.513e-04            | 1.690e-02            | 7.410e-04                 |
+| 1000   | 3072    | 3201   | 1.140e-04            | 8.426e-03            | 1.877e-04                 |
+| 2000   | 12288   | 12545  | 2.859e-05            | 4.209e-03            | 4.715e-05                 |
 
-@f{align}
-  \begin{tabular}{|c|c|c|c|c|c|} \hline
-	  cycles & \# cells & \# dofs & Slope $\textrm{L}^2$ & Slope $\textrm{H}^1$  & Slope $\textrm{L}^\infty$ \\ \hline
-	  125 & 48 & 65 & --- & --- & --- \\ \hline
-	  250 & 192 & 225 & 1.798 & 1.030 & 1.474 \\ \hline
-	  500 & 768 & 833 & 1.943 & 1.014 & 1.877 \\ \hline
-	  1000 & 3072 & 3201 & 1.985 & 1.004 & 1.981 \\ \hline
-	  2000 & 12288 & 12545 & 1.995 & 1.001  & 1.993 \\ \hline
-  \end{tabular}
-@f}
-
-
+| cycles | # cells | # dofs | Slope $\textrm{L}^2$ | Slope $\textrm{H}^1$ | Slope $\textrm{L}^\infty$ |
+| :----: | :-----: | :----: | :------------------: | :------------------: | :-----------------------: |
+| 125    | 48      | 65     | ---                  | ---                  | ---                       |
+| 250    | 192     | 225    | 1.798                | 1.030                | 1.474                     |
+| 500    | 768     | 833    | 1.943                | 1.014                | 1.877                     |
+| 1000   | 3072    | 3201   | 1.985                | 1.004                | 1.981                     |
+| 2000   | 12288   | 12545  | 1.995                | 1.001                | 1.993                     |
 
 The convergence rate is plotted as a function of the grid spacing in the figure below.
 As can be seen, the slope converges at a second order rate for the $\textrm{L}^2$ and $\textrm{L}^\infty$ norms and at a first order rate for the $\textrm{H}^1$ norms.
