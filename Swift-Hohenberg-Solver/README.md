@@ -65,7 +65,8 @@ As usual, we multiply each side of the equation by a
 test function 
 
 $$\overrightarrow\varphi_i = \begin{pmatrix}
-    \phi_i\\ \psi_i
+    \phi_i\\
+    \psi_i
 \end{pmatrix}$$
 
 to get the equation
@@ -94,16 +95,17 @@ and then expand our solution vector in this basis
 $$\begin{aligned}
     \sum_j u_j\begin{pmatrix}
             \phi_i\\
-		\psi_i
+		    \psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
         \end{pmatrix}
         \begin{pmatrix}
-            \phi_j\\\psi_j
+            \phi_j\\
+            \psi_j
         \end{pmatrix} &= \begin{pmatrix}
             \phi_i\\
-		\psi_i
+		    \psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
