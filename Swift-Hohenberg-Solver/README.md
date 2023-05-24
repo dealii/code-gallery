@@ -53,7 +53,8 @@ $$\begin{aligned}
             1 + \Delta & -1
         \end{pmatrix}
         \begin{pmatrix}
-            U_n\\ V_n
+            U_n\\
+		    V_n
         \end{pmatrix} &= \begin{pmatrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
@@ -61,13 +62,18 @@ $$\begin{aligned}
 \end{aligned}$$
 
 As usual, we multiply each side of the equation by a
-test function $\overrightarrow\varphi_i = \begin{pmatrix}
+test function 
+
+$$\overrightarrow\varphi_i = \begin{pmatrix}
     \phi_i\\ \psi_i
-\end{pmatrix}$
+\end{pmatrix}$$
+
+to get the equation
 
 $$\begin{aligned}
     \begin{pmatrix}
-            \phi_i\\ \psi_i
+            \phi_i\\ 
+                \psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
@@ -75,7 +81,8 @@ $$\begin{aligned}
         \begin{pmatrix}
             U_n\\ V_n
         \end{pmatrix} &= \begin{pmatrix}
-            \phi_i\\\psi_i
+            \phi_i\\
+		\psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
@@ -86,7 +93,8 @@ and then expand our solution vector in this basis
 
 $$\begin{aligned}
     \sum_j u_j\begin{pmatrix}
-            \phi_i\\\psi_i
+            \phi_i\\
+		\psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
@@ -94,7 +102,8 @@ $$\begin{aligned}
         \begin{pmatrix}
             \phi_j\\\psi_j
         \end{pmatrix} &= \begin{pmatrix}
-            \phi_i\\\psi_i
+            \phi_i\\
+		\psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
