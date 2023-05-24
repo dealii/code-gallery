@@ -80,7 +80,8 @@ $$\begin{aligned}
             1 + \Delta & -1
         \end{pmatrix}
         \begin{pmatrix}
-            U_n\\ V_n
+            U_n\\
+            V_n
         \end{pmatrix} &= \begin{pmatrix}
             \phi_i\\
 		\psi_i
