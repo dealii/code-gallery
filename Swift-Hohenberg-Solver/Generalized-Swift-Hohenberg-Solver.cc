@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  *
- * Copyright (C) 2013 - 2021 by the deal.II authors
+ * Copyright (C) 2013 - 2023 by the deal.II authors
  *
  * This file is part of the deal.II library.
  *
@@ -14,7 +14,7 @@
  * ---------------------------------------------------------------------
 
  *
- * Author: Wolfgang Bangerth, Texas A&M University, 2013
+ * Author: Samuel Scheuerman, Colorado State University, 2023
  */
 
 
