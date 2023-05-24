@@ -55,7 +55,8 @@ $$\begin{aligned}
         \begin{pmatrix}
             U_n\\ V_n
         \end{pmatrix} &= \begin{pmatrix}
-            U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\0
+            U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
+		0
         \end{pmatrix}
 \end{aligned}$$
 
@@ -76,7 +77,8 @@ $$\begin{aligned}
         \end{pmatrix} &= \begin{pmatrix}
             \phi_i\\\psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
-            U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\0
+            U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
+		0
         \end{pmatrix}\\
 \end{aligned}$$
 
@@ -94,7 +96,8 @@ $$\begin{aligned}
         \end{pmatrix} &= \begin{pmatrix}
             \phi_i\\\psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
-            U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\0
+            U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
+		0
         \end{pmatrix}
 \end{aligned}$$
 
