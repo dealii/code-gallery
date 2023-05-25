@@ -31,10 +31,10 @@ $$\begin{aligned}
 \end{aligned}$$
 
 We can solve these two equations simultaneously by treating our
-finite elements as vector valued, and interpretting our system of
+finite elements as vector valued, and interpreting our system of
 equations as a single vector-valued PDE. We can handle the nonlinear
 terms by treating them fully explicitly. If we discretize in time and
-Backrange terms, our system of equations becomes 
+rearrange terms, our system of equations becomes 
 
 $$\begin{aligned}
         (1 - kr)U_n + k(1 + \Delta)V_n &= U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
@@ -69,10 +69,10 @@ $$\overrightarrow\varphi_i = \begin{pmatrix}
     \psi_i
 \end{pmatrix}$$
 
-to get the equation
+and then integrate over the domain $\Omega$ to get the equation
 
 $$\begin{aligned}
-    \begin{pmatrix}
+    \int_\Omega \begin{pmatrix}
             \phi_i\\ 
                 \psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
@@ -82,7 +82,7 @@ $$\begin{aligned}
         \begin{pmatrix}
             U_n\\
             V_n
-        \end{pmatrix} &= \begin{pmatrix}
+        \end{pmatrix} &= \int_\Omega \begin{pmatrix}
             \phi_i\\
 		\psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
@@ -91,10 +91,10 @@ $$\begin{aligned}
         \end{pmatrix}\\
 \end{aligned}$$
 
-and then expand our solution vector in this basis
+We can expand our solution vector in this basis
 
 $$\begin{aligned}
-    \sum_j u_j\begin{pmatrix}
+    \int_\Omega \sum_j u_j\begin{pmatrix}
             \phi_i\\
 		    \psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
@@ -104,7 +104,7 @@ $$\begin{aligned}
         \begin{pmatrix}
             \phi_j\\
             \psi_j
-        \end{pmatrix} &= \begin{pmatrix}
+        \end{pmatrix} &= \int_\Omega\begin{pmatrix}
             \phi_i\\
 		    \psi_i
         \end{pmatrix}\cdot\begin{pmatrix}
@@ -113,12 +113,12 @@ $$\begin{aligned}
         \end{pmatrix}
 \end{aligned}$$
 
-The last step is to expand out the matrix multiplication
-and dot products, integrate, and apply the divergence theorem to obtain
+and finally expand out the matrix multiplication
+and dot products, then apply the divergence theorem to obtain
 a single equation:
 
 $$\begin{aligned}
-    \sum_j u_j [(1 - kr)\phi_i\phi_j + k\phi_i\psi_j - k\nabla\phi_i\nabla\psi_j + \psi_i\phi_j - \nabla\psi_i\nabla\psi_j - \psi_i\psi_j] &= \phi_i(U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3)
+    \sum_j u_j \int_\Omega[(1 - kr)\phi_i\phi_j + k\phi_i\psi_j - k\nabla\phi_i\nabla\psi_j + \psi_i\phi_j - \nabla\psi_i\nabla\psi_j - \psi_i\psi_j] &= \int_\Omega\phi_i(U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3)
 \end{aligned}$$
 
 This last equation represents matrix multiplication of the
@@ -129,7 +129,7 @@ compute the $(i, j)^{th}$ entry of the system matrix.
 # Boundary Conditions and Choosing a Suitable Domain
 
 This code implements both zero Dirichlet and zero Neumann boundary
-conditions. Both these conditions affect the patterns that form. To
+conditions. Both of these conditions affect the patterns that form. To
 minimize this effect, we use Neumann boundary conditions and we choose
 the boundary to be some multiple of the wave number. For example, this
 code chooses the square mesh to have a side length of $6\cdot 2\pi$.
@@ -153,7 +153,7 @@ parameters in the SH equation.
 
 The hot spot initial condition is useful for the opposite reason: it is
 very simple, but it lets us see what happens to a single pattern
-\"wavelength\" as it propagates along our surface. This is particularly
+\"wave\" as it propagates along our surface. This is particularly
 useful in distinguishing the effect of curvature and geometry on pattern
 propagation.
 
@@ -211,7 +211,7 @@ pieces as $g_1$ is increased. In the matrix below, $g_1$ is
 increased by 0.2 starting from 0 to a maximum value of 1.4. Note that
 each final solution is at 100 time units:
 
-![image](doc/images/Sphere_Hotspot_Table.png)
+![image](doc/images/Square_Hotspot_Table.png)
 
 On the cylinder, the front looks similar to the square, but the back has
 an overlapping wave pattern:

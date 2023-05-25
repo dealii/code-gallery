@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------
  *
- * Copyright (C) 2013 - 2023 by the deal.II authors
+ * Copyright (C) 2023 by the deal.II authors
  *
  * This file is part of the deal.II library.
  *
@@ -142,7 +142,6 @@ namespace SwiftHohenbergSolver
     SHEquation(const unsigned int degree
                 , double time_step_denominator
                 , unsigned int ref_num
-                /* , unsigned int iteration_number */
                 , double r_constant = 0.5
                 , double g1_constant = 0.5
                 , std::string output_file_name = "solution-"
