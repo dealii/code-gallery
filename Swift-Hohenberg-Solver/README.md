@@ -2,7 +2,9 @@
 
 This program is used to solve the generalized Swift-Hohenberg equation
 
-$$\frac{\partial u}{\partial t} = ru - (k_c + \Delta)^2 u + g_1 u^2 - u^3$$
+$$\begin{aligned}
+    \frac{\partial u}{\partial t} = ru - (k_c + \Delta)^2 u + g_1 u^2 - u^3
+\end{aligned}$$
 
 where $k_c$ is the wave number, $r$ is some fixed constant, and
 $g_1$ is a parameter which determines the behavior of the solutions.
@@ -15,7 +17,9 @@ are interesting behaviors that occur when $g_1$ is smaller or larger
 than $r$ in magnitude, so this allows us room to vary $g_1$ and
 explore these behavior. To summarize, this code solves:
 
-$$\frac{\partial u}{\partial t} = 0.3u - (1 + \Delta)^2 u + g_1 u^2 - u^3$$
+$$\begin{aligned}
+    \frac{\partial u}{\partial t} = 0.3u - (1 + \Delta)^2 u + g_1 u^2 - u^3
+\end{aligned}$$
 
 # Discretization and Solving the Bilaplacian
 
@@ -48,69 +52,69 @@ the previous timestep. We then reframe this system as a vector valued
 problem
 
 $$\begin{aligned}
-    \begin{pmatrix}
+    \left(\begin{matrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
-        \end{pmatrix}
-        \begin{pmatrix}
+        \end{matrix}\right)
+        \left(\begin{matrix}
             U_n\\
 		    V_n
-        \end{pmatrix} &= \begin{pmatrix}
+        \end{matrix}\right) &= \left(\begin{matrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
-        \end{pmatrix}
+        \end{matrix}\right)
 \end{aligned}$$
 
 As usual, we multiply each side of the equation by a
 test function 
 
-$$\overrightarrow\varphi_i = \begin{pmatrix}
+$$\overrightarrow\varphi_i = \left(\begin{matrix}
     \phi_i\\
     \psi_i
-\end{pmatrix}$$
+\end{matrix}\right)$$
 
 and then integrate over the domain $\Omega$ to get the equation
 
 $$\begin{aligned}
-    \int_\Omega \begin{pmatrix}
+    \int_\Omega \left(\begin{matrix}
             \phi_i\\ 
                 \psi_i
-        \end{pmatrix}\cdot\begin{pmatrix}
+        \end{matrix}\right)\cdot\left(\begin{matrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
-        \end{pmatrix}
-        \begin{pmatrix}
+        \end{matrix}\right)
+        \left(\begin{matrix}
             U_n\\
             V_n
-        \end{pmatrix} &= \int_\Omega \begin{pmatrix}
+        \end{matrix}\right) &= \int_\Omega \left(\begin{matrix}
             \phi_i\\
 		\psi_i
-        \end{pmatrix}\cdot\begin{pmatrix}
+        \end{matrix}\right)\cdot\left(\begin{matrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
-        \end{pmatrix}\\
+        \end{matrix}\right)\\
 \end{aligned}$$
 
 We can expand our solution vector in this basis
 
 $$\begin{aligned}
-    \int_\Omega \sum_j u_j\begin{pmatrix}
+    \int_\Omega \sum_j u_j\left(\begin{matrix}
             \phi_i\\
 		    \psi_i
-        \end{pmatrix}\cdot\begin{pmatrix}
+        \end{matrix}\right)\cdot\left(\begin{matrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
-        \end{pmatrix}
-        \begin{pmatrix}
+        \end{matrix}\right)
+        \left(\begin{matrix}
             \phi_j\\
             \psi_j
-        \end{pmatrix} &= \int_\Omega\begin{pmatrix}
+        \end{matrix}\right) &= \int_\Omega\left(\begin{matrix}
             \phi_i\\
 		    \psi_i
-        \end{pmatrix}\cdot\begin{pmatrix}
+        \end{matrix}\right)\cdot\left(\begin{matrix}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
-        \end{pmatrix}
+        \end{matrix}\right)
 \end{aligned}$$
 
 and finally expand out the matrix multiplication
@@ -176,7 +180,7 @@ on the finest mesh.
 
 Below are the results of several runs of constant initial conditions
 
-![image](doc/images/Figures_1_and_2.png)
+![image](./doc/images/Figures_1_and_2.png)
 
 We also validated that given a fixed random start on a very fine mesh,
 refining the timestep resulted in the same final solution. The initial
@@ -184,7 +188,7 @@ condition for each is shown above, While the final solutions are shown in the ma
 timestep begins at 1/25 and the denominator increases by 25 across each
 row, to a max of 1/200 in the bottom right:
 
-![image](doc/images/TC_table.png)
+![image](./doc/images/TC_table.png)
 
 We validated that solutions converged across mesh refinement by defining
 psuedorandom functions
@@ -198,9 +202,9 @@ so that the smallest wave could be resolved by a mesh refinement of 7 or
 higher. The following matrix shows the initial and final solution
 ranging from a refinement of 0 to a refinement of 7:
 
-![image](doc/images/Refinement_Convergence_Table_1.png)
+![image](./doc/images/Refinement_Convergence_Table_1.png)
 
-![image](doc/images/Refinement_Convergence_Table_2.png)
+![image](./doc/images/Refinement_Convergence_Table_2.png)
 
 # Results
 
@@ -211,29 +215,29 @@ pieces as $g_1$ is increased. In the matrix below, $g_1$ is
 increased by 0.2 starting from 0 to a maximum value of 1.4. Note that
 each final solution is at 100 time units:
 
-![image](doc/images/Square_Hotspot_Table.png)
+![image](./doc/images/Square_Hotspot_Table.png)
 
 On the cylinder, the front looks similar to the square, but the back has
 an overlapping wave pattern:
 
-![image](doc/images/Cylinder_Hotspot_Table.png)
+![image](./doc/images/Cylinder_Hotspot_Table.png)
 
 
 On the sphere, the hot spot generates a single wave. Note that this may
 be due to the fact that our sphere has a surface area proportional to
 the period of our pattern wave.
 
-![image](doc/images/Sphere_Hotspot_Table.png)
+![image](./doc/images/Sphere_Hotspot_Table.png)
 
 On the torus, the pattern propagates similar to the cylinder, with some
 minor imperfections
 
-![image](doc/images/Torus_Hotspot_Front_Table.png)
+![image](./doc/images/Torus_Hotspot_Front_Table.png)
 
 But on the back side of the torus, we see wave overlapping and spot
 patterns forming
 
-![image](doc/images/Torus_Hotspot_Back_Table.png)
+![image](./doc/images/Torus_Hotspot_Back_Table.png)
 
 On shapes with stranger curvature, we can see that the pattern wave has
 a tendency to break apart when crossing lines of curvature. This shape
@@ -241,16 +245,16 @@ was made by warping the boundary of a cylinder by a cosine wave, and is
 equivalent to the surface of revolution bounded by
 $1 + 0.5\cos(\frac{\pi}{10}x)$
 
-![image](doc/images/Sinusoid_Hotspot_Front_Table.png)
+![image](./doc/images/Sinusoid_Hotspot_Front_Table.png)
 
-![image](doc/images/Sinusoid_Hotspot_Back_Table.png)
+![image](./doc/images/Sinusoid_Hotspot_Back_Table.png)
 
 Finally, here is a small selection of random initial conditions and the
 patterns that form. Each image sequence was taken at times 0, 10, 25,
 50, and 100:
 
-![image](doc/images/Square_Random_Table.png)
+![image](./doc/images/Square_Random_Table.png)
 
-![image](doc/images/Sphere_Random_Table.png)
+![image](./doc/images/Sphere_Random_Table.png)
 
-![image](doc/images/Sinusoid_Random_Table.png)
+![image](./doc/images/Sinusoid_Random_Table.png)
