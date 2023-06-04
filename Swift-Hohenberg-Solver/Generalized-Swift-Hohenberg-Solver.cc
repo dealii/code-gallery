@@ -55,36 +55,38 @@
 #include <iostream>
 #include <random>
 
-
 namespace SwiftHohenbergSolver
 {
   using namespace dealii;
 
 
 
-  /// @brief This enum defines the five mesh types implemented
-  ///        in this program and allows the user to pass which
-  ///        mesh is desired to the solver at runtime. This is
-  ///        useful for looping over different meshes.
+  /** @brief This enum defines the five mesh types implemented
+   *         in this program and allows the user to pass which
+   *         mesh is desired to the solver at runtime. This is
+   *         useful for looping over different meshes.
+   */
   enum MeshType {HYPERCUBE, CYLINDER, SPHERE, TORUS, SINUSOID};
 
   
-  /// @brief This enum defines the three initial conditions used
-  ///        by the program. This allows for the solver class to
-  ///        use a template argument to determine the desired
-  ///        initial condition, which is helpful for setting up
-  ///        loops to solve with a variety of different conditions
+  /** @brief This enum defines the three initial conditions used
+   *         by the program. This allows for the solver class to
+   *         use a template argument to determine the desired
+   *         initial condition, which is helpful for setting up
+   *         loops to solve with a variety of different conditions
+   */
   enum InitialConditionType {HOTSPOT, PSUEDORANDOM, RANDOM};
 
 
 
 
-  /// @brief This function warps points on a cyclindrical mesh by cosine wave along the central axis.
-  ///        We use this function to generate the "sinusoid" mesh, which is the surface of revolution
-  ///        bounded by the cosine wave.
-  /// @tparam spacedim This is the dimension of the embedding space, which is where the input point lives
-  /// @param p This is thel input point to be translated.
-  /// @return The return as a tranlated point in the same dimensional space. This is the new point on the mesh.
+  /** @brief This function warps points on a cyclindrical mesh by cosine wave along the central axis.
+   *         We use this function to generate the "sinusoid" mesh, which is the surface of revolution
+   *         bounded by the cosine wave.
+   *  @tparam spacedim This is the dimension of the embedding space, which is where the input point lives
+   *  @param p This is the input point to be translated.
+   *  @return The return as a tranlated point in the same dimensional space. This is the new point on the mesh.
+   */
   template<int spacedim>
   Point<spacedim> transform_function(const Point<spacedim>&p)
   {
@@ -98,31 +100,16 @@ namespace SwiftHohenbergSolver
   }
 
 
-  /// @brief Not currently implemented, but will function the same as above only with and undulary boundary curve rather
-  ///        than a cosine boundary curve.
-  /// @tparam spacedim See above
-  /// @param p See above
-  /// @return See above
-  template<int spacedim>
-  Point<spacedim> transform_function_2_electric_boogaloo(const Point<spacedim> &p)
-  {
-    Assert(spacedim == 3, ExcNotImplemented());
-    return 0;
-  }
 
 
-
-
-
-
-
-  /// @brief  This is the class that holds all the important variables for the solver, as well as the important member
-  ///         functions. This class is based off the HeatEquation class from step-26, so we won't go into full detail
-  ///         on all the features, but we will highlight what has been changed for this problem.
-  /// @tparam dim       This is the intrinsic dimension of the manifold we are solving on.
-  /// @tparam spacedim  This is the dimension of the embedding space.
-  /// @tparam MESH      This determines what manifold we are solving on
-  /// @tparam ICTYPE    This determines what initial condition we use
+  /** @brief  This is the class that holds all the important variables for the solver, as well as the important member
+   *          functions. This class is based off the HeatEquation class from step-26, so we won't go into full detail
+   *          on all the features, but we will highlight what has been changed for this problem.
+   *  @tparam dim       This is the intrinsic dimension of the manifold we are solving on.
+   *  @tparam spacedim  This is the dimension of the embedding space.
+   *  @tparam MESH      This determines what manifold we are solving on
+   *  @tparam ICTYPE    This determines what initial condition we use
+   */
   template <int dim, int spacedim, MeshType MESH, InitialConditionType ICTYPE>
   class SHEquation
   {
@@ -131,14 +118,15 @@ namespace SwiftHohenbergSolver
     SHEquation();
 
     
-    /// @brief                          Overloaded constructor, allows user to pass values for important constants
-    /// @param degree                   This is the degree of finite element used
-    /// @param time_step_denominator    This determines what size timestep we use. The timestep is 1/time_step_denominator
-    /// @param ref_num                  The number of times the mesh will be globally refined.
-    /// @param r_constant               Constant for linear component, default 0.5
-    /// @param g1_constant              Constant for quadratic component, default 0.5
-    /// @param output_file_name         Self explanatory, default "solution-"
-    /// @param end_time                 Determines when the solver stops, default 0.5, should be ~100 to see equilibrium solutions
+    /** @brief                          Overloaded constructor, allows user to pass values for important constants
+     *  @param degree                   This is the degree of finite element used
+     *  @param time_step_denominator    This determines what size timestep we use. The timestep is 1/time_step_denominator
+     *  @param ref_num                  The number of times the mesh will be globally refined.
+     *  @param r_constant               Constant for linear component, default 0.5
+     *  @param g1_constant              Constant for quadratic component, default 0.5
+     *  @param output_file_name         Self explanatory, default "solution-"
+     *  @param end_time                 Determines when the solver stops, default 0.5, should be ~100 to see equilibrium solutions
+     */
     SHEquation(const unsigned int degree
                 , double time_step_denominator
                 , unsigned int ref_num
@@ -152,12 +140,14 @@ namespace SwiftHohenbergSolver
     void setup_system();
     void solve_time_step();
     void output_results() const;
-    /// @brief This function calls a different grid generation function depending on the template argument MESH. Allows the solver object to generate
-    ///        different mesh types based on the template parameter.
+    /** @brief This function calls a different grid generation function depending on the template argument MESH. Allows the solver object to generate
+     *         different mesh types based on the template parameter.
+     */
     void make_grid();
 
-    /// @brief Generates a cylindrical mesh with radius 6 and width 6*pi by first creating a volumetric cylinder, extracting the boundary, and redefining the mesh as a cylinder, then
-    ///        refining the mesh refinement_number times
+    /** @brief Generates a cylindrical mesh with radius 6 and width 6*pi by first creating a volumetric cylinder, extracting the boundary, and redefining the mesh as a cylinder, then
+     *         refining the mesh refinement_number times
+     */
     void make_cylinder();
     /// @brief Uses the same process as creating a cylinder, but then also warps the boundary of the cylinder by the function (1 + 0.5*cos(pi*x/10))
     void make_sinusoid();
@@ -174,8 +164,9 @@ namespace SwiftHohenbergSolver
 
     /// @brief Object holding the mesh
     Triangulation<dim, spacedim> triangulation;
-    /// @brief Object describing the finite element vectors at each node
-    ///        (I believe this gives a basis for the finite elements at each node)
+    /** @brief Object describing the finite element vectors at each node
+     *         (I believe this gives a basis for the finite elements at each node)
+     */
     FESystem<dim, spacedim>          fe;
     /// @brief Object which understands which finite elements are at each node
     DoFHandler<dim, spacedim>    dof_handler;
@@ -186,13 +177,15 @@ namespace SwiftHohenbergSolver
     /// @brief Object holding the system matrix, stored as a sparse matrix
     SparseMatrix<double> system_matrix;
 
-    /// @brief Vector of coefficients for the solution in the current timestep
-    ///        We solve for this in each timestep
+    /** @brief Vector of coefficients for the solution in the current timestep
+     *         We solve for this in each timestep
+     */
     Vector<double> solution;
     /// @brief Stores the solution from the previous timestep. Used to compute non-linear terms
     Vector<double> old_solution;
-    /// @brief Stores the coefficients of the right hand side function(in terms of the finite elements)
-    ///        Is the RHS for the linear system
+    /** @brief Stores the coefficients of the right hand side function(in terms of the finite elements)
+     *         Is the RHS for the linear system
+     */
     Vector<double> system_rhs;
 
     /// @brief Stores the current time, in the units of the problem
@@ -221,10 +214,11 @@ namespace SwiftHohenbergSolver
   };
 
 
-  /// @brief The function which applies zero Dirichlet boundary conditions, and is
-  ///        not being used by the solver currently. Leaving the code in case this
-  ///        is ever needed.
-  /// @tparam spacedim The dimension of the points which the function takes as input
+  /** @brief The function which applies zero Dirichlet boundary conditions, and is
+   *         not being used by the solver currently. Leaving the code in case this
+   *         is ever needed.
+   *  @tparam spacedim The dimension of the points which the function takes as input
+   */
   template <int spacedim>
   class BoundaryValues : public Function<spacedim>
   {
@@ -239,12 +233,13 @@ namespace SwiftHohenbergSolver
 
 
 
-  /// @brief            Returns 0 for all points. This is the output for the boundary
-  /// @tparam spacedim  The dimension of points that are input
-  /// @param p          The input point
-  /// @param component  Determines whether we are solving for u or v.
-  ///                   This determines which part of the system we are solving
-  /// @return           0; This is the boundary value for all points
+  /** @brief            Returns 0 for all points. This is the output for the boundary
+   *  @tparam spacedim  The dimension of points that are input
+   *  @param p          The input point
+   *  @param component  Determines whether we are solving for u or v.
+   *                    This determines which part of the system we are solving
+   *  @return           0; This is the boundary value for all points
+   */
   template <int spacedim>
   double BoundaryValues<spacedim>::value(const Point<spacedim> & p,
                                     const unsigned int component) const
@@ -255,18 +250,19 @@ namespace SwiftHohenbergSolver
     return 0.;
   }
 
-  /// @brief            This class holds the initial condition function we will use for the solver.
-  ///                   Note that this class takes both MeshType and InitialConditionType as parameters.
-  ///                   This class is capable of producing several different initial conditions without
-  ///                   having to change the code each time, which makes it useful for running longer
-  ///                   experiments without having to stop the code each time. The downside of this is
-  ///                   the code is that the class is rather large, and functions have to be defined
-  ///                   multiple times to be compatible with the different configurations of MESH and
-  ///                   ICTYPE. Because of this, our implementation is not a good solution if more than
-  ///                   a few variations of mesh and initial conditions need to be used.
-  /// @tparam spacedim  The dimension of the input points
-  /// @tparam MESH      The type of mesh to apply initial conditions to, of type MeshType
-  /// @tparam ICTYPE    The type of initial condition to apply, of type InitialConditionType
+  /** @brief            This class holds the initial condition function we will use for the solver.
+   *                    Note that this class takes both MeshType and InitialConditionType as parameters.
+   *                    This class is capable of producing several different initial conditions without
+   *                    having to change the code each time, which makes it useful for running longer
+   *                    experiments without having to stop the code each time. The downside of this is
+   *                    the code is that the class is rather large, and functions have to be defined
+   *                    multiple times to be compatible with the different configurations of MESH and
+   *                    ICTYPE. Because of this, our implementation is not a good solution if more than
+   *                    a few variations of mesh and initial conditions need to be used.
+   *  @tparam spacedim  The dimension of the input points
+   *  @tparam MESH      The type of mesh to apply initial conditions to, of type MeshType
+   *  @tparam ICTYPE    The type of initial condition to apply, of type InitialConditionType
+   */
   template<int spacedim, MeshType MESH, InitialConditionType ICTYPE>
   class InitialCondition : public Function<spacedim>
   {
@@ -283,8 +279,9 @@ namespace SwiftHohenbergSolver
       double y_sin_coefficients[10];
 
     public:
-      /// @brief  The default constructor for the class. Initializes a function of 2 parameters and sets r and radius to default values.
-      ///         The constructor also loops through the coefficient arrays and stores the random coefficients for the psuedorandom initial condition.
+      /** @brief  The default constructor for the class. Initializes a function of 2 parameters and sets r and radius to default values.
+       *          The constructor also loops through the coefficient arrays and stores the random coefficients for the psuedorandom initial condition.
+       */
       InitialCondition()
       : Function<spacedim>(2),
         r(0.5),
@@ -296,10 +293,11 @@ namespace SwiftHohenbergSolver
         }
       }
 
-      /// @brief        An overloaded constructor, takes r and radius as parameters and uses these for initialization. Also loops through
-      ///               the coefficient arrays and stores the random coefficients for the psuedorandom initial condition.
-      /// @param r      The value of the r parameter in the SH equation
-      /// @param radius The radius of the hot spot
+      /** @brief        An overloaded constructor, takes r and radius as parameters and uses these for initialization. Also loops through
+       *                the coefficient arrays and stores the random coefficients for the psuedorandom initial condition.
+       *  @param r      The value of the r parameter in the SH equation
+       *  @param radius The radius of the hot spot
+       */
       InitialCondition(const double r,
                         const double radius)
       : Function<spacedim>(2),
@@ -312,32 +310,34 @@ namespace SwiftHohenbergSolver
         }
       }
 
-      /// @brief            The return value of the initial condition function. This function is highly overloaded to account for a variety
-      ///                   of different initial condition and mesh configurations, based on the template parameter given.
-      ///
-      ///                   Note that each initial condition sets the v component to 1e18. The v initial condition should not effect our solutions,
-      ///                   and this is a good way to make any bugs causing v's initial condition to affect the solution easy to detect
-      ///
-      ///                   The RANDOM initial condition type does not change from mesh to mesh, it just returns a random number between -sqrt(r) and sqrt(r)
-      ///
-      ///                   The HOTSPOT initial condition changes the center depending on the input mesh type so that the hotspot is on the surface of the mesh
-      ///
-      ///                   The PSEUDORANDOM initial condition generates a function by summing up 10 sine waves in the x and y directions, with periods chosen so
-      ///                   that the smallest period wave can still be resolved by a mesh with global refinement 5 or higher. On the plane, the value at each point
-      ///                   is the product of the x sine sum and the y sine sum evaluated at the point. On the cylinder and Sinusoid, the x component is still used
-      ///                   for the x sine sum, but we use ((arctan(y, z) - pi)/pi)*6*pi for the y sine sum. This wraps the psuedorandom function around the cylinder
-      ///                   so that we can compare it to the same initial conditions on the plane. This function will run for the torus and sphere, but it has not been
-      ///                   implemented to be comparable to the plane.
-      /// @param p 
-      /// @param component 
-      /// @return 
+      /** @brief            The return value of the initial condition function. This function is highly overloaded to account for a variety
+       *                    of different initial condition and mesh configurations, based on the template parameter given.
+       * 
+       *                    Note that each initial condition sets the v component to 1e18. The v initial condition should not effect our solutions,
+       *                    and this is a good way to make any bugs causing v's initial condition to affect the solution easy to detect
+       * 
+       *                    The RANDOM initial condition type does not change from mesh to mesh, it just returns a random number between -sqrt(r) and sqrt(r)
+       * 
+       *                    The HOTSPOT initial condition changes the center depending on the input mesh type so that the hotspot is on the surface of the mesh
+       * 
+       *                    The PSEUDORANDOM initial condition generates a function by summing up 10 sine waves in the x and y directions, with periods chosen so
+       *                    that the smallest period wave can still be resolved by a mesh with global refinement 5 or higher. On the plane, the value at each point
+       *                    is the product of the x sine sum and the y sine sum evaluated at the point. On the cylinder and Sinusoid, the x component is still used
+       *                    for the x sine sum, but we use ((arctan(y, z) - pi)/pi)*6*pi for the y sine sum. This wraps the psuedorandom function around the cylinder
+       *                    so that we can compare it to the same initial conditions on the plane. This function will run for the torus and sphere, but it has not been
+       *                    implemented to be comparable to the plane.
+       *  @param p 
+       *  @param component 
+       *  @return 
+       */
       virtual double value(const Point<spacedim> &p, const unsigned int component) const override;
   };
 
-  /// @brief              Places a small hot spot in the center of the plane on the u solution, and set v to a large number
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Places a small hot spot in the center of the plane on the u solution, and set v to a large number
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<2, HYPERCUBE, HOTSPOT>::value(
     const Point<2> &p,
@@ -356,10 +356,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Places the hot spot in the center of the cylinder, on the positive z side
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Places the hot spot in the center of the cylinder, on the positive z side
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, CYLINDER, HOTSPOT>::value(
     const Point<3> &p,
@@ -380,10 +381,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Places the hot spot on the outside of the sphere, along the positive x axis
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Places the hot spot on the outside of the sphere, along the positive x axis
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, SPHERE, HOTSPOT>::value(
     const Point<3> &p,
@@ -404,10 +406,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Places the hot spot on the outside of the torus, along the x axis
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Places the hot spot on the outside of the torus, along the x axis
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, TORUS, HOTSPOT>::value(
     const Point<3> &p,
@@ -428,10 +431,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Places the hot spot in the center of the sinusoid, on the positive z side
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Places the hot spot in the center of the sinusoid, on the positive z side
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, SINUSOID, HOTSPOT>::value(
     const Point<3> &p,
@@ -452,10 +456,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns the value of the psuedorandom function at the input point, as described above
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns the value of the psuedorandom function at the input point, as described above
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<2, HYPERCUBE, PSUEDORANDOM>::value(
     const Point<2> &p,
@@ -476,10 +481,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns the value of the psuedorandom function at the input point, as described above
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns the value of the psuedorandom function at the input point, as described above
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, CYLINDER, PSUEDORANDOM>::value(
     const Point<3> &p,
@@ -501,10 +507,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              NOTE: Not particularly useful at the moment. Returns the value of the psuedorandom function at the input point, as described above
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              NOTE: Not particularly useful at the moment. Returns the value of the psuedorandom function at the input point, as described above
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, SPHERE, PSUEDORANDOM>::value(
     const Point<3> &p,
@@ -525,10 +532,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              NOTE: Not particularly useful at the moment. Returns the value of the psuedorandom function at the input point, as described above
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              NOTE: Not particularly useful at the moment. Returns the value of the psuedorandom function at the input point, as described above
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, TORUS, PSUEDORANDOM>::value(
     const Point<3> &p,
@@ -549,10 +557,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns the value of the psuedorandom function at the input point, as described above
-  /// @param p            The input point
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns the value of the psuedorandom function at the input point, as described above
+   *  @param p            The input point
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, SINUSOID, PSUEDORANDOM>::value(
     const Point<3> &p,
@@ -574,10 +583,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns a random value between -sqrt(r) and sqrt(r)
-  /// @param p            The input point, not used in this function
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns a random value between -sqrt(r) and sqrt(r)
+   *  @param p            The input point, not used in this function
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<2, HYPERCUBE, RANDOM>::value(
     const Point<2> &/*p*/,
@@ -591,10 +601,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns a random value between -sqrt(r) and sqrt(r)
-  /// @param p            The input point, not used in this function
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns a random value between -sqrt(r) and sqrt(r)
+   *  @param p            The input point, not used in this function
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, CYLINDER, RANDOM>::value(
     const Point<3> &/*p*/,
@@ -608,10 +619,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns a random value between -sqrt(r) and sqrt(r)
-  /// @param p            The input point, not used in this function
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns a random value between -sqrt(r) and sqrt(r)
+   *  @param p            The input point, not used in this function
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, SPHERE, RANDOM>::value(
     const Point<3> &/*p*/,
@@ -625,10 +637,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns a random value between -sqrt(r) and sqrt(r)
-  /// @param p            The input point, not used in this function
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns a random value between -sqrt(r) and sqrt(r)
+   *  @param p            The input point, not used in this function
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, TORUS, RANDOM>::value(
     const Point<3> &/*p*/,
@@ -642,10 +655,11 @@ namespace SwiftHohenbergSolver
     }
   }
 
-  /// @brief              Returns a random value between -sqrt(r) and sqrt(r)
-  /// @param p            The input point, not used in this function
-  /// @param component    Determines whether the input is for u or v
-  /// @return             The value of the initial solution at the point
+  /** @brief              Returns a random value between -sqrt(r) and sqrt(r)
+   *  @param p            The input point, not used in this function
+   *  @param component    Determines whether the input is for u or v
+   *  @return             The value of the initial solution at the point
+   */
   template <>
   double InitialCondition<3, SINUSOID, RANDOM>::value(
     const Point<3> &/*p*/,
@@ -695,12 +709,13 @@ namespace SwiftHohenbergSolver
     , end_time(end_time)
   {}
 
-  /// @brief              Distrubutes the finite element vectors to each DoF, creates the system matrix, solution, old_solution, and system_rhs vectors,
-  ///                     and outputs the number of DoF's to the console.
-  /// @tparam dim         The dimension of the manifold
-  /// @tparam spacedim    The dimension of the ambient space
-  /// @tparam MESH        The type of mesh being used, doesn't change how this function works
-  /// @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+  /** @brief              Distrubutes the finite element vectors to each DoF, creates the system matrix, solution, old_solution, and system_rhs vectors,
+   *                      and outputs the number of DoF's to the console.
+   *  @tparam dim         The dimension of the manifold
+   *  @tparam spacedim    The dimension of the ambient space
+   *  @tparam MESH        The type of mesh being used, doesn't change how this function works
+   *  @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+   */
   template <int dim, int spacedim, MeshType MESH, InitialConditionType ICTYPE>
   void SHEquation<dim, spacedim, MESH, ICTYPE>::setup_system()
   {
@@ -733,12 +748,13 @@ namespace SwiftHohenbergSolver
   }
 
 
-  /// @brief              Uses a direct solver to invert the system matrix, then multiplies the RHS vector by the inverted matrix to get the solution.
-  ///                     Also includes a timer feature, which is currently commented out, but can be helpful to compute how long a run will take
-  /// @tparam dim         The dimension of the manifold
-  /// @tparam spacedim    The dimension of the ambient space
-  /// @tparam MESH        The type of mesh being used, doesn't change how this function works
-  /// @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+  /** @brief              Uses a direct solver to invert the system matrix, then multiplies the RHS vector by the inverted matrix to get the solution.
+   *                      Also includes a timer feature, which is currently commented out, but can be helpful to compute how long a run will take
+   *  @tparam dim         The dimension of the manifold
+   *  @tparam spacedim    The dimension of the ambient space
+   *  @tparam MESH        The type of mesh being used, doesn't change how this function works
+   *  @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+   */
   template <int dim, int spacedim, MeshType MESH, InitialConditionType ICTYPE>
   void SHEquation<dim, spacedim, MESH, ICTYPE>::solve_time_step()
   {
@@ -757,11 +773,12 @@ namespace SwiftHohenbergSolver
 
 
 
-  /// @brief              Converts the solution vector into a .vtu file and labels the outputs as u and v
-  /// @tparam dim         The dimension of the manifold
-  /// @tparam spacedim    The dimension of the ambient space
-  /// @tparam MESH        The type of mesh being used, doesn't change how this function works
-  /// @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+  /** @brief              Converts the solution vector into a .vtu file and labels the outputs as u and v
+   *  @tparam dim         The dimension of the manifold
+   *  @tparam spacedim    The dimension of the ambient space
+   *  @tparam MESH        The type of mesh being used, doesn't change how this function works
+   *  @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+   */
   template <int dim, int spacedim, MeshType MESH, InitialConditionType ICTYPE>
   void SHEquation<dim, spacedim, MESH, ICTYPE>::output_results() const
   {
@@ -881,12 +898,13 @@ namespace SwiftHohenbergSolver
   }
 
 
-  /// @brief              Runs the solver. First it creates the mesh and sets up the system, then constructs the system matrix, and finally loops over time to create
-  ///                     the RHS vector and solve the system at each step
-  /// @tparam dim         The dimension of the manifold
-  /// @tparam spacedim    The dimension of the ambient space
-  /// @tparam MESH        The type of mesh being used
-  /// @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+  /** @brief              Runs the solver. First it creates the mesh and sets up the system, then constructs the system matrix, and finally loops over time to create
+   *                      the RHS vector and solve the system at each step
+   *  @tparam dim         The dimension of the manifold
+   *  @tparam spacedim    The dimension of the ambient space
+   *  @tparam MESH        The type of mesh being used
+   *  @tparam ICTYPE      The type of initial condition used, doesn't change how this function works
+   */
   template <int dim, int spacedim, MeshType MESH, InitialConditionType ICTYPE>
   void SHEquation<dim, spacedim, MESH, ICTYPE>::run()
   {
