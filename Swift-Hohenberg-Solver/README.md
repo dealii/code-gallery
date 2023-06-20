@@ -68,10 +68,12 @@ problem
 As usual, we multiply each side of the equation by a
 test function 
 
-$$\overrightarrow\varphi_i = \left(\begin{matrix}
+@f{align*}{
+\overrightarrow\varphi_i = \left(\begin{matrix}
     \phi_i\\
     \psi_i
-\end{matrix}\right)$$
+\end{matrix}\right)
+@f}
 
 and then integrate over the domain $\Omega$ to get the equation
 
