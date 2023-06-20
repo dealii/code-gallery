@@ -2,9 +2,9 @@
 
 This program is used to solve the generalized Swift-Hohenberg equation
 
-$$\begin{aligned}
+@f{align*}{
     \frac{\partial u}{\partial t} = ru - (k_c + \Delta)^2 u + g_1 u^2 - u^3
-\end{aligned}$$
+@f}
 
 where $k_c$ is the wave number, $r$ is some fixed constant, and
 $g_1$ is a parameter which determines the behavior of the solutions.
@@ -17,9 +17,9 @@ are interesting behaviors that occur when $g_1$ is smaller or larger
 than $r$ in magnitude, so this allows us room to vary $g_1$ and
 explore these behavior. To summarize, this code solves:
 
-$$\begin{aligned}
+@f{align*}{
     \frac{\partial u}{\partial t} = 0.3u - (1 + \Delta)^2 u + g_1 u^2 - u^3
-\end{aligned}$$
+@f}
 
 # Discretization and Solving the Bilaplacian
 
@@ -29,10 +29,10 @@ $(1 + \Delta)^2$, which introduces $4^{th}$ derivatives. To deal
 with the Bilaplacian, we introduce a variable $v$ and construct a
 system of PDEs:
 
-$$\begin{aligned}
+@f{align*}{
     \frac{\partial u}{\partial t} &= 0.3u - (1 + \Delta) v + g_1 u^2 - u^3\\
     (1 + \Delta)u &= v
-\end{aligned}$$
+@f}
 
 We can solve these two equations simultaneously by treating our
 finite elements as vector valued, and interpreting our system of
@@ -40,10 +40,10 @@ equations as a single vector-valued PDE. We can handle the nonlinear
 terms by treating them fully explicitly. If we discretize in time and
 rearrange terms, our system of equations becomes 
 
-$$\begin{aligned}
+@f{align*}{
         (1 - kr)U_n + k(1 + \Delta)V_n &= U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
         (1 + \Delta)U_n - V_n &= 0
-\end{aligned}$$ 
+@f} 
 
 where $k$ is the discrete timestep, $U_n$ and
 $V_n$ are the solutions for $u$ and $v$ at the current timestep,
@@ -51,7 +51,7 @@ and $U_{n-1}$ and $V_{n-1}$ are the solutions for $u$ and $v$ at
 the previous timestep. We then reframe this system as a vector valued
 problem
 
-$$\begin{aligned}
+@f{align*}{
     \left(\begin{matrix}
             1 - kr & k(1 + \Delta)\\
             1 + \Delta & -1
@@ -63,7 +63,7 @@ $$\begin{aligned}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
         \end{matrix}\right)
-\end{aligned}$$
+@f}
 
 As usual, we multiply each side of the equation by a
 test function 
@@ -75,7 +75,7 @@ $$\overrightarrow\varphi_i = \left(\begin{matrix}
 
 and then integrate over the domain $\Omega$ to get the equation
 
-$$\begin{aligned}
+@f{align*}{
     \int_\Omega \left(\begin{matrix}
             \phi_i\\ 
                 \psi_i
@@ -93,11 +93,11 @@ $$\begin{aligned}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
         \end{matrix}\right)\\
-\end{aligned}$$
+@f}
 
 We can expand our solution vector in this basis
 
-$$\begin{aligned}
+@f{align*}{
     \int_\Omega \sum_j u_j\left(\begin{matrix}
             \phi_i\\
 		    \psi_i
@@ -115,15 +115,15 @@ $$\begin{aligned}
             U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3\\
 		0
         \end{matrix}\right)
-\end{aligned}$$
+@f}
 
 and finally expand out the matrix multiplication
 and dot products, then apply the divergence theorem to obtain
 a single equation:
 
-$$\begin{aligned}
+@f{align*}{
     \sum_j u_j \int_\Omega[(1 - kr)\phi_i\phi_j + k\phi_i\psi_j - k\nabla\phi_i\nabla\psi_j + \psi_i\phi_j - \nabla\psi_i\nabla\psi_j - \psi_i\psi_j] &= \int_\Omega\phi_i(U_{n-1} + kg_1U_{n-1}^2 - kU_{n-1}^3)
-\end{aligned}$$
+@f}
 
 This last equation represents matrix multiplication of the
 solution vector by the $i^{th}$ row of the system matrix, and the left
