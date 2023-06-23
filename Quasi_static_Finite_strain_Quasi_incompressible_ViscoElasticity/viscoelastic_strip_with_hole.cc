@@ -1256,6 +1256,7 @@ namespace ViscoElasStripHole
         step_sizes.push_back(subdivision_width);
 
         const double sum_half_width = std::accumulate(subdivision_width.begin(), subdivision_width.end(), 0.0);
+        (void)sum_half_width;
         Assert(std::abs(sum_half_width-width/2.0) < 1e-12, ExcInternalError());
       }
       {
@@ -1269,6 +1270,7 @@ namespace ViscoElasStripHole
         step_sizes.push_back(subdivision_length);
 
         const double sum_half_length = std::accumulate(subdivision_length.begin(), subdivision_length.end(), 0.0);
+        (void)sum_half_length;
         Assert(std::abs(sum_half_length-length/2.0) < 1e-12, ExcInternalError());
       }
 

@@ -627,7 +627,7 @@ int main(int argc, char *argv[])
     {
       using namespace dealii;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+      PetscInitialize(&argc, &argv, nullptr, nullptr);
       deallog.depth_console (0);
       {
         unsigned int degree_LS = 1;
