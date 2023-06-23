@@ -1559,7 +1559,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
 
   VecGetOwnershipRange (vector, &begin, &end);
 
-  Vec solution_in_local_form = PETSC_NULL;
+  Vec solution_in_local_form = nullptr;
   VecGhostGetLocalForm(vector, &solution_in_local_form);
 
   PetscScalar *soln;
@@ -1605,7 +1605,7 @@ void LevelSetSolver<dim>::get_vector_values (PETScWrappers::VectorBase &vector,
 
   VecGetOwnershipRange (vector, &begin, &end);
 
-  Vec solution_in_local_form = PETSC_NULL;
+  Vec solution_in_local_form = nullptr;
   VecGhostGetLocalForm(vector, &solution_in_local_form);
 
   PetscScalar *soln;

@@ -225,6 +225,8 @@ namespace Step22
   {
     Assert(component < this->n_components,
            ExcIndexRange (component, 0, this->n_components));
+    (void)p;
+    (void)component;
 
     Assert(p[0] >= -10.0, ExcLowerRangeType<double>(p[0], -10.0)); //value of -10 is to permit some small numerical error moving nodes left of x=0; a << value is in fact sufficient
 

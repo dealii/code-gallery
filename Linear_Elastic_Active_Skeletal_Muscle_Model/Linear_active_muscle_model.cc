@@ -933,6 +933,7 @@ namespace LMM
       const Point<dim> pt_eps_m = profile(pt_0_eps_m);
 
       static const double tol = 1e-9;
+      (void)tol;
       Assert(profile(pt_0).distance(pt) < tol, ExcInternalError());
       Assert(inv_profile(pt_eps_p).distance(pt_0_eps_p) < tol, ExcInternalError());
       Assert(inv_profile(pt_eps_m).distance(pt_0_eps_m) < tol, ExcInternalError());
