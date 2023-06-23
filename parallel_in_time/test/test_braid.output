@@ -4,6 +4,9 @@ Starting braid_TestInitAccess
    braid_TestInitAccess:   Starting Test 1
    braid_TestInitAccess:   u = init(t=2.00e-01)
    braid_TestInitAccess:   access(u) 
+Cycle 0:
+   Number of active cells:       12288
+   Number of degrees of freedom: 12545
 
 cycle cells dofs     L2        H1      Linfty   
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
@@ -18,11 +21,17 @@ Starting braid_TestClone
    braid_TestClone:   u = init(t=2.00e-01)
    braid_TestClone:   v = clone(u)
    braid_TestClone:   access(u)
+Cycle 0:
+   Number of active cells:       12288
+   Number of degrees of freedom: 12545
 
 cycle cells dofs     L2        H1      Linfty   
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
    braid_TestClone:   access(v)
+Cycle 0:
+   Number of active cells:       12288
+   Number of degrees of freedom: 12545
 
 cycle cells dofs     L2        H1      Linfty   
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
@@ -41,6 +50,9 @@ Starting braid_TestSum
    braid_TestSum:   v = clone(u)
    braid_TestSum:   v = u - v
    braid_TestSum:   access(v)
+Cycle 0:
+   Number of active cells:       12288
+   Number of degrees of freedom: 12545
 
 cycle cells dofs     L2        H1      Linfty   
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
@@ -52,6 +64,9 @@ cycle cells dofs     L2        H1      Linfty
    braid_TestSum:   Starting Test 2
    braid_TestSum:   v = 2*u + v
    braid_TestSum:   access(v)
+Cycle 0:
+   Number of active cells:       12288
+   Number of degrees of freedom: 12545
 
 cycle cells dofs     L2        H1      Linfty   
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
@@ -60,6 +75,9 @@ cycle cells dofs     L2        H1      Linfty
     0 12288 12545 3.225e-04 2.865e-03 3.723e-04 
     0 12288 12545 1.732e+00 1.539e+01 2.003e+00 
    braid_TestSum:   access(u)
+Cycle 0:
+   Number of active cells:       12288
+   Number of degrees of freedom: 12545
 
 cycle cells dofs     L2        H1      Linfty   
     0 12288 12545 8.657e-01 7.696e+00 1.001e+00 
