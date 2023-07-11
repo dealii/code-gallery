@@ -13,7 +13,7 @@ SET(TARGET_SRC
 #Search for required deal.II version
 CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0)
 
-FIND_PACKAGE(deal.II 9.4
+FIND_PACKAGE(deal.II 9.5
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 IF(NOT ${deal.II_FOUND})
