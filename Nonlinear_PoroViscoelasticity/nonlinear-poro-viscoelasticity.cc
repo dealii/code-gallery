@@ -702,9 +702,9 @@ namespace NonLinearPoroViscoElasticity
 // @sect3{Constitutive equation for the solid component of the biphasic material}
 
 //@sect4{Base class: generic hyperelastic material}
-// The ``extra" Kirchhoff stress in the solid component is the sum of isochoric
-// and a volumetric part.
-// $\mathbf{\tau} = \mathbf{\tau}_E^{(\bullet)} + \mathbf{\tau}^{\textrm{vol}}$
+// The "extra" Kirchhoff stress in the solid component is the sum of isochoric
+// and a volumetric part:
+// $\mathbf{\tau} = \mathbf{\tau}_E^{(\bullet)} + \mathbf{\tau}^{\textrm{vol}}$.
 // The deviatoric part changes depending on the type of material model selected:
 // Neo-Hooken hyperelasticity, Ogden hyperelasticiy,
 // or a single-mode finite viscoelasticity based on the Ogden hyperelastic model.
@@ -713,7 +713,7 @@ namespace NonLinearPoroViscoElasticity
 // We define here the volumetric component, which depends on the
 // extension function $U(J_S)$ selected, and in this case is the same for all models.
 // We use the function proposed by
-// Ehlers & Eipper 1999 doi:10.1023/A:1006565509095
+// Ehlers & Eipper 1999 doi:10.1023/A:1006565509095.
 // We also define some public functions to access and update the internal variables.
     template <int dim, typename NumberType = Sacado::Fad::DFad<double> >
     class Material_Hyperelastic
@@ -1324,7 +1324,7 @@ namespace NonLinearPoroViscoElasticity
 // for storing data at the quadrature points.  Here each quadrature point
 // holds a pointer to a material description.  Thus, different material models
 // can be used in different regions of the domain.  Among other data, we
-// choose to store the ``extra" Kirchhoff stress $\boldsymbol{\tau}_E$ and
+// choose to store the "extra" Kirchhoff stress $\boldsymbol{\tau}_E$ and
 // the dissipation values $\mathcal{D}_p$ and $\mathcal{D}_v$.
     template <int dim, typename NumberType = Sacado::Fad::DFad<double> > //double>
     class PointHistory
