@@ -1679,7 +1679,11 @@ namespace ErrorIndicators
     void
     prune_eigenpairs(const double &TOL);
 
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+    std::vector<const ReadVector<PetscScalar> *>    eigenfunction_ptrs;
+#else
     std::vector<const PETScWrappers::MPI::Vector *> eigenfunction_ptrs;
+#endif
     std::vector<const double *>                     eigenvalue_ptrs;
 
     std::vector<std::shared_ptr<Vector<float>>> errors;
@@ -1810,11 +1814,21 @@ namespace ErrorIndicators
         estimated_error_per_cell[i] = errors[i].get();
       }
 
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+    const auto solution_view = make_array_view(eigenfunction_ptrs);
+    auto error_view = make_array_view(estimated_error_per_cell);
+    KellyErrorEstimator<dim>::estimate(this->dof_handler,
+                                       *this->face_quadrature_collection,
+                                       {},
+                                       solution_view,
+                                       error_view);
+#else
     KellyErrorEstimator<dim>::estimate(this->dof_handler,
                                        *this->face_quadrature_collection,
                                        {},
                                        eigenfunction_ptrs,
                                        estimated_error_per_cell);
+#endif
 
     for (auto &error_vec : errors)
       {
