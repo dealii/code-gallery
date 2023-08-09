@@ -1297,7 +1297,7 @@ namespace NS_TRBDF2 {
 
       if(boundary_id == 1) {
         phi.reinit(face);
-        phi.gather_evaluate(src, true, true);
+        phi.gather_evaluate(src, EvaluationFlags::values | EvaluationFlags::gradients);
 
         const auto coef_jump = C_p*std::abs((phi.get_normal_vector(0)*phi.inverse_jacobian(0))[dim - 1]);
 
@@ -1436,7 +1436,7 @@ namespace NS_TRBDF2 {
       /*--- Loop over cells in the range ---*/
       for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
         phi_old_extr.reinit(cell);
-        phi_old_extr.gather_evaluate(u_extr, true, false);
+        phi_old_extr.gather_evaluate(u_extr, EvaluationFlags::values);
         phi.reinit(cell);
 
         /*--- Loop over dofs ---*/
@@ -1476,7 +1476,7 @@ namespace NS_TRBDF2 {
       /*--- Loop over cells in the range ---*/
       for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
         phi_int_extr.reinit(cell);
-        phi_int_extr.gather_evaluate(u_extr, true, false);
+        phi_int_extr.gather_evaluate(u_extr, EvaluationFlags::values);
         phi.reinit(cell);
 
         /*--- Loop over dofs ---*/
@@ -1534,9 +1534,9 @@ namespace NS_TRBDF2 {
       /*--- Now we loop over faces ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_old_extr_p.reinit(face);
-        phi_old_extr_p.gather_evaluate(u_extr, true, false);
+        phi_old_extr_p.gather_evaluate(u_extr, EvaluationFlags::values);
         phi_old_extr_m.reinit(face);
-        phi_old_extr_m.gather_evaluate(u_extr, true, false);
+        phi_old_extr_m.gather_evaluate(u_extr, EvaluationFlags::values);
         phi_p.reinit(face);
         phi_m.reinit(face);
 
@@ -1600,9 +1600,9 @@ namespace NS_TRBDF2 {
       /*--- Now we loop over faces ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_extr_p.reinit(face);
-        phi_extr_p.gather_evaluate(u_extr, true, false);
+        phi_extr_p.gather_evaluate(u_extr, EvaluationFlags::values);
         phi_extr_m.reinit(face);
-        phi_extr_m.gather_evaluate(u_extr, true, false);
+        phi_extr_m.gather_evaluate(u_extr, EvaluationFlags::values);
         phi_p.reinit(face);
         phi_m.reinit(face);
 
@@ -1673,7 +1673,7 @@ namespace NS_TRBDF2 {
       /*--- Loop over all faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_old_extr.reinit(face);
-        phi_old_extr.gather_evaluate(u_extr, true, false);
+        phi_old_extr.gather_evaluate(u_extr, EvaluationFlags::values);
         phi.reinit(face);
 
         const auto boundary_id = data.get_boundary_id(face);
@@ -1763,7 +1763,7 @@ namespace NS_TRBDF2 {
       /*--- Loop over all faces in the range ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
         phi_extr.reinit(face);
-        phi_extr.gather_evaluate(u_extr, true, false);
+        phi_extr.gather_evaluate(u_extr, EvaluationFlags::values);
         phi.reinit(face);
 
         const auto boundary_id = data.get_boundary_id(face);
