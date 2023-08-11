@@ -1444,7 +1444,7 @@ namespace NS_TRBDF2 {
           for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
             phi.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j); /*--- Set all dofs to zero ---*/
           phi.submit_dof_value(tmp, i); /*--- Set dof i equal to one ---*/
-          phi.evaluate(true, true);
+          phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
           /*--- Loop over quadrature points ---*/
           for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1456,7 +1456,7 @@ namespace NS_TRBDF2 {
             phi.submit_value(1.0/(gamma*dt)*u_int, q);
             phi.submit_gradient(-a22*tensor_product_u_int + a22/Re*grad_u_int, q);
           }
-          phi.integrate(true, true);
+          phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal[i] = phi.get_dof_value(i);
         }
         for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1484,7 +1484,7 @@ namespace NS_TRBDF2 {
           for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
             phi.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
           phi.submit_dof_value(tmp, i);
-          phi.evaluate(true, true);
+          phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
           /*--- Loop over quadrature points ---*/
           for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1496,7 +1496,7 @@ namespace NS_TRBDF2 {
             phi.submit_value(1.0/((1.0 - gamma)*dt)*u_curr, q);
             phi.submit_gradient(-a33*tensor_product_u_curr + a33/Re*grad_u_curr, q);
           }
-          phi.integrate(true, true);
+          phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal[i] = phi.get_dof_value(i);
         }
         for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1550,9 +1550,9 @@ namespace NS_TRBDF2 {
             phi_m.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
           }
           phi_p.submit_dof_value(tmp, i);
-          phi_p.evaluate(true, true);
+          phi_p.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
           phi_m.submit_dof_value(tmp, i);
-          phi_m.evaluate(true, true);
+          phi_m.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
           /*--- Loop over quadrature points to compute the integral ---*/
           for(unsigned int q = 0; q < phi_p.n_q_points; ++q) {
@@ -1571,9 +1571,9 @@ namespace NS_TRBDF2 {
             phi_p.submit_normal_derivative(-theta_v*0.5*a22/Re*jump_u_int, q);
             phi_m.submit_normal_derivative(-theta_v*0.5*a22/Re*jump_u_int, q);
           }
-          phi_p.integrate(true, true);
+          phi_p.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal_p[i] = phi_p.get_dof_value(i);
-          phi_m.integrate(true, true);
+          phi_m.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal_m[i] = phi_m.get_dof_value(i);
         }
         for(unsigned int i = 0; i < phi_p.dofs_per_component; ++i) {
@@ -1616,9 +1616,9 @@ namespace NS_TRBDF2 {
             phi_m.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
           }
           phi_p.submit_dof_value(tmp, i);
-          phi_p.evaluate(true, true);
+          phi_p.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
           phi_m.submit_dof_value(tmp, i);
-          phi_m.evaluate(true, true);
+          phi_m.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
           /*--- Loop over quadrature points to compute the integral ---*/
           for(unsigned int q = 0; q < phi_p.n_q_points; ++q) {
@@ -1637,9 +1637,9 @@ namespace NS_TRBDF2 {
             phi_p.submit_normal_derivative(-theta_v*0.5*a33/Re*jump_u, q);
             phi_m.submit_normal_derivative(-theta_v*0.5*a33/Re*jump_u, q);
           }
-          phi_p.integrate(true, true);
+          phi_p.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal_p[i] = phi_p.get_dof_value(i);
-          phi_m.integrate(true, true);
+          phi_m.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
           diagonal_m[i] = phi_m.get_dof_value(i);
         }
         for(unsigned int i = 0; i < phi_p.dofs_per_component; ++i) {
@@ -1687,7 +1687,7 @@ namespace NS_TRBDF2 {
             for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
               phi.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
             phi.submit_dof_value(tmp, i);
-            phi.evaluate(true, true);
+            phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
             /*--- Loop over quadrature points to compute the integral ---*/
             for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1701,7 +1701,7 @@ namespace NS_TRBDF2 {
                                a22*coef_trasp*tensor_product_u_int*n_plus + a22*lambda*u_int, q);
               phi.submit_normal_derivative(-theta_v*a22/Re*u_int, q);
             }
-            phi.integrate(true, true);
+            phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
             diagonal[i] = phi.get_dof_value(i);
           }
           for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1714,7 +1714,7 @@ namespace NS_TRBDF2 {
             for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
               phi.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
             phi.submit_dof_value(tmp, i);
-            phi.evaluate(true, true);
+            phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
             /*--- Loop over quadrature points to compute the integral ---*/
             for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1742,7 +1742,7 @@ namespace NS_TRBDF2 {
                                a22*0.5*lambda*(u_int - u_int_m), q);
               phi.submit_normal_derivative(-theta_v*a22/Re*(u_int - u_int_m), q);
             }
-            phi.integrate(true, true);
+            phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
             diagonal[i] = phi.get_dof_value(i);
           }
           for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1777,7 +1777,7 @@ namespace NS_TRBDF2 {
             for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
               phi.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
             phi.submit_dof_value(tmp, i);
-            phi.evaluate(true, true);
+            phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
             /*--- Loop over quadrature points to compute the integral ---*/
             for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1791,7 +1791,7 @@ namespace NS_TRBDF2 {
                                a33*coef_trasp*tensor_product_u*n_plus + a33*lambda*u, q);
               phi.submit_normal_derivative(-theta_v*a33/Re*u, q);
             }
-            phi.integrate(true, true);
+            phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
             diagonal[i] = phi.get_dof_value(i);
           }
           for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
@@ -1804,7 +1804,7 @@ namespace NS_TRBDF2 {
             for(unsigned int j = 0; j < phi.dofs_per_component; ++j)
               phi.submit_dof_value(Tensor<1, dim, VectorizedArray<Number>>(), j);
             phi.submit_dof_value(tmp, i);
-            phi.evaluate(true, true);
+            phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
             /*--- Loop over quadrature points to compute the integral ---*/
             for(unsigned int q = 0; q < phi.n_q_points; ++q) {
@@ -1832,7 +1832,7 @@ namespace NS_TRBDF2 {
                                a33*0.5*lambda*(u - u_m), q);
               phi.submit_normal_derivative(-theta_v*a33/Re*(u - u_m), q);
             }
-            phi.integrate(true, true);
+            phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
             diagonal[i] = phi.get_dof_value(i);
           }
           for(unsigned int i = 0; i < phi.dofs_per_component; ++i)
