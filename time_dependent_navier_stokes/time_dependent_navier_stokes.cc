@@ -653,7 +653,7 @@ namespace fluid
     owned_partitioning[0] = dof_handler.locally_owned_dofs().get_view(0, dof_u);
     owned_partitioning[1] =
       dof_handler.locally_owned_dofs().get_view(dof_u, dof_u + dof_p);
-    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
     relevant_partitioning.resize(2);
     relevant_partitioning[0] = locally_relevant_dofs.get_view(0, dof_u);
     relevant_partitioning[1] =

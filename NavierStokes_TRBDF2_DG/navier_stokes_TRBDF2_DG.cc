@@ -2709,8 +2709,7 @@ namespace NS_TRBDF2 {
     TimerOutput::Scope t(time_table, "Refine mesh");
 
     /*--- We first create a proper vector for computing estimator ---*/
-    IndexSet locally_relevant_dofs;
-    DoFTools::extract_locally_relevant_dofs(dof_handler_velocity, locally_relevant_dofs);
+    const IndexSet locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler_velocity);
     LinearAlgebra::distributed::Vector<double> tmp_velocity;
     tmp_velocity.reinit(dof_handler_velocity.locally_owned_dofs(), locally_relevant_dofs, MPI_COMM_WORLD);
     tmp_velocity = u_n;

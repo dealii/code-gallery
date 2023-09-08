@@ -162,8 +162,8 @@ CDRProblem<dim>::setup_dofs()
   dof_handler.distribute_dofs(fe);
   pcout << "Number of degrees of freedom: " << dof_handler.n_dofs()
         << std::endl;
-  locally_owned_dofs = dof_handler.locally_owned_dofs();
-  DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+  locally_owned_dofs    = dof_handler.locally_owned_dofs();
+  locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
 
   constraints.clear();
   constraints.reinit(locally_relevant_dofs);

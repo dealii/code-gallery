@@ -320,15 +320,14 @@ make_dofs()
   // Now we get the locally owned dofs, that is the dofs that our local
   // to this processor. These dofs corresponding entries in the
   // matrix and vectors that we will write to.
-  IndexSet locally_owned_dofs = dof_handler.locally_owned_dofs();
+  const IndexSet &locally_owned_dofs = dof_handler.locally_owned_dofs();
 
   // In additon to the locally owned dofs, we also need the the locally
   // relevant dofs.  These are the dofs that have read access to and we
   // need in order to do computations on our processor, but, that
   // we do not have the ability to write to.
-  IndexSet locally_relevant_dofs;
-  DoFTools::extract_locally_relevant_dofs(dof_handler,
-                                          locally_relevant_dofs);
+  const IndexSet locally_relevant_dofs =
+    DoFTools::extract_locally_relevant_dofs(dof_handler);
 
   const std::vector<types::global_dof_index> dofs_per_component =
     DoFTools::count_dofs_per_fe_component(dof_handler);
