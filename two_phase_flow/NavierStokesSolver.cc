@@ -472,16 +472,16 @@ void NavierStokesSolver<dim>::setup_DOF()
   degree_MAX=std::max(degree_LS,degree_U);
   // setup system LS
   dof_handler_LS.distribute_dofs(fe_LS);
-  locally_owned_dofs_LS=dof_handler_LS.locally_owned_dofs();
-  DoFTools::extract_locally_relevant_dofs(dof_handler_LS,locally_relevant_dofs_LS);
+  locally_owned_dofs_LS    = dof_handler_LS.locally_owned_dofs();
+  locally_relevant_dofs_LS = DoFTools::extract_locally_relevant_dofs(dof_handler_LS);
   // setup system U
   dof_handler_U.distribute_dofs(fe_U);
-  locally_owned_dofs_U=dof_handler_U.locally_owned_dofs();
-  DoFTools::extract_locally_relevant_dofs(dof_handler_U,locally_relevant_dofs_U);
-  // setup system P //
+  locally_owned_dofs_U    = dof_handler_U.locally_owned_dofs();
+  locally_relevant_dofs_U = DoFTools::extract_locally_relevant_dofs(dof_handler_U);
+  // setup system P
   dof_handler_P.distribute_dofs(fe_P);
-  locally_owned_dofs_P=dof_handler_P.locally_owned_dofs();
-  DoFTools::extract_locally_relevant_dofs(dof_handler_P,locally_relevant_dofs_P);
+  locally_owned_dofs_P    = dof_handler_P.locally_owned_dofs();
+  locally_relevant_dofs_P = DoFTools::extract_locally_relevant_dofs(dof_handler_P);
 }
 
 template<int dim>

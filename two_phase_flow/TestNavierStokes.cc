@@ -170,19 +170,16 @@ void TestNavierStokes<dim>::setup()
 {
   // setup system LS
   dof_handler_LS.distribute_dofs (fe_LS);
-  locally_owned_dofs_LS = dof_handler_LS.locally_owned_dofs ();
-  DoFTools::extract_locally_relevant_dofs (dof_handler_LS,
-                                           locally_relevant_dofs_LS);
+  locally_owned_dofs_LS    = dof_handler_LS.locally_owned_dofs ();
+  locally_relevant_dofs_LS = DoFTools::extract_locally_relevant_dofs (dof_handler_LS);
   // setup system U
   dof_handler_U.distribute_dofs (fe_U);
-  locally_owned_dofs_U = dof_handler_U.locally_owned_dofs ();
-  DoFTools::extract_locally_relevant_dofs (dof_handler_U,
-                                           locally_relevant_dofs_U);
+  locally_owned_dofs_U    = dof_handler_U.locally_owned_dofs ();
+  locally_relevant_dofs_U = DoFTools::extract_locally_relevant_dofs (dof_handler_U);
   // setup system P //
   dof_handler_P.distribute_dofs (fe_P);
-  locally_owned_dofs_P = dof_handler_P.locally_owned_dofs ();
-  DoFTools::extract_locally_relevant_dofs (dof_handler_P,
-                                           locally_relevant_dofs_P);
+  locally_owned_dofs_P    = dof_handler_P.locally_owned_dofs ();
+  locally_relevant_dofs_P = DoFTools::extract_locally_relevant_dofs (dof_handler_P);
   init_constraints();
   // init vectors for rho
   locally_relevant_solution_rho.reinit (locally_owned_dofs_LS,locally_relevant_dofs_LS,mpi_communicator);

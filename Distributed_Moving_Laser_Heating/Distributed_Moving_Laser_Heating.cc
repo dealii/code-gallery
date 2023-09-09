@@ -207,8 +207,8 @@ void LaserHeating<dim>::setup_system ()
             << dof_handler.n_dofs()
             << std::endl;
 
-  locally_owned_dofs = dof_handler.locally_owned_dofs();
-  DoFTools::extract_locally_relevant_dofs (dof_handler, locally_relevant_dofs);
+  locally_owned_dofs    = dof_handler.locally_owned_dofs();
+  locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs (dof_handler);
 
   // we want to output solution, so here should have ghost cells
   old_solution_T.reinit     (locally_owned_dofs,locally_relevant_dofs,mpi_communicator);

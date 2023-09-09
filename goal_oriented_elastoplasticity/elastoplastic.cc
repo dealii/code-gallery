@@ -4066,10 +4066,9 @@ namespace ElastoPlastic
             << dof_handler.n_dofs()
             << std::endl;
 
-      locally_owned_dofs = dof_handler.locally_owned_dofs();
-      locally_relevant_dofs.clear();
-      DoFTools::extract_locally_relevant_dofs(dof_handler,
-                                              locally_relevant_dofs);
+      locally_owned_dofs    = dof_handler.locally_owned_dofs();
+      locally_relevant_dofs =
+        DoFTools::extract_locally_relevant_dofs(dof_handler);
     }
 
     /* setup hanging nodes and Dirichlet constraints */

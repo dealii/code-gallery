@@ -285,19 +285,16 @@ void TestLevelSet<dim>::setup()
   degree = std::max(degree_LS,degree_U);
   // setup system LS
   dof_handler_LS.distribute_dofs (fe_LS);
-  locally_owned_dofs_LS = dof_handler_LS.locally_owned_dofs ();
-  DoFTools::extract_locally_relevant_dofs (dof_handler_LS,
-                                           locally_relevant_dofs_LS);
+  locally_owned_dofs_LS    = dof_handler_LS.locally_owned_dofs ();
+  locally_relevant_dofs_LS = DoFTools::extract_locally_relevant_dofs (dof_handler_LS);
   // setup system U
   dof_handler_U.distribute_dofs (fe_U);
-  locally_owned_dofs_U = dof_handler_U.locally_owned_dofs ();
-  DoFTools::extract_locally_relevant_dofs (dof_handler_U,
-                                           locally_relevant_dofs_U);
+  locally_owned_dofs_U    = dof_handler_U.locally_owned_dofs ();
+  locally_relevant_dofs_U = DoFTools::extract_locally_relevant_dofs (dof_handler_U);
   // setup system U for disp field
   dof_handler_U_disp_field.distribute_dofs (fe_U_disp_field);
-  locally_owned_dofs_U_disp_field = dof_handler_U_disp_field.locally_owned_dofs ();
-  DoFTools::extract_locally_relevant_dofs (dof_handler_U_disp_field,
-                                           locally_relevant_dofs_U_disp_field);
+  locally_owned_dofs_U_disp_field    = dof_handler_U_disp_field.locally_owned_dofs ();
+  locally_relevant_dofs_U_disp_field = DoFTools::extract_locally_relevant_dofs (dof_handler_U_disp_field);
   // init vectors for phi
   locally_relevant_solution_phi.reinit(locally_owned_dofs_LS,
                                        locally_relevant_dofs_LS,
