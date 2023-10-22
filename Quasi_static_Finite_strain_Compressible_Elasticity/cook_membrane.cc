@@ -1409,7 +1409,7 @@ namespace Cook_Membrane
               break;
             }
       }
-    AssertThrow(vertical_tip_displacement > 0.0, ExcMessage("Found no cell with point inside!"))
+    AssertThrow(vertical_tip_displacement > 0.0, ExcMessage("Found no cell with point inside!"));
 
     std::cout << "Vertical tip displacement: " << vertical_tip_displacement
               << "\t Check: " << vertical_tip_displacement_check
