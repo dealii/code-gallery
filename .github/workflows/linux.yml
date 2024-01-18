@@ -54,26 +54,27 @@ jobs:
 
       - name: Compile all projects
         run: |
-          for dir in */
-          do
+          for dir in */; do
             cd ${dir}
-            if [ -e CMakeLists.txt ]
-            then
+            if [ -e CMakeLists.txt ]; then
               echo "Current project: ${dir}"
-              cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .
-              make
+              (cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} . && make) || err="${err} ${dir}"
             else
               echo "Skipping project: ${dir}"
             fi
             cd ..
           done
+          if [ -n "${err}" ]; then
+            echo "error_compile=${err}" >> $GITHUB_ENV
+            exit 1
+          fi
 
       - name: Test coupled_laplace_problem
         run: |
           cd coupled_laplace_problem
           (./coupled_laplace_problem 2>&1 & ./fancy_boundary_condition >fbc.log)
           sed -i '2d' solution-10.vtk
-          numdiff solution-10.vtk test_data/reference-10.vtk
+          numdiff solution-10.vtk test_data/reference-10.vtk || (echo "error_test=coupled_laplace_problem/" >> $GITHUB_ENV && exit 1)
 
       - name: Create issue about failure
         if: failure() && github.event_name == 'schedule'
