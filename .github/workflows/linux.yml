@@ -38,7 +38,7 @@ jobs:
 
       - name: Install preCICE
         run: |
-          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_${{ matrix.ubuntu_version }}.deb
+          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.0.0/libprecice3_3.0.0_${{ matrix.ubuntu_version }}.deb
           apt-get -y install ./libprecice.deb
 
       - name: Install XBraid
