@@ -28,7 +28,7 @@
 #include <deal.II/numerics/vector_tools.h>
 // In addition to the deal.II header files, we include the preCICE API in order
 // to obtain access to preCICE specific functionality
-#include <precice/SolverInterface.hpp>
+#include <precice/precice.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -62,20 +62,20 @@ template <int dim, typename ParameterClass>
 class Adapter
 {
 public:
-  Adapter(const ParameterClass &   parameters,
+  Adapter(const ParameterClass    &parameters,
           const types::boundary_id dealii_boundary_interface_id);
 
   double
-  initialize(const DoFHandler<dim> &                    dof_handler,
+  initialize(const DoFHandler<dim>                     &dof_handler,
              std::map<types::global_dof_index, double> &boundary_data,
-             const MappingQGeneric<dim> &               mapping);
+             const MappingQGeneric<dim>                &mapping);
 
   double
   advance(std::map<types::global_dof_index, double> &boundary_data,
           const double                               computed_timestep_length);
 
   // public precCICE solver interface
-  precice::SolverInterface precice;
+  precice::Participant precice;
 
   // Boundary ID of the deal.II triangulation, associated with the coupling
   // interface. The variable is defined in the constructor of this class and
@@ -94,8 +94,6 @@ private:
 
   // These IDs are filled by preCICE during the initialization. We set a default
   // value of -1 in order to detect potential errors more easily.
-  int mesh_id;
-  int read_data_id;
   int n_interface_nodes;
 
   // DoF IndexSet, containing relevant coupling DoF indices at the coupling
@@ -132,7 +130,7 @@ private:
 // which is associated with the coupling interface.
 template <int dim, typename ParameterClass>
 Adapter<dim, ParameterClass>::Adapter(
-  const ParameterClass &   parameters,
+  const ParameterClass    &parameters,
   const types::boundary_id deal_boundary_interface_id)
   : precice(parameters.participant_name,
             parameters.config_file,
@@ -156,18 +154,12 @@ Adapter<dim, ParameterClass>::Adapter(
 template <int dim, typename ParameterClass>
 double
 Adapter<dim, ParameterClass>::initialize(
-  const DoFHandler<dim> &                    dof_handler,
+  const DoFHandler<dim>                     &dof_handler,
   std::map<types::global_dof_index, double> &boundary_data,
-  const MappingQGeneric<dim> &               mapping)
+  const MappingQGeneric<dim>                &mapping)
 {
   Assert(dim > 1, ExcNotImplemented());
-  AssertDimension(dim, precice.getDimensions());
-
-  // In a first step, we get preCICE specific IDs from preCICE and store them in
-  // the respective variables. Later, they are used for data transfer.
-  mesh_id      = precice.getMeshID(mesh_name);
-  read_data_id = precice.getDataID(read_data_name, mesh_id);
-
+  AssertDimension(dim, precice.getMeshDimensions(mesh_name));
 
   // Afterwards, we extract the number of interface nodes and the coupling DoFs
   // at the coupling interface from our deal.II solver via
@@ -219,30 +211,24 @@ Adapter<dim, ParameterClass>::initialize(
 
   // Now we have all information to define the coupling mesh and pass the
   // information to preCICE.
-  precice.setMeshVertices(mesh_id,
-                          n_interface_nodes,
-                          interface_nodes_positions.data(),
-                          interface_nodes_ids.data());
+  precice.setMeshVertices(mesh_name,
+                          interface_nodes_positions,
+                          interface_nodes_ids);
 
   // Then, we initialize preCICE internally calling the API function
   // `initialize()`
-  const double max_delta_t = precice.initialize();
-
+  precice.initialize();
+  const double max_delta_t = precice.getMaxTimeStepSize();
 
   // read first coupling data from preCICE if available (i.e. deal.II is
   // the second participant in a serial coupling scheme)
-  if (precice.isReadDataAvailable())
-    {
-      precice.readBlockScalarData(read_data_id,
-                                  n_interface_nodes,
-                                  interface_nodes_ids.data(),
-                                  read_data.data());
+  precice.readData(
+    mesh_name, read_data_name, interface_nodes_ids, max_delta_t, read_data);
 
-      // After receiving the coupling data in `read_data`, we convert it to
-      // the std::map `boundary_data` which is later needed in order to apply
-      // Dirichlet boundary conditions
-      format_precice_to_dealii(boundary_data);
-    }
+  // After receiving the coupling data in `read_data`, we convert it to
+  // the std::map `boundary_data` which is later needed in order to apply
+  // Dirichlet boundary conditions
+  format_precice_to_dealii(boundary_data);
 
   return max_delta_t;
 }
@@ -261,16 +247,15 @@ Adapter<dim, ParameterClass>::advance(
   // return, preCICE tells us the maximum admissible time-step size our
   // participant is allowed to compute in order to not exceed the next coupling
   // time step.
-  const double max_delta_t = precice.advance(computed_timestep_length);
+  precice.advance(computed_timestep_length);
+  const double max_delta_t = precice.getMaxTimeStepSize();
 
   // As a next step, we obtain data, i.e. the boundary condition, from another
   // participant. We have already all IDs and just need to convert our obtained
   // data to the deal.II compatible 'boundary map' , which is done in the
   // format_deal_to_precice function.
-  precice.readBlockScalarData(read_data_id,
-                              n_interface_nodes,
-                              interface_nodes_ids.data(),
-                              read_data.data());
+  precice.readData(
+    mesh_name, read_data_name, interface_nodes_ids, max_delta_t, read_data);
 
   format_precice_to_dealii(boundary_data);
 
