@@ -62,17 +62,20 @@ template <int dim, typename ParameterClass>
 class Adapter
 {
 public:
-  Adapter(const ParameterClass    &parameters,
+  Adapter(const ParameterClass &   parameters,
           const types::boundary_id dealii_boundary_interface_id);
 
-  double
-  initialize(const DoFHandler<dim>                     &dof_handler,
+  void
+  initialize(const DoFHandler<dim> &                    dof_handler,
              std::map<types::global_dof_index, double> &boundary_data,
-             const MappingQGeneric<dim>                &mapping);
+             const MappingQGeneric<dim> &               mapping);
 
-  double
-  advance(std::map<types::global_dof_index, double> &boundary_data,
-          const double                               computed_timestep_length);
+  void
+  read_data(double                                     relative_read_time,
+            std::map<types::global_dof_index, double> &boundary_data);
+
+  void
+  advance(const double computed_timestep_length);
 
   // public precCICE solver interface
   precice::Participant precice;
@@ -92,8 +95,8 @@ private:
   const std::string mesh_name;
   const std::string read_data_name;
 
-  // These IDs are filled by preCICE during the initialization. We set a default
-  // value of -1 in order to detect potential errors more easily.
+  // The node IDs are filled by preCICE during the initialization and associated to
+  // the spherical vertices we pass to preCICE
   int n_interface_nodes;
 
   // DoF IndexSet, containing relevant coupling DoF indices at the coupling
@@ -103,10 +106,10 @@ private:
   // Data containers which are passed to preCICE in an appropriate preCICE
   // specific format
   std::vector<int>    interface_nodes_ids;
-  std::vector<double> read_data;
+  std::vector<double> read_data_buffer;
 
   // The MPI rank and total number of MPI ranks is required by preCICE when the
-  // SolverInterface is created. Since this tutorial runs only in serial mode we
+  // Participant is created. Since this tutorial runs only in serial mode we
   // define the variables manually in this class instead of using the regular
   // MPI interface.
   static constexpr int this_mpi_process = 0;
@@ -122,7 +125,7 @@ private:
 
 
 // In the constructor of the Adapter class, we set up the preCICE
-// SolverInterface. We need to tell preCICE our name as participant of the
+// Participant. We need to tell preCICE our name as participant of the
 // simulation and the name of the preCICE configuration file. Both have already
 // been specified in the CouplingParameter class above. Thus, we pass the class
 // directly to the constructor and read out all relevant information. As a
@@ -130,7 +133,7 @@ private:
 // which is associated with the coupling interface.
 template <int dim, typename ParameterClass>
 Adapter<dim, ParameterClass>::Adapter(
-  const ParameterClass    &parameters,
+  const ParameterClass &   parameters,
   const types::boundary_id deal_boundary_interface_id)
   : precice(parameters.participant_name,
             parameters.config_file,
@@ -149,14 +152,13 @@ Adapter<dim, ParameterClass>::Adapter(
 // the associated interface(s). The `boundary_data` is an empty map, which is
 // filled by preCICE, i.e., information of the other participant. Throughout
 // the system assembly, the map can directly be used in order to apply the
-// Dirichlet boundary conditions in the linear system. preCICE returns the
-// maximum admissible time-step size during the initialization.
+// Dirichlet boundary conditions in the linear system.
 template <int dim, typename ParameterClass>
-double
+void
 Adapter<dim, ParameterClass>::initialize(
-  const DoFHandler<dim>                     &dof_handler,
+  const DoFHandler<dim> &                    dof_handler,
   std::map<types::global_dof_index, double> &boundary_data,
-  const MappingQGeneric<dim>                &mapping)
+  const MappingQGeneric<dim> &               mapping)
 {
   Assert(dim > 1, ExcNotImplemented());
   AssertDimension(dim, precice.getMeshDimensions(mesh_name));
@@ -194,8 +196,8 @@ Adapter<dim, ParameterClass>::initialize(
   // Set up the appropriate size of the data container needed for data
   // exchange. Here, we deal with a scalar problem, so that only a scalar value
   // is read/written per interface node.
-  read_data.resize(n_interface_nodes);
-  // The IDs are again filled by preCICE during the initializations.
+  read_data_buffer.resize(n_interface_nodes);
+  // The IDs are filled by preCICE during the initializations.
   interface_nodes_ids.resize(n_interface_nodes);
 
   // The node location is obtained using `map_dofs_to_support_points()`.
@@ -218,57 +220,49 @@ Adapter<dim, ParameterClass>::initialize(
   // Then, we initialize preCICE internally calling the API function
   // `initialize()`
   precice.initialize();
-  const double max_delta_t = precice.getMaxTimeStepSize();
+}
 
-  // read first coupling data from preCICE if available (i.e. deal.II is
-  // the second participant in a serial coupling scheme)
-  precice.readData(
-    mesh_name, read_data_name, interface_nodes_ids, max_delta_t, read_data);
+template <int dim, typename ParameterClass>
+void
+Adapter<dim, ParameterClass>::read_data(
+  double                                     relative_read_time,
+  std::map<types::global_dof_index, double> &boundary_data)
+{
+  // here, we obtain data, i.e. the boundary condition, from another
+  // participant. We have already vertex IDs and just need to convert our
+  // obtained data to the deal.II compatible 'boundary map' , which is done in
+  // the format_deal_to_precice function.
+  precice.readData(mesh_name,
+                   read_data_name,
+                   interface_nodes_ids,
+                   relative_read_time,
+                   read_data_buffer);
 
-  // After receiving the coupling data in `read_data`, we convert it to
+  // After receiving the coupling data in `read_data_buffer`, we convert it to
   // the std::map `boundary_data` which is later needed in order to apply
   // Dirichlet boundary conditions
   format_precice_to_dealii(boundary_data);
-
-  return max_delta_t;
 }
 
 
 // The function `advance()` is called in the main time loop after the
-// computation in each time step. Here,
-// coupling data is passed to and obtained from preCICE.
+// computation in each time step. Here, preCICE exchanges the coupling data
+// internally and computes mappings as well as acceleration methods.
 template <int dim, typename ParameterClass>
-double
-Adapter<dim, ParameterClass>::advance(
-  std::map<types::global_dof_index, double> &boundary_data,
-  const double                               computed_timestep_length)
+void
+Adapter<dim, ParameterClass>::advance(const double computed_timestep_length)
 {
-  // We specify the computed time-step length and pass it to preCICE. In
-  // return, preCICE tells us the maximum admissible time-step size our
-  // participant is allowed to compute in order to not exceed the next coupling
-  // time step.
+  // We specify the computed time-step length and pass it to preCICE.
   precice.advance(computed_timestep_length);
-  const double max_delta_t = precice.getMaxTimeStepSize();
-
-  // As a next step, we obtain data, i.e. the boundary condition, from another
-  // participant. We have already all IDs and just need to convert our obtained
-  // data to the deal.II compatible 'boundary map' , which is done in the
-  // format_deal_to_precice function.
-  precice.readData(
-    mesh_name, read_data_name, interface_nodes_ids, max_delta_t, read_data);
-
-  format_precice_to_dealii(boundary_data);
-
-  return max_delta_t;
 }
 
 
 
-// This function takes the std::vector obtained by preCICE in `read_data` and
+// This function takes the std::vector obtained by preCICE in `read_data_buffer` and
 // inserts the values to the right position in the boundary map used throughout
 // our deal.II solver for Dirichlet boundary conditions. The function is only
 // used internally in the Adapter class and not called in the solver itself. The
-// order, in which preCICE sorts the data in the `read_data` vector is exactly
+// order, in which preCICE sorts the data in the `read_data_buffer` vector is exactly
 // the same as the order of the initially passed vertices coordinates.
 template <int dim, typename ParameterClass>
 void
@@ -280,8 +274,8 @@ Adapter<dim, ParameterClass>::format_precice_to_dealii(
   auto dof_component = boundary_data.begin();
   for (int i = 0; i < n_interface_nodes; ++i)
     {
-      AssertIndexRange(i, read_data.size());
-      boundary_data[dof_component->first] = read_data[i];
+      AssertIndexRange(i, read_data_buffer.size());
+      boundary_data[dof_component->first] = read_data_buffer[i];
       ++dof_component;
     }
 }
@@ -582,11 +576,9 @@ CoupledLaplaceProblem<dim>::run()
   make_grid();
   setup_system();
 
-  // After we set up the system, we initialize preCICE using the functionalities
-  // of the Adapter. preCICE returns the maximum admissible time-step size,
-  // which needs to be compared to our desired solver time-step size.
-  precice_delta_t = adapter.initialize(dof_handler, boundary_data, mapping);
-  delta_t         = std::min(precice_delta_t, solver_delta_t);
+  // After we set up the system, we initialize preCICE and the adapter using the
+  // functionalities of the Adapter.
+  adapter.initialize(dof_handler, boundary_data, mapping);
 
   // preCICE steers the coupled simulation: `isCouplingOngoing` is
   // used to synchronize the end of the simulation with the coupling partner
@@ -594,6 +586,16 @@ CoupledLaplaceProblem<dim>::run()
     {
       // The time step number is solely used to generate unique output files
       ++time_step;
+      // preCICE returns the maximum admissible time-step size,
+      // which needs to be compared to our desired solver time-step size.
+      precice_delta_t = adapter.precice.getMaxTimeStepSize();
+      delta_t         = std::min(precice_delta_t, solver_delta_t);
+      // Next we read data. Since we use a fully backward Euler method, we want
+      // the data to be associated to the end of the current time-step (delta_t)
+      // Time-interpolation methods in preCICE allow to get readData at any
+      // point in time, if the coupling scheme allows it
+      adapter.read_data(delta_t, boundary_data);
+
       // In the time loop, we assemble the coupled system and solve it as
       // usual.
       assemble_system();
@@ -601,12 +603,8 @@ CoupledLaplaceProblem<dim>::run()
 
       // After we solved the system, we advance the coupling to the next time
       // level. In a bi-directional coupled simulation, we would pass our
-      // calculated data to and obtain new data from preCICE. Here, we simply
-      // obtain new data from preCICE, so from the other participant. As before,
-      // we obtain a maximum time-step size and compare it against the desired
-      // solver time-step size.
-      precice_delta_t = adapter.advance(boundary_data, delta_t);
-      delta_t         = std::min(precice_delta_t, solver_delta_t);
+      // calculated data to preCICE
+      adapter.advance(delta_t);
 
       // Write an output file if the time step is completed. In case of an
       // implicit coupling, where individual time steps are computed more than
