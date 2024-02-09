@@ -78,27 +78,35 @@ main()
   // Pass the vertices to preCICE
   precice.setMeshVertices(meshName, vertices, vertexIDs);
 
-  // initialize the Solverinterface
-  precice.initialize();
-  double dt = precice.getMaxTimeStepSize();
-
-  // Start time loop
+  // Variables for the time
   const double end_time = 1;
   double       time     = 0;
+
+  // Not used in the configuration by default
+  if (precice.requiresInitialData())
+    {
+      std::cout << "Boundary participant: writing initial data \n";
+      define_boundary_values(writeData, time, end_time);
+      precice.writeData(meshName, dataWriteName, vertexIDs, writeData);
+    }
+
+  // initialize the Participant
+  precice.initialize();
+
+  // Start time loop
   while (precice.isCouplingOngoing())
     {
+      double dt = precice.getMaxTimeStepSize();
+      time += dt;
+
       // Generate new boundary data
       define_boundary_values(writeData, time, end_time);
 
-      {
-        std::cout << "Boundary participant: writing coupling data \n";
-        precice.writeData(meshName, dataWriteName, vertexIDs, writeData);
-      }
+      std::cout << "Boundary participant: writing coupling data \n";
+      precice.writeData(meshName, dataWriteName, vertexIDs, writeData);
 
-      precice.advance(dt);
       std::cout << "Boundary participant: advancing in time\n";
-
-      time += dt;
+      precice.advance(dt);
     }
 
   std::cout << "Boundary participant: closing...\n";
