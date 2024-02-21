@@ -7,46 +7,40 @@
       enabled="true" />
   </log>
 
-  <solver-interface dimensions="2">
-    <data:scalar name="boundary-data" />
+  <data:scalar name="boundary-data" />
 
-    <mesh name="dealii-mesh">
-      <use-data name="boundary-data" />
-    </mesh>
+  <mesh name="dealii-mesh" dimensions="2">
+    <use-data name="boundary-data" />
+  </mesh>
 
-    <mesh name="boundary-mesh">
-      <use-data name="boundary-data" />
-    </mesh>
+  <mesh name="boundary-mesh" dimensions="2">
+    <use-data name="boundary-data" />
+  </mesh>
 
-    <participant name="laplace-solver">
-      <use-mesh name="dealii-mesh" provide="yes" />
-      <use-mesh name="boundary-mesh" from="boundary-participant" />
-      <read-data name="boundary-data" mesh="dealii-mesh" />
-      <mapping:rbf-thin-plate-splines
-        direction="read"
-        from="boundary-mesh"
-        to="dealii-mesh"
-        constraint="consistent"
-        use-qr-decomposition="true"
-        x-dead="true" />
-    </participant>
+  <participant name="laplace-solver">
+    <provide-mesh name="dealii-mesh" />
+    <receive-mesh name="boundary-mesh" from="boundary-participant" />
+    <read-data name="boundary-data" mesh="dealii-mesh" />
+    <mapping:rbf direction="read" from="boundary-mesh" to="dealii-mesh" constraint="consistent">
+      <basis-function:thin-plate-splines />
+    </mapping:rbf>
+  </participant>
 
-    <participant name="boundary-participant">
-      <use-mesh name="boundary-mesh" provide="yes" />
-      <write-data name="boundary-data" mesh="boundary-mesh" />
-    </participant>
+  <participant name="boundary-participant">
+    <provide-mesh name="boundary-mesh" />
+    <write-data name="boundary-data" mesh="boundary-mesh" />
+  </participant>
 
-    <m2n:sockets from="laplace-solver" to="boundary-participant" />
+  <m2n:sockets acceptor="laplace-solver" connector="boundary-participant" />
 
-    <coupling-scheme:serial-explicit>
-      <time-window-size value="0.1" />
-      <max-time value="1" />
-      <participants first="boundary-participant" second="laplace-solver" />
-      <exchange
-        data="boundary-data"
-        mesh="boundary-mesh"
-        from="boundary-participant"
-        to="laplace-solver" />
-    </coupling-scheme:serial-explicit>
-  </solver-interface>
+  <coupling-scheme:serial-explicit>
+    <time-window-size value="0.1" />
+    <max-time value="1" />
+    <participants first="boundary-participant" second="laplace-solver" />
+    <exchange
+      data="boundary-data"
+      mesh="boundary-mesh"
+      from="boundary-participant"
+      to="laplace-solver" />
+  </coupling-scheme:serial-explicit>
 </precice-configuration>
