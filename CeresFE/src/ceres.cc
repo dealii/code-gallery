@@ -1,7 +1,15 @@
-/*
-Viscoelastoplastic relaxation of Ceres
-Author: Roger R. Fu
-Adapted from Fu et al. 2014 Icarus 240, 133-145 starting Oct. 19, 2014
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2012 by Roger R. Fu
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ *
+ * Viscoelastoplastic relaxation of Ceres
+ * Author: Roger R. Fu
+ * Adapted from Fu et al. 2014 Icarus 240, 133-145 starting Oct. 19, 2014
  */
 
 /*
