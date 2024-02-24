@@ -1,3 +1,14 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2020 by David Schneider
+ * Copyright (C) 2020 by Benjamin Uekermann
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 // This program does not use any deal.II functionality and depends only on
 // preCICE and the standard libraries.
 #include <precice/precice.hpp>

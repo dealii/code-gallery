@@ -1,3 +1,14 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2020 by David Schneider
+ * Copyright (C) 2020 by Benjamin Uekermann
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 // The included deal.II header files are the same as in the other example
 // programs:
 #include <deal.II/base/function.h>
