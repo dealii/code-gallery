@@ -1,3 +1,13 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2015 by Marco Feder
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 #ifndef INCLUDE_DG_UPWIND_H_
 #define INCLUDE_DG_UPWIND_H_
 
