@@ -1,3 +1,13 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2017 by Michael Harmon
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 // @sect3{LDGPoisson.cc}
 // The code begins as per usual with a long list of the the included
 // files from the deal.ii library.
