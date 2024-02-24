@@ -1,3 +1,12 @@
+## -----------------------------------------------------------------------------
+##
+## SPDX-License-Identifier: LGPL-2.1-or-later
+## Copyright (C) 2020 by Ester Comellas
+## Copyright (C) 2020 by Jean-Paul Pelteret
+##
+## This file is part of the deal.II code gallery.
+##
+## -----------------------------------------------------------------------------
 
 #GNUPLOT file to plot graphs of biomechanical brain tests in Budday et al 2017
 # **** cycles must be separated in the .sol file by two blank lines ****
