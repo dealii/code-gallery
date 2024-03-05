@@ -1,20 +1,12 @@
-/* ---------------------------------------------------------------------
- * Copyright (C) 2017 by the deal.II authors and
- *                           Jean-Paul Pelteret
+/* -----------------------------------------------------------------------------
  *
- * This file is part of the deal.II library.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2017 by Jean-Paul Pelteret
  *
- * The deal.II library is free software; you can use it, redistribute
- * it, and/or modify it under the terms of the GNU Lesser General
- * Public License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * The full text of the license can be found in the file LICENSE at
- * the top level of the deal.II distribution.
+ * This file is part of the deal.II code gallery.
  *
- * ---------------------------------------------------------------------
- */
-
-/*
+ * -----------------------------------------------------------------------------
+ *
  * Authors: Jean-Paul Pelteret, University of Erlangen-Nuremberg, 2017
  */
 

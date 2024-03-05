@@ -1,3 +1,13 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2018 by Joshua Christopher
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 #include "BraidFuncs.hh"
 
 // This advances the solution forward by one time step.

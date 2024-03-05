@@ -1,21 +1,16 @@
-/* ---------------------------------------------------------------------
- * $Id: elastoplastic.cc 31592 2013-11-08 16:47:28Z Ghorashi $
+/* -----------------------------------------------------------------------------
  *
- * Copyright (C) 2012 - 2013 by the deal.II authors
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2012 by Joerg Frohne
+ * Copyright (C) 2012 by Wolfgang Bangerth
+ * Copyright (C) 2013 by Timo Heister
+ * Copyright (C) 2014 by Seyed Shahram Ghorashi
  *
- * This file is part of the deal.II library.
+ * This file is part of the deal.II code gallery.
  *
- * The deal.II library is free software; you can use it, redistribute
- * it, and/or modify it under the terms of the GNU Lesser General
- * Public License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * The full text of the license can be found in the file LICENSE at
- * the top level of the deal.II distribution.
+ * -----------------------------------------------------------------------------
  *
- * ---------------------------------------------------------------------
-
- *
- * Authors: Seyed Shahram Ghorashi, Bauhaus-Universit\"at Weimar, 2014
+ * Authors: Seyed Shahram Ghorashi, Bauhaus-Universität Weimar, 2014
  *          Joerg Frohne, Texas A&M University and
  *                        University of Siegen, 2012, 2013
  *          Wolfgang Bangerth, Texas A&M University, 2012, 2013

@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2015 by David Wells
+//
+// This file is part of the deal.II code gallery.
+//
+// -----------------------------------------------------------------------------
+
 #include <deal.II-cdr/parameters.h>
 
 #include <fstream>

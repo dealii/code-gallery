@@ -1,3 +1,13 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2022 by Giuseppe Orlando
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 // We start by including all the necessary deal.II header files.
 //
 #include <deal.II/base/point.h>

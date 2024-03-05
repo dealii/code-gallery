@@ -1,3 +1,14 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2021 by Hongfeng Ma
+ * Copyright (C) 2021 by Tatiana E. Itina
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 //#----------------------------------------------------------
 //#
 //# This file defines the boundary and initial conditions

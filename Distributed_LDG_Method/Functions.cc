@@ -1,3 +1,13 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2017 by Michael Harmon
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 // @sect3{Functions.cc}
 // In this file we keep right hand side function, Dirichlet boundary
 // conditions and solution to our Poisson equation problem.  Since

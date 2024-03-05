@@ -1,22 +1,15 @@
-/* ---------------------------------------------------------------------
+/* -----------------------------------------------------------------------------
  *
- * Copyright (C) 2010 - 2020 by the deal.II authors and
- *                              Ester Comellas and Jean-Paul Pelteret
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2018 by Ester Comellas
+ * Copyright (C) 2018 by Jean-Paul Pelteret
  *
- * This file is part of the deal.II library.
+ * This file is part of the deal.II code gallery.
  *
- * The deal.II library is free software; you can use it, redistribute
- * it, and/or modify it under the terms of the GNU Lesser General
- * Public License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * The full text of the license can be found in the file LICENSE at
- * the top level of the deal.II distribution.
+ * -----------------------------------------------------------------------------
  *
- * ---------------------------------------------------------------------
- */
-
-/*   Authors: Ester Comellas and Jean-Paul Pelteret,
- *           University of Erlangen-Nuremberg, 2018
+ * Authors: Ester Comellas and Jean-Paul Pelteret,
+ *          University of Erlangen-Nuremberg, 2018
  */
 
 // We start by including all the necessary deal.II header files and some C++

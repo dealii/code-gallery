@@ -1,10 +1,16 @@
-
-/*
- Started 10/8/2012, R. R. Fu
-
- Reference Pohanka 2011, Contrib. Geophys. Geodes.
-
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2012 by Roger R. Fu
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ *
+ * Author: Roger R. Fu
+ * Reference Pohanka 2011, Contrib. Geophys. Geodes.
  */
+
 #include <math.h>
 #include <deal.II/base/point.h>
 #include <fstream>

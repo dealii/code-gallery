@@ -1,3 +1,13 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2015 by David Wells
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 #ifndef dealii__cdr_system_rhs_templates_h
 #define dealii__cdr_system_rhs_templates_h
 #include <deal.II/base/point.h>
