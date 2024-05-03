@@ -395,7 +395,7 @@ void InformationDensityMeshRefinement<dim>::assemble_system ()
 
   std::vector<unsigned int> local_dof_indices (dofs_per_cell);
 
-  FEValuesExtractors::Scalar c(0), lambda(1), f(2);
+  const FEValuesExtractors::Scalar c(0), lambda(1), f(2);
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -760,7 +760,7 @@ void InformationDensityMeshRefinement<dim>::refine_grid ()
       QGauss<dim> quadrature(3);
       FEValues<dim> fe_values (fe, quadrature, update_values | update_JxW_values);
 
-      FEValuesExtractors::Scalar lambda(1), f(2);
+      const FEValuesExtractors::Scalar lambda(1), f(2);
 
       std::vector<double> lambda_values (quadrature.size());
       std::vector<double> f_values (quadrature.size());
