@@ -697,7 +697,7 @@ namespace fluid
     else
       dirichlet_bc_ids = std::vector<unsigned int>{0, 2, 3, 4, 5, 6};
 
-    FEValuesExtractors::Vector velocities(0);
+    const FEValuesExtractors::Vector velocities(0);
     for (auto id : dirichlet_bc_ids)
       {
         VectorTools::interpolate_boundary_values(dof_handler,
@@ -1081,7 +1081,7 @@ namespace fluid
     pcout << "Refining mesh..." << std::endl;
 
     Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
-    FEValuesExtractors::Vector velocity(0);
+    const FEValuesExtractors::Vector velocity(0);
     KellyErrorEstimator<dim>::estimate(dof_handler,
                                        face_quad_formula,
                                        {},
