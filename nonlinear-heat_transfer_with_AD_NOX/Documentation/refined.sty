@@ -1,0 +1,279 @@
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\epstopdfsetup{update}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\lstset{%
+	language=Fortran,
+	frame=single,
+	basicstyle=\sffamily\footnotesize,%\scriptsize,%\footnotesize,
+	captionpos=b
+}
+
+\usepackage{lineno}
+
+
+\biboptions{sort&compress}
+\usepackage{etex} % some OS will throw memory errors when too many packages are used. This packages will increase memory allocation
+\usepackage{graphicx,color,colordvi}%subfigure
+\usepackage{latexsym,amsbsy,epsfig,fancybox}
+\usepackage{amstext}
+\usepackage{subcaption}
+\usepackage{amsfonts,textgreek}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{stmaryrd,dsfont}
+\usepackage{bbm}
+\usepackage{url}
+\usepackage{wrapfig,bm}
+\usepackage{tikz}
+\usepackage{pstricks}
+\usepackage{caption}
+\usepackage{psfrag}
+\usepackage{upgreek}
+\usepackage{isomath}
+\usepackage{latexsym}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{verbatim}
+\usepackage{color}
+\usepackage[colorlinks=true,citecolor=blue]{hyperref}
+\usepackage{epstopdf,overpic}
+\usepackage{enumerate}
+\usepackage{amsmath,amssymb,xspace}
+\usetikzlibrary{plotmarks}
+\usepackage{appendix}
+%--- for remark
+\newtheorem{rmk}{Remark}
+\usepackage[margin=3cm]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Color definitions
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\definecolor{forestgreen}{RGB}{34, 139, 34}
+\definecolor{lightgray}{gray}{0.92}
+%=========================
+%Short cuts
+\newcommand{\Eref}[1]{Equation~\ref{#1}} % Refer to an Equation with "Equation"
+\newcommand{\eref}[1]{Eqn.~\ref{#1}} % Refer to an Equation with Eqn.
+\newcommand{\Erefs}[2]{Equations~\ref{#1} and \ref{#2}} % Refer to "Equations"
+
+\newcommand{\X}{\mathbf{X}} % Coordinate in the Reference configuration
+\newcommand{\x}{\mathbf{x}} %Coordinate in the current configuration
+\newcommand{\Xc}{\mathbf{\bar{X}}} %Coordinate in intermediate configuration
+\newcommand{\Xci}[1]{\bar{X}_{#1}} %Indicial notation coordinate in intermediation configuration
+%=================================
+%Configurations
+\newcommand{\CF}[1]{\mathcal{C}_F({#1})}
+\newcommand{\CR}[1]{\mathcal{C}_R({#1})}
+\newcommand{\CI}[1]{\mathcal{C}_I({#1})}
+\newcommand{\COA}[1]{\mathcal{C}_0^\ca}
+\newcommand{\COB}[1]{\mathcal{C}_0^\cb}
+%Mappings
+\newcommand{\mrc}[2]{\mathbf{\Phi}{({#1}{#2})}}
+\newcommand{\mrci}[3]{\Phi_{#1}{({#2}{#3})}}
+\newcommand{\mrI}[2]{\mathbf{\bar{\Phi}}{({#1}{#2})}}
+\newcommand{\mrIi}[3]{\bar{\Phi}_{#1}{({#2}{#3})}}
+
+%Infinitesimal volume elements
+\newcommand{\dvf}{dV_f}
+\newcommand{\dvi}{dV_i}
+\newcommand{\dvr}{dV_r}
+\newcommand{\Vc}{V_c}%Control volume
+\newcommand{\dvc}{dV_c}
+%Brackets
+\newcommand{\pl}{\left(}
+\newcommand{\pr}{\right)}
+\newcommand{\fl}{\left\{}
+\newcommand{\fr}{\right\}}
+%Specie
+\newcommand{\ca}{\alpha}
+\newcommand{\cb}{\beta}
+\newcommand{\rca}{\rho^\ca}
+\newcommand{\rcb}{\rho^\cb}
+%Specie velocity
+\newcommand{\vca}[1]{v^\ca_{#1}}
+\newcommand{\vcb}[1]{v^\cb_{#1}}
+%Derivatives
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\tdto}{\frac{d}{dt}}
+\newcommand{\tdti}[1]{\frac{d#1}{dt}}
+%Permutation symbol
+\newcommand{\permut}[1]{\epsilon_{#1}}
+%Stress
+\newcommand{\stra}[1]{\sigma^\ca_{#1}}
+\newcommand{\strb}[1]{\sigma^\cb_{#1}}
+\newcommand{\strm}[1]{\sigma^m_{#1}}
+%Some constants
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\Id}{\mathbf{I}}
+\newcommand{\Idi}[1]{\delta_{#1}}
+%Strains
+\newcommand{\Ee}{\mathbf{E^E}}
+
+%Fluxes
+\newcommand{\fa}[1]{f^\ca_{#1}}
+\newcommand{\fb}[1]{f^\cb_{#1}}
+\newcommand{\fta}[1]{\tilde{f}^\ca_{#1}}
+\newcommand{\ftb}[1]{\tilde{f}^\cb_{#1}}
+\newcommand{\bfa}[1]{\bar{f}^\ca_{#1}}
+\newcommand{\bfb}[1]{\bar{f}^\cb_{#1}}
+\newcommand{\flx}[1]{J_{#1}}
+%Deformation gradient
+\newcommand{\FT}{\mathbf{F}}
+\newcommand{\FTi}[1]{F_{#1}}
+
+\newcommand{\FI}{\mathbf{F^I}}
+\newcommand{\FIi}[1]{F^I_{#1}}
+
+\newcommand{\FC}{\mathbf{F^C}}
+\newcommand{\FCi}[1]{F^C_{#1}}
+
+\newcommand{\FE}{\mathbf{F^E}}
+\newcommand{\FEi}[1]{F^E_{#1}}
+
+\newcommand{\FP}{\mathbf{F^P}}
+\newcommand{\FPi}[1]{F^P_{#1}}
+
+\newcommand{\dFP}{\text{det}\pl \FP \pr}
+\newcommand{\dFC}{\text{det}\pl \FC \pr}
+\newcommand{\dFI}{\text{det}\pl \FI \pr}
+\newcommand{\dFE}{\text{det}\pl \FE\pr}
+\newcommand{\dFT}{\text{det}\pl \FT\pr}
+
+\newcommand{\FTdot}{\dot{\FT}}
+\newcommand{\FEdot}{\dot{\FE}}
+\newcommand{\FCdot}{\dot{\FC}}
+\newcommand{\FPdot}{\dot{\FP}}
+%Inverses
+\newcommand{\IFT}{\FT^{-1}}
+\newcommand{\IFE}{\FE^{-1}}
+\newcommand{\IFC}{\FC^{-1}}
+\newcommand{\IFP}{\FP^{-1}}
+
+
+%==================================
+%Velocity gradients
+\newcommand{\VG}{\mathbf{G}}
+\newcommand{\VGi}[1]{G_{#1}}
+
+\newcommand{\Vg}{\mathbf{g}}
+\newcommand{\Vgi}[1]{g_{#1}}
+%=====================================
+%Stress measures
+\newcommand{\cs}{\mathbold{\sigma}}
+\newcommand{\csi}[1]{\sigma_{#1}}
+
+\newcommand{\fpk}{\mathbf{P}}
+\newcommand{\fpki}[1]{P_{#1}}
+
+\newcommand{\spk}{\mathbf{S}}
+\newcommand{\spki}[1]{S_{#1}}
+
+
+%Yield function
+\newcommand{\YFC}[1]{\mathcal{T}\pl{#1}\pr}
+\newcommand{\YFK}[1]{\hat{\mathcal{T}}\pl{#1}\pr}
+\newcommand{\YSK}[1]{\tilde{\mathcal{T}}\pl{#1}\pr}
+\newcommand{\YSB}{\bar{\mathcal{T}}}
+% Other functons
+\newcommand{\ipf}[1]{q^{#1}}
+%Rate of deformation and spin
+\newcommand{\Rd}{\mathbf{D}}
+\newcommand{\Rdi}[1]{\mathbf{D}_{#1}}
+
+\newcommand{\St}{\mathbf{W}}
+\newcommand{\Sti}[1]{\mathbf{W}_{#1}}
+%Energies
+\newcommand{\Eel}{\mathbf{W^{el}}}
+\newcommand{\Eelr}{\hat{\mathbf{W}}^{el}}
+\newcommand{\Eelc}{\mathbf{w}^{el}}
+%Elastic modulus
+\newcommand{\STI}{\mathbf{\bar{C}}}
+\newcommand{\STT}{\mathbf{\mathring{C}}}
+\newcommand{\STIi}[1]{\bar{C}_{#1}}
+\newcommand{\STTi}[1]{\mathring{C}_{#1}}
+\newcommand{\STJ}{\mathbf{\tilde{C}}}
+\newcommand{\STJi}[1]{\tilde{C}_{#1}}
+\newcommand{\STtan}{\bar{\mathbf{C^T}}}
+%Stress rate
+\newcommand{\csrj}{\mathbold{\breve{\sigma}}}
+\newcommand{\csrt}{\mathbold{\mathring{\sigma}}}
+%Rotation and stretch
+\newcommand{\RE}{\mathbf{R^E}}
+\newcommand{\UE}{\mathbf{U^E}}
+\newcommand{\REi}[1]{R^E_{#1}}
+%Free energy
+\newcommand{\TFE}{\mathbf{G}}
+\newcommand{\Eeln}{\mathcal{G}^{el}}
+\newcommand{\Echn}{\mathcal{G}^{ch}}
+\newcommand{\Epln}{\mathcal{G}^{pl}}
+\newcommand{\Einn}{\mathcal{G}^{in}}
+
+\newcommand{\Eelnr}{\mathcal{\hat{G}}^{el}}
+\newcommand{\Echnr}{\mathcal{\hat{G}}^{ch}}
+\newcommand{\Eplnr}{\mathcal{\hat{G}}^{pl}}
+\newcommand{\Einnr}{\mathcal{\hat{G}}^{in}}
+
+
+%Energy of invididual phases
+\newcommand{\Ien}[1]{g^{#1}}
+%Phase field
+\newcommand{\pf}[2]{\phi_{#1}^{#2}}
+% Interface
+\newcommand{\gam}[2]{\gamma^{#1-#2}}
+% Lagrange multiplier
+\newcommand{\lm}{\lambda}
+%weightfunction for a phase
+\newcommand{\et}[2]{\eta_{#1}^{#2}}
+%Typical finite element
+\newcommand{\Ome}{\Omega^e}
+\newcommand{\Oms}{\Gamma^e}
+\newcommand{\af}[2]{\psi_{#1}^{^#2}}
+\newcommand{\cf}[1]{\zeta_{#1}}
+\newcommand{\cl}[1]{\xi_{#1}}
+\newcommand{\cm}[1]{\omega_{#1}}
+\newcommand{\pfa}[2]{\bar{\phi}_{#1}^{#2}}
+\newcommand{\pfc}[1]{\bar{c}_{#1}}
+\newcommand{\pfl}[1]{\bar{\lm}_{#1}}
+\newcommand{\pfm}[1]{\bar{\mu}_{#1}}
+\newcommand{\fcv}[1]{\pl \cf{#1}\pfc{#1}\pr}
+\newcommand{\fcl}[1]{\pl \cl{#1}\pfl{#1}\pr}
+\newcommand{\fcm}[1]{\pl \cm{#1}\pfm{#1}\pr}
+\newcommand{\dfcv}[2]{\pl \cf{#1,#2}\pfc{#1} \pr}
+\newcommand{\dfcl}[2]{\pl \cl{#1,#2}\pfl{#1} \pr}
+\newcommand{\dfml}[2]{\pl \cm{#1,#2}\pfm{#1} \pr}
+\newcommand{\fav}[2]{\pl \af{#2}{#1}\pfa{#2}{#1} \pr}
+\newcommand{\dfav}[3]{\pl \af{#3,#2}{#1}\pfa{#3}{#1} \pr}
+%Mobility of a phase
+\newcommand{\Mo}[1]{\mathcal{M}^{#1}}
+\newcommand{\Db}{\bar{D}}
+%Time
+\newcommand{\dt}{\Delta t}
+% Time derivative
+\newcommand{\pfd}[3]{(^{#3}\dot{\bar{\phi}}_{#1}^{^#2})}
+\newcommand{\pfdl}[2]{(^{#2}\dot{\bar{\lambda}}_{#1}}
+
+\newcommand{\pft}[3]{(\bar{\phi}_{#1}^{#2})^{^{#3}}}
+\newcommand{\pftl}[2]{(\bar{\lambda}_{#1})^{^{#2}}}
+
+\newcommand{\kdl}[2]{\delta_{#1#2}}
+\newcommand{\kdu}[2]{\delta^{#1#2}}
+
+%Normalized Concentration
+\newcommand{\bc}[1]{\bar{#1}}
+
+\newcommand{\ts}{s+1}
+\newcommand{\dto}{\Delta t}
+\newcommand{\dtt}{\Delta {t}}
+\newcommand{\bep}{\bar{\epsilon}}
+\newcommand{\JPP}[2]{\frac{\partial f_{#1}^1}{\partial p_{#2}^{\ts}}}
+\newcommand{\JPT}[2]{\frac{\partial f_{#1}^1}{\partial T_{#2}^{\ts}}}
+\newcommand{\JTP}[2]{\frac{\partial f_{#1}^2}{\partial p_{#2}^{\ts}}}
+\newcommand{\JTT}[2]{\frac{\partial f_{#1}^2}{\partial T_{#2}^{\ts}}}
+
+\usepackage[nameinlink,capitalise]{cleveref}
