@@ -4562,8 +4562,7 @@ namespace NonLinearPoroViscoElasticity
             if (this->parameters.load_type == "displacement")
             {
                 const std::vector<double> value = get_dirichlet_load(5,2);
-                const FEValuesExtractors::Scalar direction;
-                direction = this->z_displacement;
+                const FEValuesExtractors::Scalar direction(this->z_displacement);
 
                 VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                            5,
@@ -4707,8 +4706,7 @@ namespace NonLinearPoroViscoElasticity
             if (this->parameters.load_type == "displacement")
             {
                 const std::vector<double> value = get_dirichlet_load(5,2);
-                const FEValuesExtractors::Scalar direction;
-                direction = this->z_displacement;
+                const FEValuesExtractors::Scalar direction(this->z_displacement);
 
                 VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                            5,
@@ -4857,8 +4855,7 @@ namespace NonLinearPoroViscoElasticity
             if (this->parameters.load_type == "displacement")
             {
                 const std::vector<double> value = get_dirichlet_load(4,0);
-                const FEValuesExtractors::Scalar direction;
-                direction = this->x_displacement;
+                const FEValuesExtractors::Scalar direction(this->x_displacement);
 
                 VectorTools::interpolate_boundary_values( this->dof_handler_ref,
                                                            4,
