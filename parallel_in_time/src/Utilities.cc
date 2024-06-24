@@ -17,6 +17,7 @@
 
 int procID = 0;
 
+#ifdef USE_MPI
 // The shared variables
 
 static std::string       s_pout_filename ;
@@ -26,7 +27,6 @@ static std::ofstream     s_pout ;
 static bool              s_pout_init = false ;
 static bool              s_pout_open = false ;
 
-#ifdef USE_MPI
 // in parallel, compute the filename give the basename
 //[NOTE: dont call this before MPI is initialized.]
 static void setFileName()
@@ -48,18 +48,6 @@ static void openFile()
   // if open() fails, we have problems, but it's better
   // to try again later than to make believe it succeeded
   s_pout_open = (bool)s_pout ;
-}
-
-#else
-// in serial, filename is always cout
-static void setFileName()
-{
-  s_pout_filename = "cout" ;
-}
-
-// in serial, this does absolutely nothing
-static void openFile()
-{
 }
 #endif
 
