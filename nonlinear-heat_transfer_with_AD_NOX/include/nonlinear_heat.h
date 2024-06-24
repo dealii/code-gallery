@@ -120,7 +120,7 @@ public:
    {}
    // Returns the intitial  values.
     virtual double value(const Point<2> &p,
-                              const unsigned int component =0) const;
+                              const unsigned int component =0) const override;
 };
 
 /** A class to apply the boundary (Dirichlet) condition at the left edge.

@@ -5,7 +5,7 @@
  * @param comp component
  * @return
  */
-double Initialcondition::value(const Point<2> &p, const unsigned int comp) const
+double Initialcondition::value(const Point<2> & /*p*/, const unsigned int /*comp*/) const
 {
     /**
      * In the current case, we asume that the initial conditions are zero everywhere.
