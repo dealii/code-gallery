@@ -687,7 +687,7 @@ The variable `present_solution` is assigned the value of `converged_solution` fr
 
 The results are essentially the time evolution of the temperature throughout the domain. The first of the pictures below shows the temperature distribution at the final step, i.e. at time $t=5$. This should be very similar to the figure at the bottom on the page [here](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). We also plot the time evolution of the temperature at a point close to the right edge of the domain indicated by the small magenta dot (close to $(0.49, 0.12)$) in the second of the pictures below. This is also simlar to the second figure at the [bottom of this page](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). There could be minor differences due to the choice of the point. Further, note that, we have plotted in the second of the pictures below the temperature as a function of time steps instead of time. Since the $\Delta t$ chosen is 0.1, 50 steps maps to $t=5$ as in the link.
 
-![image](./doc/Images/contour.pdf)
+![image](./doc/Images/contour.png)
 
 Contour plot of the temperature at the final step
 
