@@ -1,24 +1,24 @@
 Nonlinear heat transfer with TRILINOS
-======================================
+-------------------------------------
 
-# Introduction
+## Introduction
 This application uses automatic differentiation to develop the residual and the jacobian for a simple transient non-linear heat transfer problem. The nonlinear solution is then done using TRILINOS NOX. The nonlinearity arises due to the dependence of thermal conductivity on the temperature. This example can be found in the following [link](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). 
 
-# About the folders
+## About the folders
 The source codes are there in the `source/` folder. Note that the geometry and its mesh are present in `mesh/` folder. The `output/` folder will contain the vtu files from the run. The folder `include/` contains all the header files needed. Further, the file `CMakeLists.txt` is added so that you can run the programme as  
 
 	cmake .
   	make all
   	make run
 
-# Documentation
+## Documentation
 
 In this example, we solve  a simple  transient nonlinear heat transfer equation. The nonlinearity is due to the temperature dependence of the thermal conductivity.  Two main aspects covered by this example are (a) it develops the residual and the jacobian using automatic differentiation and (b) solves the nonlinear equations using TRILINOS NOX. The actual code contains the comments which will explain how these aspects are executed. Here, we give the full derivation and set up the equations. We also provide explanations to some of the functions important for this applicaiton. 
 
 
-## Strong form
+### Strong form
 
-### Governing equations
+#### Governing equations
 
 We solve now a non-linear differential equation governing the heat transfer in a 2D domain using a combination of Automatic Differentiation and TRILINOS NOX in this example. The link for the original problem can be found [here](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). We shall consider the finite element model of the following differential equation
 @f[
@@ -31,12 +31,12 @@ subjected to appropriate boundary conditions. For the sake of convenience, we wi
 The nonlinearity arises because the thermal conductivity is a function of the temperature $T$. We will write down the functional form of this dependence later.
 
 
-### Boundary conditions and domain
+#### Boundary conditions and domain
 
 Please see [this link](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html) for the actual domain over which the differential equation in solved. The `.geo` and `.msh` file for the domain can be found in the `mesh` folder. The boundary conditions are as follows: Left end (domain id 1) is fixed at $100^\circ$C and the right end (domain id 3) has a outgoing flux of magnitude 10. All other material parameters are defined in file `source/nonlinear_heat_cons_des.cc` 
 
 
-## Weak form
+### Weak form
 
 The weak form of the equation over a typical finite element $\Omega_e$ with boundary $\Gamma_e$ is written as 
 @f[
@@ -88,7 +88,7 @@ We will consider the case where $M_{IJ}$ and $Q_I$ are both independent of time.
 @f}
 
 
-## Time marching
+### Time marching
 
 Consider the following approximation for the time derivative
 @f[
@@ -133,7 +133,7 @@ We want to find $T_K$s so that the previous equation is satisfied for every time
 is the residual at the $s+1$$^{th}$ time step. After assembling, we need to find the $T_{J}^{s+1}$ that essentially makes the assembled $R_I^{s+1}$ go to zero. Numerically, we will require some norm of the residual to go to zero. Note that the residual we developed is local to the element. This will have to be assembled in the usual manner before solving. *We again note that $T_K^{s}$ are all known from the previous time step $s$.*
 
 
-## The Jacobian
+### The Jacobian
 
 The solution (i.e. to find $T_K^{{s+1}}$) which make the residual to go to zero, can be found using the Newton Raphson's technique. For this we need to calculate the *Jacobian* or the *Tangent stiffness* matrix  which involves calculating 
  $\frac{\partial R_I^{s+1}}{\partial T_{Q}^{s+1}}$. From the final equation above, we get, 
@@ -165,12 +165,12 @@ and hence we get
 Then, $J_{IQ}^{{s+1}}$ can be written using the definition of $J_{IQ}^{s+1}$. It is this calculation of the Jacobian which is often complicated and we intend to automate it using the /Automatic differentiation/ facility. These are implemented in the functions `compute_residual()` and `compute_jacobian()`. These functions are described in detail next. 
 
 
-## The functions compute_residual() and compute_jacobian()
+### The functions compute_residual() and compute_jacobian()
 
 The functions `compute_residual()` and `compute_jacobian()` compute the residuals and the jacobian, respectively. These are done with automatic differentiation from TRILINOS. For dealii tutorials on these, please see step-71 and step-72. The residual is computed in such a way that the a single line will actually differentiate it and calculate the jacobian given by the definition of $J_{IQ}^{s+1}$. While the difference between `compute_residual()` and `compute_jacobian()` is minimal and could have been incorporated in a single function, we separate them in this implementation, because we want to use the nonlinear solver provided by TRILINOS (NOX) to actually perform the Newton Raphson iteration. For further details on this (Nonlinear solvers) aspect, please see step-77 of the dealii tutorial. We describe some aspects of the `compute_residual()` and `compute_jacobian()` here. 
 
 
-### The compute_residual() function
+#### The compute_residual() function
 
 The `compute_residual()` function actually takes in two arguments. `evaluation_point` and `residual`, both by reference. We will discuss this in some detail as we elaborate the function. 
 
@@ -407,7 +407,7 @@ are used to calculate the global `residual` from the local `cell_rhs`. Now `resi
 are routine, in particular, it makes the global degrees of freedom, where the dirichlet boundary conditions are applied to be zero.
 
 
-### The compute_jacobian() function
+#### The compute_jacobian() function
 
 The `compute_jacobian()` only takes in the `evaluation_point` as an input and is identical to the 
 `compute_residual()` except for some minor modification. In particular the line
@@ -418,7 +418,7 @@ The `compute_jacobian()` only takes in the `evaluation_point` as an input and is
 computes the actual jacobian by performing the automatic differentiation and evaluates it at the `evaluation_point`. The remaining lines are routine and should be straightforward. 
 
 
-## General ideas involved in solving coupled nonlinear equations using Newton Raphson's technique
+### General ideas involved in solving coupled nonlinear equations using Newton Raphson's technique
 Consider that we have the equations 
 @f{eqnarray}{
 	f_i^1(p_j^{{s+1}}, T_j^{{s+1}})=0 \\
@@ -571,7 +571,7 @@ or
 where $tol$ is some small number. In the code, we use the second of these two choices. The final converged solution in the one that satisfies the set of equations and is called by the variable `converged_solution` in the code. This iterative process is carried out for every time step. The variable `present_solution` is given the value of `converged_solution` at the beginning of the iteration of a given time step, so that it serves as a better initial guess for the nonlinear set of equations for the next time step.
 
 
-### The run() function
+#### The run() function
 
 The function which implements the nonlinear solver is the `run()` function for every time step. In particular the lines
 ```
@@ -683,7 +683,7 @@ The variable `present_solution` is assigned the value of `converged_solution` fr
 ```
 
 
-## Results
+### Results
 
 The results are essentially the time evolution of the temperature throughout the domain. The first of the pictures below shows the temperature distribution at the final step, i.e. at time $t=5$. This should be very similar to the figure at the bottom on the page [here](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). We also plot the time evolution of the temperature at a point close to the right edge of the domain indicated by the small magenta dot (close to $(0.49, 0.12)$) in the second of the pictures below. This is also simlar to the second figure at the [bottom of this page](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). There could be minor differences due to the choice of the point. Further, note that, we have plotted in the second of the pictures below the temperature as a function of time steps instead of time. Since the $\Delta t$ chosen is 0.1, 50 steps maps to $t=5$ as in the link.
 
@@ -698,7 +698,7 @@ Evolution of temperature at a point close to the right edge $\approx (0.49, 0.12
 In closing, we give some ideas as to how the residuals and the jacobians are actually calculated in a finite element setting. 
 
 
-## Evaluating the function at previous iterations
+### Evaluating the function at previous iterations
 
 For solving the linear equation every iteration, we have to evaluate the right hand side functions ($f_i^1$ and $f_i^2$) at the values  $p$ and $T$ had at their previous iteration. For instance, in the current problem consider the final equation above (we only have only one function $f_I$ in this case), which is 
 @f[
@@ -733,5 +733,5 @@ which are evaluated using gauss quadrature by summing the functions after evalua
 
 
 
-# The dealii steps
+## The dealii steps
 To understand this application, step-71, step-72 and step-77 are needed. 
