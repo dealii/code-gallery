@@ -1,0 +1,122 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Kobayashi_Parallel",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Kobayashi_Parallel::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Kobayashi_Parallel-Debug-44a3edf76a0b1d6ce63e.json",
+					"name" : "Kobayashi_Parallel",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "debug::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-debug-Debug-437935d3bee2b5247a4b.json",
+					"name" : "debug",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "distclean::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-distclean-Debug-c7bb04d03470732a1bf6.json",
+					"name" : "distclean",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "info::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-info-Debug-674f5ad97c283606d33a.json",
+					"name" : "info",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "release::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-release-Debug-369c002c3664eeb6fab0.json",
+					"name" : "release",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "run::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-run-Debug-4e9e7476fde444444aa7.json",
+					"name" : "run",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "runclean::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-runclean-Debug-00d511f9b7de392a16ba.json",
+					"name" : "runclean",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "strip_comments::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-strip_comments-Debug-4c6358df7e8d19107171.json",
+					"name" : "strip_comments",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/umair/dealii-candi/code-gallery/Crystal_Growth_Phase_Field_Model",
+		"source" : "/home/umair/dealii-candi/code-gallery/Crystal_Growth_Phase_Field_Model"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}
