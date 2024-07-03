@@ -17,7 +17,7 @@ SET(TARGET_SRC
         get_random_number.cpp
         )
 
-FIND_PACKAGE(deal.II 9.2.0 QUIET
+FIND_PACKAGE(deal.II 9.5.0 QUIET
         HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
         )
 IF(NOT ${deal.II_FOUND})

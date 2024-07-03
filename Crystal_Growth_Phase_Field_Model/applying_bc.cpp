@@ -17,7 +17,7 @@ void PhaseFieldSolver::applying_bc(){
     // Prescribing p=1 at the left face (this will be maintained in the subsequent iterations when zero BC is applied in the Newton-Raphson iterations)
     VectorTools::interpolate_boundary_values (dof_handler,
                                               1,
-                                              ConstantFunction<2>(1., 2),
+                                              Functions::ConstantFunction<2>(1., 2),
                                               boundary_values,p_mask);
 
     // To apply the boundary values only to the solution vector without the Jacobian Matrix and RHS Vector

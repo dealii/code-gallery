@@ -46,7 +46,7 @@ void PhaseFieldSolver::run() {
             old_solution_np = old_solution;
             //Initialise the delta solution as zero
             VectorTools::interpolate(dof_handler,
-                                     ZeroFunction<2>(2),
+                                     Functions::ZeroFunction<2>(2),
                                      solution_update);
             solution_update.compress(VectorOperation::insert);
             //Assemble Jacobian and Residual
