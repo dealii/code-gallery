@@ -1,0 +1,40 @@
+#	List of dimensionless parameters
+
+subsection Problem
+  set delta                         = 0.01
+  set epsilon                       = 0.1
+  set Prandtl number                = 0.75    # Pr
+  set Lewis number                  = 1.0     # Le
+  set Constant of reaction rate     = 1.0     # k
+  set Activation energy             = 1.65    # theta
+  set Heat release                  = 1.7     # q
+  set Ignition Temperature          = 1.0     # T_ign
+
+  set Type of the wave (deflagration / detonation) = 0    # 0 for "deflagration"; 1 for "detonation".
+ 
+  set Type of boundary condition for the temperature at the right boundary = 0    # 0 for "Neumann" (deflagration); 1 for "Dirichlet" (detonation).
+  set T_left    = 2.3       # Dirichlet boundary condition.
+  set T_right   = 0.9       # For detonation waves the value serves as a Dirichlet boundary condition. For deflagration waves it serves for construction of the piecewise constant initial guess.
+
+  set u_left    = -0.2      # For detonation waves the value is ignored. For deflagration waves it serves for construction of the piecewise constant initial guess.
+  set u_right   = 0.1       # Dirichlet boundary condition.
+
+  set Initial guess for the wave speed = 0.2    # For detonation waves the value is ignored. For deflagration waves it serves as an initial guess for the wave speed.
+
+end
+
+subsection Finite elements
+  set Polynomial degree             = 1
+  set Number of quadrature points   = 3
+end
+
+subsection Mesh
+  set Interval left boundary        = -50	
+  set Interval right boundary       = 20
+  set Refinements number            = 10
+  set Adaptive mesh refinement      = 1     # 1 for adaptive; 0 for global.
+end
+
+subsection Solver
+  set Tolerance                     = 1e-10
+end
