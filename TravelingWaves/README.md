@@ -42,7 +42,7 @@ Because of translational invariance, we need to impose another constraint on the
 ## Numerical algorithm
 
 ### Newton–Raphson iteration scheme
-The nonlinear boundary value problem is solved numerically on a finite interval $I = [l, r]$ $\left(|l|, |r| \gg 1 \right)$, using a Newton–Raphson iteration scheme, similar to one, described in deal.II tutorial [step-15](https://www.dealii.org/current/doxygen/deal.II/step_15.html). The main difference from step-15 is that we have an additional scalar unknown, the front velocity $c$. So the algorithm has to be modified to take this feature into account.
+The nonlinear boundary value problem is solved numerically on a finite interval $I = [l, r]$ $\left(|l|, |r| \gg 1 \right)$, using a Newton–Raphson iteration scheme, similar to one, described in deal.II tutorial step-15. The main difference from step-15 is that we have an additional scalar unknown, the front velocity $c$. So the algorithm has to be modified to take this feature into account.
 
 Rewriting the system in a vector form
 @f{align*}{
@@ -159,7 +159,7 @@ for $i, j < 3N + 1$.
 In order for the system to have a unique solution, we need to supplement it with one more equation, corresponding to the constraint $T(0) = T_{\text{ign}}$. The initial approximation to the solution is set so as to satisfy this condition, so we just need the computed increment function $dT$ to be zero at the specified point. Thus, we add a row of zeros with a value of 1 in the position corresponding to $dT(0)$ to the matrix $J$ and set $b_{3N + 1} = 0$.
 
 The resulting sparsity pattern structure has the form shown in the figure below.
-![Sparsity pattern corresponding to basis polynomial degree $p=1$.](doc/pics/sparsity-pattern_p1.png)
+![Sparsity pattern corresponding to basis polynomial degree $p=1$.](./doc/pics/sparsity-pattern_p1.png)
 
 The integration of the terms with $\kappa_1$ need special attention because of the Dirac delta function. If $U_n$ and $U_m$ are the degrees of freedom, associated with the vertex $\xi = 0$ (i.e., $\phi_n^2(0) = 1$ and $\phi_m^3(0) = 1$), we get
 @f{align*}{
@@ -207,12 +207,12 @@ The calculation parameters are set in the `ParametersList.prm` file. To reproduc
 ### Class `TravelingWaveSolver`
 `TravelingWaveSolver` is the main class for computation of the traveling-wave profiles.
 
-The implementation of Newton's method is based on that described in [step-77](https://www.dealii.org/current/doxygen/deal.II/step_77.html) and relies on SUNDIALS' [KINSOL](https://computing.llnl.gov/projects/sundials/kinsol) package. Because of the additional unknown, the front velocity, we expand the Jacobi matrix by one column and one row (`jacobian_matrix_extended`), and add one more element to the solution vector (`current_solution_extended`). After completing the Newton iterations, we split the resulting extended solution vector `current_solution_extended` into two parts: the solution vector `current_solution`, corresponding to $(u, T, \lambda)$, and the front velocity `current_wave_speed`. After that the adaptive mesh refinement is performed using the `current_solution` vector, which is very important for resolving a narrow transition layer with a large solution gradient in the vicinity of zero. The [KellyErrorEstimator](https://www.dealii.org/current/doxygen/deal.II/classKellyErrorEstimator.html) is used as a refinement indicator.
+The implementation of Newton's method is based on that described in step-77 and relies on SUNDIALS' [KINSOL](https://computing.llnl.gov/projects/sundials/kinsol) package. Because of the additional unknown, the front velocity, we expand the Jacobi matrix by one column and one row (`jacobian_matrix_extended`), and add one more element to the solution vector (`current_solution_extended`). After completing the Newton iterations, we split the resulting extended solution vector `current_solution_extended` into two parts: the solution vector `current_solution`, corresponding to $(u, T, \lambda)$, and the front velocity `current_wave_speed`. After that the adaptive mesh refinement is performed using the `current_solution` vector, which is very important for resolving a narrow transition layer with a large solution gradient in the vicinity of zero. The [KellyErrorEstimator](https://www.dealii.org/current/doxygen/deal.II/classKellyErrorEstimator.html) is used as a refinement indicator.
 
 ### Function `calculate_profile`
 The full calculation cycle is done in the `calculate_profile` function. First, we construct an initial guess to the solution depending on the selected wave type and store the result as an object of type `SolutionStruct`. This object, along with the problem parameters, is then passed to the constructor of the `TravelingWaveSolver` class to calculate the traveling wave.
 
-Decreasing the dissipation parameter $\delta$ leads to the appearance of large gradients in solutions in the neighborhood of zero. As a consequence, Newton's method becomes more sensitive to the initial data and ceases to converge. To solve this problem, the `calculate_profile` function implements the method of continuation by the $\delta$ parameter (for an example, see [step-57](https://www.dealii.org/current/doxygen/deal.II/step_57.html)). The solution and the refined triangulation are saved after each step of the method using the `get_solution` and `get_triangulation` functions and then passed to the next step.
+Decreasing the dissipation parameter $\delta$ leads to the appearance of large gradients in solutions in the neighborhood of zero. As a consequence, Newton's method becomes more sensitive to the initial data and ceases to converge. To solve this problem, the `calculate_profile` function implements the method of continuation by the $\delta$ parameter (for an example, see step-57). The solution and the refined triangulation are saved after each step of the method using the `get_solution` and `get_triangulation` functions and then passed to the next step.
 
 
 ### Error estimation
@@ -247,20 +247,20 @@ or execute the python script `plot.py`
 
 ### Slow deflagration for $\delta = 0.01$
 The calculated wave speed is $c = 0.0909$.
-![Slow deflagration, $\delta = 0.01$, $c = 0.0909$](doc/pics/slow_deflagration_delta_0.01.png)
+![Slow deflagration, $\delta = 0.01$, $c = 0.0909$](./doc/pics/slow_deflagration_delta_0.01.png)
 
 
 ### Fast deflagration for $\delta = 0.01$
 The calculated wave speed is $c = 0.8252$.
-![Fast deflagration, $\delta = 0.01$, $0.8252$](doc/pics/fast_deflagration_delta_0.01.png)
+![Fast deflagration, $\delta = 0.01$, $0.8252$](./doc/pics/fast_deflagration_delta_0.01.png)
 
 
 ### Detonation for $\delta = 0.01$ and $\delta = 0.001$
 The calculated wave speed in both cases is the same $c = 1.216481$, as expected. Solid lines represent the detonation profile for the ideal case, when $\delta=0$. 
 
-![Detonation, $\delta = 0.01$, $c = 1.216481$.](doc/pics/detonation_delta_0.01.png)
+![Detonation, $\delta = 0.01$, $c = 1.216481$.](./doc/pics/detonation_delta_0.01.png)
 
-![Detonation, $\delta = 0.001$, $c = 1.216481$](doc/pics/detonation_delta_0.001.png)
+![Detonation, $\delta = 0.001$, $c = 1.216481$](./doc/pics/detonation_delta_0.001.png)
 
 
 ## Acknowledgments
