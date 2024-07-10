@@ -70,7 +70,7 @@ set error estimation strategy        [can be set kelly_error or
                                       information)]
 
 set maximum relative error           [set a criterion value for
-                                      perfoming the mesh adaptivity] 
+                                      performing the mesh adaptivity] 
 
 set output directory                 [determine a directory to save
                                       the output results] 

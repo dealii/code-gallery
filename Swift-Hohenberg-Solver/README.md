@@ -15,7 +15,7 @@ wavelength of $2\pi$. We choose $r = 0.3$ because solutions are
 reasonably well behaved for small values of $r$ and $g_1$, but there
 are interesting behaviors that occur when $g_1$ is smaller or larger
 than $r$ in magnitude, so this allows us room to vary $g_1$ and
-explore these behavior. Additionally, we choose $r = 0.3$ because this matches the parameters used by Gurevich in [1]. We chose our parameters to match so that we could compare the output of our program to the results presented in [1], which was useful for validating that our code was functioning properly during the developement process.  To summarize, this code solves:
+explore these behavior. Additionally, we choose $r = 0.3$ because this matches the parameters used by Gurevich in [1]. We chose our parameters to match so that we could compare the output of our program to the results presented in [1], which was useful for validating that our code was functioning properly during the development process.  To summarize, this code solves:
 
 @f{align*}{
     \frac{\partial u}{\partial t} = 0.3u - (1 + \Delta)^2 u + g_1 u^2 - u^3

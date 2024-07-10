@@ -17,7 +17,7 @@ as
 It will pick up the code gallery and create joint documentation for the
 tutorial and the code gallery.
 
-### Maintainance of contributed codes
+### Maintenance of contributed codes
 
 The examples in the code-gallery are periodically adjusted so that they
 maintain compatibility with recent versions of deal.II. This means

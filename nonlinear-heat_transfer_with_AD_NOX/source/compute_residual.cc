@@ -97,7 +97,7 @@ void nonlinear_heat::compute_residual(const Vector<double> & evaluation_point, V
         fe_values[t].get_function_values(converged_solution, consol);
         fe_values[t].get_function_gradients(converged_solution, consol_grad);
         /**
-         * residual_ad is defined and initalized in its symbolic form.
+         * residual_ad is defined and initialized in its symbolic form.
          */
         std::vector<ADNumberType> residual_ad(n_dependent_variables,
                                               ADNumberType(0.0));

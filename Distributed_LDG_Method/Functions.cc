@@ -50,7 +50,7 @@ public:
   {}
 
   virtual void vector_value(const Point<dim> &p,
-                            Vector<double> &valuess) const override;
+                            Vector<double> &values) const override;
 };
 
 template <int dim>

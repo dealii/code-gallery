@@ -21,7 +21,7 @@ I could not use this framework for solving my research problem and I
 needed to write the LDG method from scratch. I thought it 
 would be helpful for others to have access to 
 this example that goes through writing a discontinuous Galerkin method from 
-scatch and also shows how to do it in a distributed setting using the 
+scratch and also shows how to do it in a distributed setting using the 
 <a href="https://www.trilinos.org">Trilinos</a> library. This example may also
 be of interest to users that wish to use the LDG method, as the method is 
 distinctly different from the 
@@ -137,7 +137,7 @@ $\textbf{q}$:
 f(\textbf{x}) && \text{in} \ \Omega, \label{eq:Primary} \\
 \textbf{q}
 \; &= \;
- -\nabla u && \text{in} \ \Omega,  \label{eq:Auxillary} \\
+ -\nabla u && \text{in} \ \Omega,  \label{eq:Auxiliary} \\
 \textbf{q}  \cdot \textbf{n} 
 \; &= \; g_{N}(\textbf{x}) && \text{on} \ \partial \Omega_{N},\\
 u &= g_{D}(\textbf{x}) && \mbox{on}\ \partial \Omega_{D}.
@@ -275,7 +275,7 @@ parameter that is defined as,
 
 
 with $\tilde{\sigma}$ being a positive constant.  There are other choices of
-penalty values $\sigma$, but the one above produces in appoximations to solutions
+penalty values $\sigma$, but the one above produces in approximations to solutions
 that are the most accurate, see this 
 <a href="http://epubs.siam.org/doi/abs/10.1137/S0036142900371003">
 reference</a> for more info.

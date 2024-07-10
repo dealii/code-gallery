@@ -133,7 +133,7 @@ namespace NS_TRBDF2 {
                                                           std::vector<Vector<double>>&                computed_quantities) const {
     const unsigned int n_quadrature_points = inputs.solution_values.size();
 
-    /*--- Check the correctness of all data structres ---*/
+    /*--- Check the correctness of all data structures ---*/
     Assert(inputs.solution_gradients.size() == n_quadrature_points, ExcInternalError());
     Assert(computed_quantities.size() == n_quadrature_points, ExcInternalError());
 
@@ -232,7 +232,7 @@ namespace NS_TRBDF2 {
 
   // @sect{ <code>NavierStokesProjectionOperator::NavierStokesProjectionOperator</code> }
 
-  // The following class sets effecively the weak formulation of the problems for the different stages
+  // The following class sets effectively the weak formulation of the problems for the different stages
   // and for both velocity and pressure.
   // The template parameters are the dimnesion of the problem, the polynomial degree for the pressure,
   // the polynomial degree for the velocity, the number of quadrature points for integrals for the pressure step,
@@ -1356,7 +1356,7 @@ namespace NS_TRBDF2 {
   }
 
 
-  // Put together all the previous steps for porjection of pressure gradient. Here we loop only over cells
+  // Put together all the previous steps for projection of pressure gradient. Here we loop only over cells
   //
   template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
   void NavierStokesProjectionOperator<dim, fe_degree_p, fe_degree_v, n_q_points_1d_p, n_q_points_1d_v, Vec>::
@@ -1390,7 +1390,7 @@ namespace NS_TRBDF2 {
   }
 
 
-  // Put together all previous steps. This is the overriden function that effectively performs the
+  // Put together all previous steps. This is the overridden function that effectively performs the
   // matrix-vector multiplication.
   //
   template<int dim, int fe_degree_p, int fe_degree_v, int n_q_points_1d_p, int n_q_points_1d_v, typename Vec>
@@ -1539,7 +1539,7 @@ namespace NS_TRBDF2 {
 
       Tensor<1, dim, VectorizedArray<Number>> tmp;
       for(unsigned int d = 0; d < dim; ++d)
-        tmp[d] = make_vectorized_array<Number>(1.0); /*--- We build the usal vector of ones that we will use as dof value ---*/
+        tmp[d] = make_vectorized_array<Number>(1.0); /*--- We build the usual vector of ones that we will use as dof value ---*/
 
       /*--- Now we loop over faces ---*/
       for(unsigned int face = face_range.first; face < face_range.second; ++face) {
@@ -2424,7 +2424,7 @@ namespace NS_TRBDF2 {
   void NavierStokesProjection<dim>::diffusion_step() {
     TimerOutput::Scope t(time_table, "Diffusion step");
 
-    /*--- We first speicify that we want to deal with velocity dof_handler (index 0, since it is the first one
+    /*--- We first specify that we want to deal with velocity dof_handler (index 0, since it is the first one
           in the 'dof_handlers' vector) ---*/
     const std::vector<unsigned int> tmp = {0};
     navier_stokes_matrix.initialize(matrix_free_storage, tmp, tmp);
@@ -2446,7 +2446,7 @@ namespace NS_TRBDF2 {
       u_star = u_extr;
     }
 
-    /*--- Build the linear solver; in this case we specifiy the maximum number of iterations and residual ---*/
+    /*--- Build the linear solver; in this case we specify the maximum number of iterations and residual ---*/
     SolverControl solver_control(max_its, eps*rhs_u.l2_norm());
     SolverGMRES<LinearAlgebra::distributed::Vector<double>> gmres(solver_control);
 
@@ -2587,7 +2587,7 @@ namespace NS_TRBDF2 {
 
 
   // The following function is used in determining the maximal nodal difference
-  // between old and current velocity value in order to see if we have reched steady-state.
+  // between old and current velocity value in order to see if we have reached steady-state.
   //
   template<int dim>
   double NavierStokesProjection<dim>::get_maximal_difference_velocity() {
@@ -2662,7 +2662,7 @@ namespace NS_TRBDF2 {
     double local_lift = 0.0;
 
     /*--- We need to perform a unique loop because the whole stress tensor takes into account contributions of
-          velocity and pressure obviously. However, the two dof_handlers are different, so we neede to create an ad-hoc
+          velocity and pressure obviously. However, the two dof_handlers are different, so we need to create an ad-hoc
           iterator for the pressure that we update manually. It is guaranteed that the cells are visited in the same order
           (see the documentation) ---*/
     auto tmp_cell = dof_handler_pressure.begin_active();
@@ -2779,7 +2779,7 @@ namespace NS_TRBDF2 {
     }
     triangulation.prepare_coarsening_and_refinement();
 
-    /*--- Now we prepare the object for transfering, basically saving the old quantities using SolutionTransfer.
+    /*--- Now we prepare the object for transferring, basically saving the old quantities using SolutionTransfer.
           Since the 'prepare_for_coarsening_and_refinement' method can be called only once, but we have two vectors
           for dof_handler_velocity, we need to put them in an auxiliary vector. ---*/
     std::vector<const LinearAlgebra::distributed::Vector<double>*> velocities;

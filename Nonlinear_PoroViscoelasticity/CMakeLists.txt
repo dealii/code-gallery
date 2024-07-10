@@ -25,7 +25,7 @@ IF(NOT ${deal.II_FOUND})
 ENDIF()
 
 
-# Are all dependencies fullfilled?
+# Are all dependencies fulfilled?
 IF(NOT DEAL_II_WITH_MPI       OR
    NOT DEAL_II_WITH_TRILINOS  OR
    NOT DEAL_II_TRILINOS_WITH_SACADO)

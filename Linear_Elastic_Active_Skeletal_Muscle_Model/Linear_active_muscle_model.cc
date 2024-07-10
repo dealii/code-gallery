@@ -754,7 +754,7 @@ namespace LMM
   {
     // Values from previous state
     // These were the values that were used in the assembly,
-    // so we must use them in the update step to be consistant.
+    // so we must use them in the update step to be consistent.
     // Need to compute these before we overwrite epsilon_c_t1
     const double m_s = get_m_s();
     const double beta = get_beta(dt);
@@ -900,7 +900,7 @@ namespace LMM
     // Provides the muscle direction at the point @p pt
     // in the real geometry (one that has undergone the
     // transformation given by the profile() function)
-    // and subequent grid rescaling.
+    // and subsequent grid rescaling.
     // The directions are given by the gradient of the
     // transformation function (i.e. the fibres are
     // orientated by the curvature of the muscle).

@@ -506,7 +506,7 @@ void MultiPhase<dim>::run()
   //////////////////////////////////////
   cK = 1.0;
   cE = 1.0;
-  sharpness_integer=10; //this will be multipled by min_h
+  sharpness_integer=10; //this will be multiplied by min_h
   //TRANSPORT_TIME_INTEGRATION=FORWARD_EULER;
   TRANSPORT_TIME_INTEGRATION=SSP33;
   //ALGORITHM = "MPP_u1";

@@ -340,7 +340,7 @@ private:
   const types::boundary_id                  interface_boundary_id;
   Adapter<dim, CouplingParamters>           adapter;
 
-  // The time-step size delta_t is the acutual time-step size used for all
+  // The time-step size delta_t is the actual time-step size used for all
   // computations. The preCICE time-step size is obtained by preCICE in order to
   // ensure a synchronization at all coupling time steps. The solver time
   // step-size is the desired time-step size of our individual solver. In more

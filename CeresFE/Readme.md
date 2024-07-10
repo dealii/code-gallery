@@ -4,7 +4,7 @@ Readme file for CeresFE
 Motivation for project
 ----------------------
 
-This code was made to simulate the evolution of global-scale topography on planetary bodies.  Specifically, it is designed to compute the rates of topography relaxation on the dwarf planet Ceres.  The NASA Dawn mission, in orbit around Ceres since March, 2015, has produced a high resolution shape model of its surface.  As on other planets including the Earth, topography on Ceres is subject to decay over time due to processes such as viscous flow and brittle failure.  Because the efficiency of these processes is dependent on the material properties of the body at depth, simulating the decay of topography and comparing it to the observed shape model permits insights into Ceres' internal stucture. 
+This code was made to simulate the evolution of global-scale topography on planetary bodies.  Specifically, it is designed to compute the rates of topography relaxation on the dwarf planet Ceres.  The NASA Dawn mission, in orbit around Ceres since March, 2015, has produced a high resolution shape model of its surface.  As on other planets including the Earth, topography on Ceres is subject to decay over time due to processes such as viscous flow and brittle failure.  Because the efficiency of these processes is dependent on the material properties of the body at depth, simulating the decay of topography and comparing it to the observed shape model permits insights into Ceres' internal structure. 
 
 Some previous applications of this basic idea- using topography to constrain internal structure- may be found in the following references:  
 
@@ -49,7 +49,7 @@ Description of files in repo
 ----------------------------
 
 * src/ceres.cc                     Main code
-* support_code/config_in.h         Reads config file and intializes system parameters
+* support_code/config_in.h         Reads config file and initializes system parameters
 * support_code/ellipsoid_fit.h     Finds best-fit ellipse for surface and internal density boundaries.  Also uses deal.II
 * support_code/ellipsoid_grav.h    Analytically computes self gravity of layered ellipsoids structure
 * support_code/local_math.h        Defines some constants for convenience

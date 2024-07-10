@@ -31,7 +31,7 @@ and $c(u;u, v)$ is the convection term:
 c(u;u, v) = \int_{\Omega} (u \cdot \nabla u) \cdot v d\Omega
 @f}
 
-Substracting $m(u^n, v) + \Delta{t}a((u^n, p^n), (v, q))$ from both sides of the equation,
+Subtracting $m(u^n, v) + \Delta{t}a((u^n, p^n), (v, q))$ from both sides of the equation,
 we have the incremental form:
 @f{eqnarray*}
 m(\Delta{u}, v) + \Delta{t}\cdot a((\Delta{u}, \Delta{p}), (v, q)) = \Delta{t}(-a(u^n, p^n), (q, v)) - \Delta{t}c(u^n;u^n, v)
@@ -62,7 +62,7 @@ The system we want to solve can be written in matrix form:
     \right)
 @f}
 
-#### Grad-Div stablization ####
+#### Grad-Div stabilization ####
 
 Similar to step-57, we add $\gamma B^T M_p^{-1} B$ to the upper left block of the system. This is a 
 term that is consistent, i.e., the corresponding operators applied to the exact solution would
@@ -95,7 +95,7 @@ With this, the system becomes:
 @f}
 where $\tilde{A} = A + \gamma B^T M_p^{-1} B$.
 
-A detailed explanation of the Grad-Div stablization can be found in [1].
+A detailed explanation of the Grad-Div stabilization can be found in [1].
 
 #### Block preconditioner ####
 

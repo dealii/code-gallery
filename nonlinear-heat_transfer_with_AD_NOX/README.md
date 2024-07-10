@@ -13,7 +13,7 @@ The source codes are there in the `source/` folder. Note that the geometry and i
 
 ## Documentation
 
-In this example, we solve  a simple  transient nonlinear heat transfer equation. The nonlinearity is due to the temperature dependence of the thermal conductivity.  Two main aspects covered by this example are (a) it develops the residual and the jacobian using automatic differentiation and (b) solves the nonlinear equations using TRILINOS NOX. The actual code contains the comments which will explain how these aspects are executed. Here, we give the full derivation and set up the equations. We also provide explanations to some of the functions important for this applicaiton. 
+In this example, we solve  a simple  transient nonlinear heat transfer equation. The nonlinearity is due to the temperature dependence of the thermal conductivity.  Two main aspects covered by this example are (a) it develops the residual and the jacobian using automatic differentiation and (b) solves the nonlinear equations using TRILINOS NOX. The actual code contains the comments which will explain how these aspects are executed. Here, we give the full derivation and set up the equations. We also provide explanations to some of the functions important for this application. 
 
 
 ### Strong form
@@ -685,7 +685,7 @@ The variable `present_solution` is assigned the value of `converged_solution` fr
 
 ### Results
 
-The results are essentially the time evolution of the temperature throughout the domain. The first of the pictures below shows the temperature distribution at the final step, i.e. at time $t=5$. This should be very similar to the figure at the bottom on the page [here](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). We also plot the time evolution of the temperature at a point close to the right edge of the domain indicated by the small magenta dot (close to $(0.49, 0.12)$) in the second of the pictures below. This is also simlar to the second figure at the [bottom of this page](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). There could be minor differences due to the choice of the point. Further, note that, we have plotted in the second of the pictures below the temperature as a function of time steps instead of time. Since the $\Delta t$ chosen is 0.1, 50 steps maps to $t=5$ as in the link.
+The results are essentially the time evolution of the temperature throughout the domain. The first of the pictures below shows the temperature distribution at the final step, i.e. at time $t=5$. This should be very similar to the figure at the bottom on the page [here](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). We also plot the time evolution of the temperature at a point close to the right edge of the domain indicated by the small magenta dot (close to $(0.49, 0.12)$) in the second of the pictures below. This is also similar to the second figure at the [bottom of this page](https://www.mathworks.com/help/pde/ug/heat-transfer-problem-with-temperature-dependent-properties.html). There could be minor differences due to the choice of the point. Further, note that, we have plotted in the second of the pictures below the temperature as a function of time steps instead of time. Since the $\Delta t$ chosen is 0.1, 50 steps maps to $t=5$ as in the link.
 
 ![image](./doc/Images/contour.png)
 

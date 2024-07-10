@@ -499,7 +499,7 @@ void TestLevelSet<dim>::run()
   //////////////////////////////////////
   cK = 1.0; // compression constant
   cE = 1.0; // entropy viscosity constant
-  sharpness_integer=1; //this will be multipled by min_h
+  sharpness_integer=1; //this will be multiplied by min_h
   //TRANSPORT_TIME_INTEGRATION=FORWARD_EULER;
   TRANSPORT_TIME_INTEGRATION=SSP33;
   //ALGORITHM = "MPP_u1";

@@ -2906,7 +2906,7 @@ namespace NonLinearPoroViscoElasticity
         Vector<double> sum_solid_vol_fraction_vertex(vertex_handler_ref.n_dofs());
 
         // We need to create a new FE space with a dim dof per node to
-        // be able to ouput data on nodes in vector form
+        // be able to output data on nodes in vector form
         FESystem<dim> fe_vertex_vec(FE_Q<dim>(1),dim);
         DoFHandler<dim> vertex_vec_handler_ref(triangulation);
         vertex_vec_handler_ref.distribute_dofs(fe_vertex_vec);
@@ -3417,7 +3417,7 @@ namespace NonLinearPoroViscoElasticity
         double total_vol_reference = 0.0;
         std::vector<Point<dim+1>> solution_vertices(tracked_vertices_IN.size());
 
-        //Auxiliar variables needed for mpi processing
+        //Auxiliary variables needed for mpi processing
         Tensor<1,dim> sum_reaction_mpi;
         Tensor<1,dim> sum_reaction_pressure_mpi;
         Tensor<1,dim> sum_reaction_extra_mpi;

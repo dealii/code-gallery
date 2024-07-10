@@ -64,7 +64,7 @@
 #include <deal.II/lac/trilinos_solver.h>
 
 
-// The functions class contains all the defintions of the functions we
+// The functions class contains all the definitions of the functions we
 // will use, i.e. the right hand side function, the boundary conditions
 // and the test functions.
 #include "Functions.cc"
@@ -75,7 +75,7 @@ using namespace dealii;
 // Here is the main class for the Local Discontinuous Galerkin method
 // applied to Poisson's equation, we won't explain much of the
 // the class and method declarations, but dive deeper into describing the
-// functions when they are defined.  The only thing I will menion
+// functions when they are defined.  The only thing I will mention
 // about the class declaration is that this is where I labeled
 // the different types of boundaries using enums.
 template <int dim>
@@ -170,7 +170,7 @@ private:
 // @sect4{Class constructor and destructor}
 // The constructor and destructor for this class is very much like the
 // like those for step-40.  The difference being that we'll be passing
-// in an integer, <code>degree</code>, which tells us the maxiumum order
+// in an integer, <code>degree</code>, which tells us the maximum order
 // of the polynomial to use as well as <code>n_refine</code> which is the
 // global number of times we refine our mesh.  The other main differences
 // are that we use a FESystem object for our choice of basis
@@ -183,7 +183,7 @@ private:
 //       FE_DGQ<dim>(degree),                          1)
 // </code>
 //
-// which tells us that the basis functions contain discontinous polynomials
+// which tells us that the basis functions contain discontinuous polynomials
 // of order <code>degree</code> in each of the <code>dim</code> dimensions
 // for the vector field.  For the scalar unknown we
 // use a discontinuous polynomial of the order <code>degree</code>.
@@ -191,7 +191,7 @@ private:
 // as well as its gradient, just like the mixed finite element method.
 // However, unlike the mixed method, the LDG method uses discontinuous
 // polynomials to approximate both variables.
-// The other difference bewteen our constructor and that of step-40 is that
+// The other difference between our constructor and that of step-40 is that
 // we all instantiate our linear solver in the constructor definition.
 template <int dim>
 LDGPoissonProblem<dim>::
@@ -253,7 +253,7 @@ make_grid()
       // the domain.  This was just to show that
       // the LDG method is working with local
       // refinement and discussions on building
-      // more realistic refinement stategies are
+      // more realistic refinement strategies are
       // discussed elsewhere in the deal.ii
       // documentation.
       for (; cell != endc; ++cell)
@@ -274,7 +274,7 @@ make_grid()
   // type, i.e. Dirichlet or Neumann,
   // we loop over all the cells in the mesh and then over
   // all the faces of each cell.  We then have to figure out
-  // which faces are on the bounadry and set all faces
+  // which faces are on the boundary and set all faces
   // on the boundary to have
   // <code>boundary_id</code> to be <code>Dirichlet</code>.
   // We remark that one could easily set more complicated
@@ -320,7 +320,7 @@ make_dofs()
   // with a distributed triangulation!
   dof_handler.distribute_dofs(fe);
 
-  // We now renumber the dofs so that the vector of unkonwn dofs
+  // We now renumber the dofs so that the vector of unknown dofs
   // that we are solving for, <code>locally_relevant_solution</code>,
   // corresponds to a vector of the form,
   //
@@ -332,7 +332,7 @@ make_dofs()
   // matrix and vectors that we will write to.
   const IndexSet &locally_owned_dofs = dof_handler.locally_owned_dofs();
 
-  // In additon to the locally owned dofs, we also need the the locally
+  // In addition to the locally owned dofs, we also need the the locally
   // relevant dofs.  These are the dofs that have read access to and we
   // need in order to do computations on our processor, but, that
   // we do not have the ability to write to.
@@ -356,7 +356,7 @@ make_dofs()
 
   // Just like step-40 we create a dynamic sparsity pattern
   // and distribute it to the processors.  Notice how we do not have to
-  // explictly mention that we are using a FESystem for system of
+  // explicitly mention that we are using a FESystem for system of
   // variables instead of a FE_DGQ for a scalar variable
   // or that we are using a discributed DoFHandler.  All these specifics
   // are taken care of under the hood by the deal.ii library.
@@ -459,7 +459,7 @@ assemble_system()
   // for evaluating the basis functions
   // on one side of an element face as well as another FEFaceValues object,
   // <code>fe_neighbor_face_values</code>, for evaluating the basis functions
-  // on the opposite side of the face, i.e. on the neighoring element's face.
+  // on the opposite side of the face, i.e. on the neighboring element's face.
   // In addition, we also introduce a FESubfaceValues object,
   // <code>fe_subface_values</code>, that
   // will be used for dealing with faces that have multiple refinement
@@ -495,7 +495,7 @@ assemble_system()
   FullMatrix<double>      ve_ue_matrix(dofs_per_cell, dofs_per_cell);
   // As explained in the section on the LDG method we take our test
   // function to be v and multiply it on the left side of our differential
-  // equation that is on u and peform integration by parts as explained in the
+  // equation that is on u and perform integration by parts as explained in the
   // introduction. Using this notation for test and solution function,
   // the matrices below will then stand for:
   //
@@ -727,7 +727,7 @@ assemble_system()
                       // At this point we know that this cell and the neighbor
                       // of this cell are on the same refinement level and
                       // the work to assemble the interior flux matrices
-                      // is very much the same as before. Infact it is
+                      // is very much the same as before. In fact it is
                       // much simpler since we do not have to loop through the
                       // subfaces.  However, we have to check that we do
                       // not compute the same contribution twice. This would
@@ -800,7 +800,7 @@ assemble_system()
 
 
           // Now that have looped over all the faces for this
-          // cell and computed as well as disributed the local
+          // cell and computed as well as distributed the local
           // flux matrices to the <code>system_matrix</code>, we
           // can finally distribute the cell's <code>local_matrix</code>
           // and <code>local_vector</code> contribution to the
@@ -812,7 +812,7 @@ assemble_system()
           // the faces on the boundary of the domain contribute
           // to the <code>local_matrix</code>
           // and <code>system_rhs</code>.  We could distribute
-          // the local contributions for each component seperately,
+          // the local contributions for each component separately,
           // but writing to the distributed sparse matrix and vector
           // is expensive and want to to minimize the number of times
           // we do so.
@@ -909,7 +909,7 @@ assemble_cell_terms(
 // Here we have the function that builds the <code>local_matrix</code>
 // contribution
 // and local right hand side vector, <code>local_vector</code>
-// for the Dirichlet boundary condtions.
+// for the Dirichlet boundary conditions.
 template<int dim>
 void
 LDGPoissonProblem<dim>::
@@ -981,7 +981,7 @@ assemble_Dirichlet_boundary_terms(
 
 // @sect4{assemble_Neumann_boundary_terms}
 // Here we have the function that builds the <code>local_matrix</code>
-// and <code>local_vector</code> for the Neumann boundary condtions.
+// and <code>local_vector</code> for the Neumann boundary conditions.
 template<int dim>
 void
 LDGPoissonProblem<dim>::
@@ -1027,7 +1027,7 @@ assemble_Neumann_boundary_terms(
             }
 
           // We also compute the contribution for the flux for
-          // $\widehat{q}$ on the Neumann bounary which is the
+          // $\widehat{q}$ on the Neumann boundary which is the
           // Neumann boundary condition and enters the right
           // hand side vector as
           //
@@ -1328,17 +1328,17 @@ distribute_local_flux_to_global(
 // As mentioned earlier I used a direct solver to solve
 // the linear system of equations resulting from the LDG
 // method applied to the Poisson equation. One could also
-// use a iterative sovler, however, we then need to use
-// a preconditoner and that was something I did not wanted
+// use a iterative solver, however, we then need to use
+// a preconditioner and that was something I did not wanted
 // to get into. For information on preconditioners
 // for the LDG Method see this
 // <a href="http://epubs.siam.org/doi/abs/10.1137/S1064827502410657">
-// paper</a>. The uses of a direct sovler here is
+// paper</a>. The uses of a direct solver here is
 // somewhat of a limitation.  The built-in distributed
 // direct solver in Trilinos reduces everything to one
 // processor, solves the system and then distributes
 // everything back out to the other processors.  However,
-// by linking to more advanced direct sovlers through
+// by linking to more advanced direct solvers through
 // Trilinos one can accomplish fully distributed computations
 // and not much about the following function calls will
 // change.
@@ -1359,7 +1359,7 @@ solve()
   TrilinosWrappers::MPI::Vector
   completely_distributed_solution(system_rhs);
 
-  // Now we can preform the solve on the completeley distributed
+  // Now we can perform the solve on the completeley distributed
   // right hand side vector, system matrix and the completely
   // distributed solution.
   solver.solve(system_matrix,
@@ -1382,11 +1382,11 @@ solve()
 }
 
 // @sect4{output_results}
-// This function deals with the writing of the reuslts in parallel
+// This function deals with the writing of the results in parallel
 // to disk.  It is almost exactly the same as
-// in step-40 and we wont go into it.  It is noteworthy
+// in step-40 and we won't go into it.  It is noteworthy
 // that in step-40 the output is only the scalar solution,
-// while in our situation, we are outputing both the scalar
+// while in our situation, we are outputting both the scalar
 // solution as well as the vector field solution. The only
 // difference between this function and the one in step-40
 // is in the <code>solution_names</code> vector where we have to add
