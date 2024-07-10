@@ -204,12 +204,12 @@ In the numerical solution, the boundary conditions described in the [beginning](
 ### Parameters
 The calculation parameters are set in the `ParametersList.prm` file. To reproduce the results obtained below, you can run the program with the parameter files `ParametersListDeflagrationSlow.prm`, `ParametersListDeflagrationFast.prm` and `ParametersListDetonation.prm`.
 
-### Class `TravelingWaveSolver`
+### Class TravelingWaveSolver
 `TravelingWaveSolver` is the main class for computation of the traveling-wave profiles.
 
 The implementation of Newton's method is based on that described in step-77 and relies on SUNDIALS' [KINSOL](https://computing.llnl.gov/projects/sundials/kinsol) package. Because of the additional unknown, the front velocity, we expand the Jacobi matrix by one column and one row (`jacobian_matrix_extended`), and add one more element to the solution vector (`current_solution_extended`). After completing the Newton iterations, we split the resulting extended solution vector `current_solution_extended` into two parts: the solution vector `current_solution`, corresponding to $(u, T, \lambda)$, and the front velocity `current_wave_speed`. After that the adaptive mesh refinement is performed using the `current_solution` vector, which is very important for resolving a narrow transition layer with a large solution gradient in the vicinity of zero. The [KellyErrorEstimator](https://www.dealii.org/current/doxygen/deal.II/classKellyErrorEstimator.html) is used as a refinement indicator.
 
-### Function `calculate_profile`
+### Function calculate_profile()
 The full calculation cycle is done in the `calculate_profile` function. First, we construct an initial guess to the solution depending on the selected wave type and store the result as an object of type `SolutionStruct`. This object, along with the problem parameters, is then passed to the constructor of the `TravelingWaveSolver` class to calculate the traveling wave.
 
 Decreasing the dissipation parameter $\delta$ leads to the appearance of large gradients in solutions in the neighborhood of zero. As a consequence, Newton's method becomes more sensitive to the initial data and ceases to converge. To solve this problem, the `calculate_profile` function implements the method of continuation by the $\delta$ parameter (for an example, see step-57). The solution and the refined triangulation are saved after each step of the method using the `get_solution` and `get_triangulation` functions and then passed to the next step.
@@ -245,17 +245,17 @@ or execute the python script `plot.py`
 
 `python plot.py "solution_filename"`
 
-### Slow deflagration for $\delta = 0.01$
+### Slow deflagration for delta = 0.01
 The calculated wave speed is $c = 0.0909$.
 ![Slow deflagration, $\delta = 0.01$, $c = 0.0909$](./doc/pics/slow_deflagration_delta_0.01.png)
 
 
-### Fast deflagration for $\delta = 0.01$
+### Fast deflagration for delta = 0.01
 The calculated wave speed is $c = 0.8252$.
 ![Fast deflagration, $\delta = 0.01$, $0.8252$](./doc/pics/fast_deflagration_delta_0.01.png)
 
 
-### Detonation for $\delta = 0.01$ and $\delta = 0.001$
+### Detonation for delta = 0.01 and delta = 0.001
 The calculated wave speed in both cases is the same $c = 1.216481$, as expected. Solid lines represent the detonation profile for the ideal case, when $\delta=0$. 
 
 ![Detonation, $\delta = 0.01$, $c = 1.216481$.](./doc/pics/detonation_delta_0.01.png)
