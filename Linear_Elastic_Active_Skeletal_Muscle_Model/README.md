@@ -53,7 +53,7 @@ a diameter of `80mm` at its mid-point.
 We assume that there exists a single muscle fibre family orientated axially.
 The orientation of the underlying muscle fibres is, however, not parallel,
 but rather follows the curvature of the macroscopic anatomy.
-The longitudinal profile of the muscle is generated using a trignometric
+The longitudinal profile of the muscle is generated using a trigonometric
 function, as opposed to being extracted from medical images.
 The benefit to doing so is that the geometry can be (parametrically) created
 in `deal.II` itself and the associated microstructural orientation can be

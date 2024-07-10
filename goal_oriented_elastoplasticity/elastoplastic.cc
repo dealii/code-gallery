@@ -2214,9 +2214,9 @@ namespace ElastoPlastic
                             Vector<double>        &rhs) const
     {
       // Assemble right hand side of the dual problem when the quantity of interest is
-      // a nonlinear functinoal. In this case, the QoI should be linearized which depends
+      // a nonlinear functional. In this case, the QoI should be linearized which depends
       // on the solution of the primal problem.
-      // The extracter of the linearized QoI functional is the gradient of the the original
+      // The extractor of the linearized QoI functional is the gradient of the the original
       // QoI functional with the primal solution values.
 
       AssertThrow (dim >= 2, ExcNotImplemented());
@@ -5447,7 +5447,7 @@ namespace ElastoPlastic
   ElastoPlasticProblem<dim>::refine_grid ()
   {
     // ---------------------------------------------------------------
-    // Make a field variable for history varibales to be able to
+    // Make a field variable for history variables to be able to
     // transfer the data to the quadrature points of the new mesh
     FE_DGQ<dim> history_fe (1);
     DoFHandler<dim> history_dof_handler (triangulation);

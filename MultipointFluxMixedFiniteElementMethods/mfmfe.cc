@@ -115,7 +115,7 @@ namespace MFMFE
     // Next, since this particular program allows for the use of
     // multiple threads, the helper CopyData structures
     // are defined. There are two kinds of these, one is used
-    // for the copying cell-wise contributions to the corresponging
+    // for the copying cell-wise contributions to the corresponding
     // node-associated data structures...
     template <int dim>
     struct NodeAssemblyCopyData
@@ -145,7 +145,7 @@ namespace MFMFE
     // Similarly, two ScratchData classes are defined.
     // One for the assembly part, where we need
     // FEValues, FEFaceValues, Quadrature and storage
-    // for the basis fuctions...
+    // for the basis functions...
     template <int dim>
     struct NodeAssemblyScratchData
     {
@@ -367,7 +367,7 @@ namespace MFMFE
 
   // First, the function that copies local cell contributions to the corresponding nodal
   // matrices and vectors is defined. It places the values obtained from local cell integration
-  // into the correct place in a matrix/vector corresponging to a specific node.
+  // into the correct place in a matrix/vector corresponding to a specific node.
   template <int dim>
   void MultipointMixedDarcyProblem<dim>::copy_cell_to_node(const DataStructures::NodeAssemblyCopyData<dim> &copy_data)
   {

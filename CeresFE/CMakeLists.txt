@@ -48,7 +48,7 @@ FIND_LIBRARY(ARMADILLO_LIBRARY NAMES armadillo
   )
 
 #
-# Are all dependencies fullfilled?
+# Are all dependencies fulfilled?
 #
 
 IF(NOT DEAL_II_WITH_UMFPACK)

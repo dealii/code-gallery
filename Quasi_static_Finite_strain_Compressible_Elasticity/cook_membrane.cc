@@ -2274,7 +2274,7 @@ int main (int argc, char *argv[])
           std::cout << "Assembly method: Residual and linearisation computed using AD." << std::endl;
 
           // Sacado Rad-Fad is not thread-safe, so disable threading.
-          // Parallisation using MPI would be possible though.
+          // Parallelisation using MPI would be possible though.
           Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv,
                                                               1);
 

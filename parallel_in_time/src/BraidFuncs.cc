@@ -187,7 +187,7 @@ my_BufSize(braid_App           app,
 // This function packs a linear buffer with data so that the buffer
 // may be sent to another processor via MPI. The buffer is cast to
 // a type we can work with. The first element of the buffer is the
-// size of the buffer. Then we iterate over soltuion vector u and
+// size of the buffer. Then we iterate over solution vector u and
 // fill the buffer with our solution data. Finally we tell XBraid
 // how much data we wrote.
 int
@@ -210,7 +210,7 @@ my_BufPack(braid_App           app,
   return 0;
 }
 
-// This function unpacks a buffer that was recieved from a different
+// This function unpacks a buffer that was received from a different
 // processor via MPI. The size of the buffer is read from the first
 // element, then we iterate over the size of the buffer and fill
 // the values of solution vector u with the data in the buffer.

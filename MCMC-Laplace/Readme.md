@@ -214,8 +214,8 @@ that may take into account the current time, the amount of data
 written to disk over the past hour, the amount of internet traffic
 that has gone through the machine in the last hour, and similar pieces
 of pretty much random information. As a consequence, the seed is then
-pretty much guaranteed to be different from program invokation to
-program invokation, and consequently we will get different random
+pretty much guaranteed to be different from program invocation to
+program invocation, and consequently we will get different random
 number sequences every time. The output file is tagged with a string
 representation of this random seed, so that it is safe to run the same
 program multiple times at the same time in the same directory, with

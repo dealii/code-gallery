@@ -35,7 +35,7 @@
 
 // This struct contains all data that changes with time. For now
 // this is just the solution data. When doing AMR this should
-// probably include the triangulization, the sparsity patter,
+// probably include the triangulization, the sparsity pattern,
 // constraints, etc.
 /**
  * \brief Struct that contains the deal.ii vector.

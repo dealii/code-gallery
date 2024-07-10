@@ -118,7 +118,7 @@ class Initialcondition : public Function<2>
 public:
     Initialcondition(): Function<2>(1)
    {}
-   // Returns the intitial  values.
+   // Returns the initial values.
     virtual double value(const Point<2> &p,
                               const unsigned int component =0) const override;
 };

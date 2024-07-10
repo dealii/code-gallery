@@ -5,7 +5,7 @@
 # Set the name of the project and target:
 SET(TARGET "viscoelastic_strip_with_hole")
 
-# Declare all source files the targest consists of:
+# Declare all source files the target consists of:
 SET(TARGET_SRC
   ${TARGET}.cc
 )
@@ -31,7 +31,7 @@ IF(NOT ${deal.II_FOUND})
 ENDIF()
 
 #
-# Are all dependencies fullfilled?
+# Are all dependencies fulfilled?
 #
 IF(NOT DEAL_II_WITH_CXX11     OR
    NOT DEAL_II_WITH_MPI       OR

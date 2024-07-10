@@ -8,7 +8,7 @@
 double Initialcondition::value(const Point<2> & /*p*/, const unsigned int /*comp*/) const
 {
     /**
-     * In the current case, we asume that the initial conditions are zero everywhere.
+     * In the current case, we assume that the initial conditions are zero everywhere.
      */
     return 0.0;
 }

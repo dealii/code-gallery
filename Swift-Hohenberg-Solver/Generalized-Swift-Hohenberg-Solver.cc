@@ -73,12 +73,12 @@ namespace SwiftHohenbergSolver
 
 
 
-  /** @brief This function warps points on a cyclindrical mesh by cosine wave along the central axis.
+  /** @brief This function warps points on a cylindrical mesh by cosine wave along the central axis.
    *         We use this function to generate the "sinusoid" mesh, which is the surface of revolution
    *         bounded by the cosine wave.
    *  @tparam spacedim This is the dimension of the embedding space, which is where the input point lives
    *  @param p This is the input point to be translated.
-   *  @return The return as a tranlated point in the same dimensional space. This is the new point on the mesh.
+   *  @return The return as a translated point in the same dimensional space. This is the new point on the mesh.
    */
   template<int spacedim>
   Point<spacedim> transform_function(const Point<spacedim>&p)
@@ -87,7 +87,7 @@ namespace SwiftHohenbergSolver
     // because we are explicitly referencing the x, y, and z coordinates
     Assert(spacedim == 3, ExcNotImplemented());
 
-    // Retruns a point where the x-coordinate is unchanged but the y and z coordinates are adjusted
+    // Returns a point where the x-coordinate is unchanged but the y and z coordinates are adjusted
     // by a cos wave of period 20, amplitude .5, and vertical shift 1
     return Point<spacedim>(p(0), p(1)*(1 + .5*std::cos((3.14159/10)*p(0))), p(2)*(1 + .5*std::cos((3.14159/10)*p(0))));
   }
@@ -185,7 +185,7 @@ namespace SwiftHohenbergSolver
     double       time;
     /// @brief The amount time is increased each iteration/ the denominator of the discretized time derivative
     double       time_step;
-    /// @brief Counts the number of iterations that have ellapsed
+    /// @brief Counts the number of iterations that have elapsed
     unsigned int timestep_number;
     /// @brief Used to compute the time_step: time_step = 1/timestep_denominator
     unsigned int timestep_denominator;
@@ -702,7 +702,7 @@ namespace SwiftHohenbergSolver
     , end_time(end_time)
   {}
 
-  /** @brief              Distrubutes the finite element vectors to each DoF, creates the system matrix, solution, old_solution, and system_rhs vectors,
+  /** @brief              Distributes the finite element vectors to each DoF, creates the system matrix, solution, old_solution, and system_rhs vectors,
    *                      and outputs the number of DoF's to the console.
    *  @tparam dim         The dimension of the manifold
    *  @tparam spacedim    The dimension of the ambient space
@@ -905,7 +905,7 @@ namespace SwiftHohenbergSolver
 
     setup_system();
 
-    // Counts total time ellapsed
+    // Counts total time elapsed
     time            = 0.0;
     // Counts number of iterations
     timestep_number = 0;
@@ -943,7 +943,7 @@ namespace SwiftHohenbergSolver
     const FEValuesExtractors::Scalar u(0);
     const FEValuesExtractors::Scalar v(1);
 
-    // Loops over the cells to create the system matrix. We do this only once becase the timestep is constant
+    // Loops over the cells to create the system matrix. We do this only once because the timestep is constant
     for(const auto &cell : dof_handler.active_cell_iterators()){
       cell_matrix = 0;
       cell_rhs = 0;
@@ -1131,9 +1131,9 @@ int main()
 {
   using namespace SwiftHohenbergSolver;
 
-  // An array of mesh types. We itterate over this to allow for longer runs without having to stop the code
+  // An array of mesh types. We iterate over this to allow for longer runs without having to stop the code
   MeshType mesh_types[5] = {HYPERCUBE, CYLINDER, SPHERE, TORUS, SINUSOID};
-  // An array of initial condition types. We itterate this as well, for the same reason
+  // An array of initial condition types. We iterate this as well, for the same reason
   InitialConditionType ic_types[3] = {HOTSPOT, PSUEDORANDOM, RANDOM};
 
   // Controls how long the code runs
@@ -1157,7 +1157,7 @@ int main()
 
         try{
           // Switch statement that determines what template parameters are used by the solver object. Template parameters must be known at compile time, so we cannot
-          // pass this as a varible unfortunately. In each case, we create a filename string (named appropriately for the particular case), output to the console what
+          // pass this as a variable unfortunately. In each case, we create a filename string (named appropriately for the particular case), output to the console what
           // we are running, create the solver object, and call run(). Note that for the cylinder, sphere, and sinusoid we decrease the refinement number by 1. This keeps
           // the number of dofs used in these cases comparable to the number of dofs on the 2D hypercube (otherwise the number of dofs is much larger). For the torus, we
           // decrease the refinement number by 2.
@@ -1364,7 +1364,7 @@ int main()
         }
         catch (std::exception &exc)
         {
-          std::cout << "An error occured" << std::endl;
+          std::cout << "An error occurred" << std::endl;
           std::cerr << std::endl
                     << std::endl
                     << "----------------------------------------------------"
@@ -1379,7 +1379,7 @@ int main()
         }
         catch (...)
         {
-          std::cout << "Error occured, made it past first catch" << std::endl;
+          std::cout << "Error occurred, made it past first catch" << std::endl;
           std::cerr << std::endl
                     << std::endl
                     << "----------------------------------------------------"

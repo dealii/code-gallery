@@ -172,7 +172,7 @@ namespace fluid
     // refinement:
     GridGenerator::flatten_triangulation(middle, tmp2);
 
-    // Left domain is requred in 3d only.
+    // Left domain is required in 3d only.
     if (compute_in_2d)
       {
         GridGenerator::merge_triangulations(tmp2, right, tria);
@@ -554,7 +554,7 @@ namespace fluid
   // The system equation is written in the incremental form, and we treat
   // the convection term explicitly. Therefore the system equation is linear
   // and symmetric, which does not need to be solved with Newton's iteration.
-  // The system is further stablized and preconditioned with Grad-Div method,
+  // The system is further stabilized and preconditioned with Grad-Div method,
   // where GMRES solver is used as the outer solver.
   template <int dim>
   class InsIMEX
@@ -985,7 +985,7 @@ namespace fluid
         bool apply_nonzero_constraints = (time.get_timestep() == 1);
         // We have to assemble the LHS for the initial two time steps:
         // once using nonzero_constraints, once using zero_constraints,
-        // as well as the steps imediately after mesh refinement.
+        // as well as the steps immediately after mesh refinement.
         bool assemble_system = (time.get_timestep() < 3 || refined);
         refined = false;
         assemble(apply_nonzero_constraints, assemble_system);

@@ -500,7 +500,7 @@ namespace nsp
 
 
   /*************************************************************/
-// formating
+// formatting
 
   template <int dim>
   void ElastoplasticTorsion<dim>::format_convergence_tables()
@@ -624,7 +624,7 @@ namespace nsp
   }
 
   /***************************************************************************************/
-  /* the coeffcients W, W' and G defining the problem.
+  /* the coefficients W, W' and G defining the problem.
 
      Min_u \int W(|Du|^2) dx
 
@@ -1054,7 +1054,7 @@ namespace nsp
       }
     if (!done)
       {
-        std::cerr << ", max. no. of iterations reached wiht steplength= "<< alpha
+        std::cerr << ", max. no. of iterations reached with steplength= "<< alpha
                   << ", fcn value= "<< phi_alpha<<std::endl;
         return false;
       }
@@ -1206,7 +1206,7 @@ namespace nsp
     double ptime=0.0;
     timer.start ();
 
-    // initalize mesh for the selected domain
+    // initialize mesh for the selected domain
     init_mesh();
 
     // setup FE space

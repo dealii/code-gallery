@@ -1291,7 +1291,7 @@ namespace ViscoElasStripHole
                                         tria_2d_not_flat);
 
     // Attach a manifold to the curved boundary and refine
-    // Note: We can only guarentee that the vertices sit on
+    // Note: We can only guarantee that the vertices sit on
     // the curve, so we must test with their position instead
     // of the cell centre.
     const Point<2> centre_2d (0,0);
@@ -1583,7 +1583,7 @@ namespace ViscoElasStripHole
           }
       }
     Assert(vol_current > 0.0, ExcInternalError());
-    // Sum across all porcessors
+    // Sum across all processors
     dil_L2_error  = Utilities::MPI::sum(dil_L2_error,mpi_communicator);
     vol_reference = Utilities::MPI::sum(vol_reference,mpi_communicator);
     vol_current   = Utilities::MPI::sum(vol_current,mpi_communicator);
