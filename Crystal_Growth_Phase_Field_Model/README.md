@@ -12,7 +12,7 @@ quickly go through the governing equations and the boundary conditions solved in
 \tau \frac{\partial p}{\partial t} = \nabla \cdot( \left(\epsilon^2\right)\nabla p) + p(1-p)(p-\frac{1}{2}+m) \label{heateq} \\
 \frac{\partial T}{\partial t}=\nabla^2T+K\frac{\partial p}{\partial t}
 @f}
-where $m(t) = \frac{a}{\pi}\tan^{-1}(\gamma(T_e-T))$
+where $m(T) = \frac{a}{\pi}\tan^{-1}(\gamma(T_e-T))$
 
 The problem is subjected to the boundary conditions:
 @f{align*}{
@@ -27,11 +27,11 @@ T(x,y,0)= T_\gamma -\Delta T
 Here, $\Delta T$ is the degree of undercooling.
 
 ### Dendritic Growth
-Using this code, we have reproduced one of the study from Koabayashi's work regarding the dendritic 
+Using this code, we have reproduced one of the study from Kobayashi's work regarding the dendritic 
 behaviour during directional solidification. The latent heat parameter 'K' in the equation determines 
 the amount of heat released as the phase solidifies. If this value is high enough, we would observe an 
 unstable interface between the solid and liquid phase, which would lead to the formation of dendrites 
-as shown in these images. To assist this growth we need to add a random perterbation term 
+as shown in these images. To assist this growth we need to add a random perturbation term 
 '$a \chi p (1-p)$' to the dynamic term of the phase field equation.
 
 ![Screenshot](./doc/images/K=1v1.2v1.4.gif)
