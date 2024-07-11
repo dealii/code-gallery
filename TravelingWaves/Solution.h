@@ -1,5 +1,5 @@
-#ifndef SOLUTION_STRUCT
-#define SOLUTION_STRUCT
+#ifndef SOLUTION
+#define SOLUTION
 
 #include <deal.II/base/function.h>
 
@@ -21,20 +21,20 @@ namespace TravelingWave
   {
     SolutionStruct();
     SolutionStruct(const std::vector<double> &ix, const std::vector<double> &iu, 
-              const std::vector<double> &iT, const std::vector<double> &ilambda, const double iwave_speed);
+                    const std::vector<double> &iT, const std::vector<double> &ilambda, const double iwave_speed);
     SolutionStruct(const std::vector<double> &ix, const std::vector<double> &iu, 
-              const std::vector<double> &iT, const std::vector<double> &ilambda);
+                    const std::vector<double> &iT, const std::vector<double> &ilambda);
 
     void reinit(const unsigned int number_of_elements);
     
     void save_to_file(std::string filename) const;
 
-    std::vector<double> x;				// mesh coordinates (must be an increasing sequence)
-    std::vector<double> u;				// array of u components
-    std::vector<double> T;				// array of T components
-    std::vector<double> lambda;		// array of lambda components
+    std::vector<double> x;        // mesh coordinates (must be an increasing sequence)
+    std::vector<double> u;        // array of u components
+    std::vector<double> T;        // array of T components
+    std::vector<double> lambda;   // array of lambda components
 
-    double wave_speed;						// speed of the wave
+    double wave_speed;            // speed of the wave
   };
 
   // Interpolation class

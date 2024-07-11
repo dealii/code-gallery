@@ -254,10 +254,10 @@ namespace TravelingWave
     // Error estimation.
     {
       unsigned int sol_length = sol.x.size();
-      double u_r = sol.u[sol_length-1];			// Dirichlet boundary condition
-      double T_r = sol.T[sol_length-1];			// Dirichlet condition only for detonation case
+      double u_r = sol.u[sol_length-1];     // Dirichlet boundary condition
+      double T_r = sol.T[sol_length-1];     // Dirichlet condition only for detonation case
       double u_l = sol.u[0];
-      double T_l = sol.T[0];								// Dirichlet boundary condition
+      double T_l = sol.T[0];                // Dirichlet boundary condition
       double wave_speed = sol.wave_speed;
 
       std::cout << "Error estimates:" << std::endl;

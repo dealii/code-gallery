@@ -12,7 +12,7 @@ namespace TravelingWave
     , triangulation_uploaded(false)
     , fe(FE_Q<1>(params.fe.poly_degree), 1, 
           FE_Q<1>(params.fe.poly_degree), 1,
-          FE_Q<1>(params.fe.poly_degree), 1)    // 3 fe basis sets, corresponding to du, dT, dlambda
+          FE_Q<1>(params.fe.poly_degree), 1)   // 3 fe basis sets, corresponding to du, dT, dlambda
     , dof_handler(triangulation)
     , current_wave_speed(0.)
     , initial_guess(initial_guess_input)
