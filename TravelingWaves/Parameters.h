@@ -25,7 +25,7 @@ namespace TravelingWave
 
   struct FiniteElements : ParameterAcceptor
   {
-	  FiniteElements();
+    FiniteElements();
 
     unsigned int poly_degree;
     unsigned int quadrature_points_number;
@@ -35,25 +35,25 @@ namespace TravelingWave
   {
     Mesh();
     
-    double interval_left;
-    double interval_right;
-    unsigned int refinements_number;
-    int adaptive;
+    double        interval_left;
+    double        interval_right;
+    unsigned int  refinements_number;
+    int           adaptive;
   };
 
   struct Solver : ParameterAcceptor
   {
     Solver();
 
-    double       tol;
+    double tol;
   };
 
   struct Parameters
   {
     Problem           problem;
-    FiniteElements 		fe;
-    Mesh			 	      mesh;
-    Solver   		      solver;
+    FiniteElements    fe;
+    Mesh              mesh;
+    Solver            solver;
   };
 
 } // namespace TravelingWave

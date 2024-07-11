@@ -1,5 +1,5 @@
-#ifndef WAVE_CONSTRUCTOR
-#define WAVE_CONSTRUCTOR
+#ifndef TRAVELING_WAVE_SOLVER
+#define TRAVELING_WAVE_SOLVER
 
 #include <deal.II/base/timer.h>
 #include <deal.II/base/function.h>
@@ -46,9 +46,9 @@ namespace TravelingWave
   {
   public:
     TravelingWaveSolver(const Parameters &parameters, const SolutionStruct &initial_guess_input);
-    
+
     void set_triangulation(const Triangulation<1> &itriangulation);
-    
+
     void run(const std::string filename="solution", const bool save_solution_to_file=true);
     void get_solution(SolutionStruct &solution) const;
     void get_triangulation(Triangulation<1> &otriangulation) const;
@@ -61,7 +61,7 @@ namespace TravelingWave
     void set_initial_guess();
 
     double Heaviside_func(double x) const;
-    
+
     void compute_and_factorize_jacobian(const Vector<double> &evaluation_point_extended);
     double compute_residual(const Vector<double> &evaluation_point_extended, Vector<double> &residual);
     void split_extended_solution_vector();
@@ -77,37 +77,37 @@ namespace TravelingWave
     std::map<std::string, unsigned int> boundary_and_centering_dof_numbers;
 
     // Parameters of the problem, taken from a .prm file.
-    const Parameters &params;
-    const Problem		 &problem; // Reference variable, just for convenience.
+    const Parameters  &params;
+    const Problem     &problem;    // Reference variable, just for convenience.
 
     unsigned int number_of_quadrature_points;
 
     Triangulation<1> triangulation;
     // The flag indicating whether the triangulation was uploaded externally or created within the <code> run </code> member function.
-    bool 						 triangulation_uploaded;
-    FESystem<1>      fe;
-    DoFHandler<1>    dof_handler;
+    bool            triangulation_uploaded;
+    FESystem<1>     fe;
+    DoFHandler<1>   dof_handler;
 
     // Constraints for Dirichlet boundary conditions.
     AffineConstraints<double> zero_boundary_constraints;	
 
-    SparsityPattern		  									sparsity_pattern_extended;
-    SparseMatrix<double>  								jacobian_matrix_extended;
-    std::unique_ptr<SparseDirectUMFPACK> 	jacobian_matrix_extended_factorization;
+    SparsityPattern                       sparsity_pattern_extended;
+    SparseMatrix<double>                  jacobian_matrix_extended;
+    std::unique_ptr<SparseDirectUMFPACK>  jacobian_matrix_extended_factorization;
 
     // Finite element solution of the problem.
-    Vector<double> 	current_solution;
+    Vector<double>  current_solution;
 
     // Value of the wave speed $c$.
-    double 					current_wave_speed;
+    double          current_wave_speed;
 
     // Solution with an additional term, corresponding to the variable wave_speed.
-    Vector<double> 	current_solution_extended;
+    Vector<double>  current_solution_extended;
 
     // Initial guess for Newton's iterations.
-    SolutionStruct initial_guess;
+    SolutionStruct  initial_guess;
 
-    TimerOutput computing_timer;
+    TimerOutput     computing_timer;
   };
 
 } // namespace TravelingWave

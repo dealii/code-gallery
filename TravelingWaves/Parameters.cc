@@ -7,13 +7,13 @@ namespace TravelingWave
   Problem::Problem() 
     : ParameterAcceptor("Problem")
   {
-	  add_parameter("delta", delta = 0.01); 
-  	add_parameter("epsilon", epsilon = 0.1);            
-  	add_parameter("Prandtl number", Pr = 0.75);        
-  	add_parameter("Lewis number", Le = 1.0);      
-  	add_parameter("Constant of reaction rate", k = 1.0);
-  	add_parameter("Activation energy", theta = 1.65);
-  	add_parameter("Heat release", q = 1.7);
+    add_parameter("delta", delta = 0.01); 
+    add_parameter("epsilon", epsilon = 0.1);            
+    add_parameter("Prandtl number", Pr = 0.75);        
+    add_parameter("Lewis number", Le = 1.0);      
+    add_parameter("Constant of reaction rate", k = 1.0);
+    add_parameter("Activation energy", theta = 1.65);
+    add_parameter("Heat release", q = 1.7);
     add_parameter("Ignition Temperature", T_ign = 1.0);
     add_parameter("Type of the wave (deflagration / detonation)", wave_type = 1);   // 0 for "deflagration"; 1 for "detonation".
 
@@ -35,12 +35,12 @@ namespace TravelingWave
   }
 
   Mesh::Mesh()
-	  : ParameterAcceptor("Mesh")
+    : ParameterAcceptor("Mesh")
   {
-	  add_parameter("Interval left boundary", interval_left = -50.0);  
-  	add_parameter("Interval right boundary", interval_right = 20.0);
-  	add_parameter<unsigned int>("Refinements number", refinements_number = 10);
-   	add_parameter("Adaptive mesh refinement", adaptive = 1);    // 1 for adaptive; 0 for global.
+    add_parameter("Interval left boundary", interval_left = -50.0);  
+    add_parameter("Interval right boundary", interval_right = 20.0);
+    add_parameter<unsigned int>("Refinements number", refinements_number = 10);
+    add_parameter("Adaptive mesh refinement", adaptive = 1);    // 1 for adaptive; 0 for global.
   }
 
   Solver::Solver()

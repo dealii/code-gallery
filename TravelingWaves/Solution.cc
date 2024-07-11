@@ -7,7 +7,7 @@ namespace TravelingWave
   
   SolutionStruct::SolutionStruct() {}
   SolutionStruct::SolutionStruct(const std::vector<double> &ix, const std::vector<double> &iu, 
-                      const std::vector<double> &iT, const std::vector<double> &ilambda, double iwave_speed)
+                                  const std::vector<double> &iT, const std::vector<double> &ilambda, double iwave_speed)
     : x(ix)
     , u(iu)
     , T(iT)
@@ -15,7 +15,7 @@ namespace TravelingWave
     , wave_speed(iwave_speed)
   {}
   SolutionStruct::SolutionStruct(const std::vector<double> &ix, const std::vector<double> &iu, 
-                      const std::vector<double> &iT, const std::vector<double> &ilambda)
+                                  const std::vector<double> &iT, const std::vector<double> &ilambda)
     : SolutionStruct(ix, iu, iT, ilambda, 0.)
   {}
 
@@ -59,7 +59,7 @@ namespace TravelingWave
 
   double Interpolant::value(const Point<1> &p, const unsigned int component) const
   {
-    double x = p[0];
+    double x   = p[0];
     double res = interpolant.value(x);
 
     return res;
@@ -78,9 +78,9 @@ namespace TravelingWave
   double SolutionVectorFunction<InterpolantType>::value(const Point<1> &p, const unsigned int component) const
   {
     double res = 0.;
-    if (component == 0) 			{	res = u_interpolant.value(p); }
-    else if (component == 1) 	{ res = T_interpolant.value(p);	}
-    else if (component == 2)	{	res = lambda_interpolant.value(p);	}
+    if      (component == 0)  { res = u_interpolant.value(p); }
+    else if (component == 1)  { res = T_interpolant.value(p); }
+    else if (component == 2)  { res = lambda_interpolant.value(p); }
 
     return res;
   }

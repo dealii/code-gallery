@@ -1,5 +1,5 @@
-#ifndef INITIAL_GUESS
-#define INITIAL_GUESS
+#ifndef CALCULATE_PROFILE
+#define CALCULATE_PROFILE
 
 #include "Parameters.h"
 #include "Solution.h"
@@ -21,9 +21,9 @@ namespace TravelingWave
 	void compute_initial_guess_deflagration(const Parameters &params, SolutionStruct &initial_guess);
 
   void calculate_profile(Parameters& parameters,
- 																	const bool continuation_for_delta=false /* Compute with the continuation. */, 
-																	const double delta_start=0.01 /* The starting value of delta for the continuation method. */, 
-																	const unsigned int number_of_continuation_points=10);
+                          const bool continuation_for_delta=false /* Compute with the continuation. */, 
+                          const double delta_start=0.01 /* The starting value of delta for the continuation method. */, 
+                          const unsigned int number_of_continuation_points=10);
 
 } // namespace TravelingWave
 
