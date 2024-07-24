@@ -1,8 +1,12 @@
-/* ---------------------------------------------------------------------
+/* -----------------------------------------------------------------------------
  *
- * This file is part of the deal.II Code Gallery.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2018 Ilona Ambartsumyan
+ * Copyright (C) 2018 Eldar Khattatov
  *
- * ---------------------------------------------------------------------
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
  *
  * Author: Ilona Ambartsumyan, Eldar Khattatov, University of Pittsburgh, 2018
  */
