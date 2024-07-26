@@ -1,4 +1,15 @@
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR LGPL-2.1-or-later
+ * Copyright (C) 2024 by Narasimhan Swaminathan
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
+
 #include "nonlinear_heat.h"
+
 /**
  * This is the constructor. All the variables defined in nonlinear_heat.h are
  * given values here.
@@ -15,6 +26,7 @@ nonlinear_heat::nonlinear_heat ()
     dof_handler(triangulation),
     fe(FE_Q<2>(1), 1)
 {}
+
 /**
  * This is the destructor
  */
