@@ -636,9 +636,13 @@ namespace TravelingWave
 
     setup_system(/*initial_step=*/ false);
 
+#  if DEAL_II_VERSION_GTE(9, 7, 0)
+    solution_transfer.interpolate(current_solution);
+#  else
     Vector<double> tmp(dof_handler.n_dofs());
     solution_transfer.interpolate(current_solution, tmp);
     current_solution = std::move(tmp);
+#  endif
 
     set_boundary_and_centering_values();
 
