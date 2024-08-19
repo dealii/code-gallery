@@ -55,8 +55,7 @@ namespace CDR
     flags.time = current_time;
     // While the default flag is for the best compression level, using
     // <code>best_speed</code> makes this function much faster.
-    flags.compression_level =
-      DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
+    flags.compression_level = DataOutBase::CompressionLevel::best_speed;
     data_out.set_flags(flags);
 
     unsigned int subdomain_n;

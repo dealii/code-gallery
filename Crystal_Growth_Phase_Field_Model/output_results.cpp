@@ -28,7 +28,7 @@ void PhaseFieldSolver::output_results(const unsigned int timestep_number) const 
                 "solution-" + Utilities::int_to_string(timestep_number, 3) + ".vtk";
         DataOutBase::VtkFlags vtk_flags;
         vtk_flags.compression_level =
-                DataOutBase::VtkFlags::ZlibCompressionLevel::best_speed;
+                DataOutBase::CompressionLevel::best_speed;
         data_out.set_flags(vtk_flags);
         std::ofstream output(filename);
 
