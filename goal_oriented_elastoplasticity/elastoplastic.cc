@@ -5608,6 +5608,12 @@ namespace ElastoPlastic
 
 #  if DEAL_II_VERSION_GTE(9, 7, 0)
     // stress
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
+        {
+          history_stress_field[i][j].reinit(history_dof_handler.n_dofs());
+        }
+
     history_stress_field_transfer0.interpolate(history_stress_field[0]);
     if ( dim > 1)
       {
@@ -5619,6 +5625,12 @@ namespace ElastoPlastic
       }
 
     // strain
+    for (unsigned int i=0; i<dim; ++i)
+      for (unsigned int j=0; j<dim; ++j)
+        {
+          history_strain_field[i][j].reinit(history_dof_handler.n_dofs());
+        }
+
     history_strain_field_transfer0.interpolate(history_strain_field[0]);
     if ( dim > 1)
       {
