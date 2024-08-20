@@ -273,8 +273,8 @@ namespace nsp
   ComputeMultiplier<dim>::get_names() const
   {
     std::vector<std::string> solution_names;
-    solution_names.push_back ("Gradient norm");
-    solution_names.push_back ("Lagrange multiplier");
+    solution_names.push_back ("Gradient_norm");
+    solution_names.push_back ("Lagrange_multiplier");
     return solution_names;
   }
 
@@ -779,6 +779,7 @@ namespace nsp
     triangulation.execute_coarsening_and_refinement();
     dof_handler.distribute_dofs(fe);
 #  if DEAL_II_VERSION_GTE(9, 7, 0)
+    present_solution.reinit(dof_handler.n_dofs());
     solution_transfer.interpolate(present_solution);
 #  else
     Vector<double> tmp(dof_handler.n_dofs());

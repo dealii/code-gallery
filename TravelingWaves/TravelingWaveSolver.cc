@@ -292,7 +292,7 @@ namespace TravelingWave
           );
         };
 
-        auto kappa_2 = [=](double T, double lambda){
+        auto kappa_2 = [=](double T, double /*lambda*/){
           return -problem.k * std::exp(-problem.theta / T) * Heaviside_func(T - problem.T_ign);
         };
 
@@ -637,6 +637,7 @@ namespace TravelingWave
     setup_system(/*initial_step=*/ false);
 
 #  if DEAL_II_VERSION_GTE(9, 7, 0)
+    current_solution.reinit(dof_handler.n_dofs());
     solution_transfer.interpolate(current_solution);
 #  else
     Vector<double> tmp(dof_handler.n_dofs());
