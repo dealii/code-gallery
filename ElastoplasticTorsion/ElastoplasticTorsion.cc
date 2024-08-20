@@ -778,9 +778,13 @@ namespace nsp
     solution_transfer.prepare_for_coarsening_and_refinement(present_solution);
     triangulation.execute_coarsening_and_refinement();
     dof_handler.distribute_dofs(fe);
+#  if DEAL_II_VERSION_GTE(9, 7, 0)
+    solution_transfer.interpolate(present_solution);
+#  else
     Vector<double> tmp(dof_handler.n_dofs());
     solution_transfer.interpolate(present_solution, tmp);
     present_solution = tmp;
+#  endif
     set_boundary_values ();
     hanging_node_constraints.clear();
 
