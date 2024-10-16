@@ -31,7 +31,7 @@ After running `cmake .`, run `make release` or `make debug` to switch between `r
 Run the executable by using `make run` on the command line.
 
 ## Numerical example
-The program currently models fracture propagation in a 3-layered material subjected to equibiaxial loading along $+x$ and $+y$ directions. The problem setup is shown in setup.png. Results are compared for 2 different initial meshes, the finer 80*80*40 mesh and the coarser 20*20*10 mesh. We present the results for the fracture patterns and the load-displacement curves for the 2 meshes.
+The program currently models fracture propagation in a 3-layered material subjected to equibiaxial loading along $+x$ and $+y$ directions. The problem setup is shown in setup.png. Results are compared for 2 different initial meshes, the finer $80\times80\times40$ mesh and the coarser 20*20*10 mesh. We present the results for the fracture patterns and the load-displacement curves for the 2 meshes.
 
 
 ## References
