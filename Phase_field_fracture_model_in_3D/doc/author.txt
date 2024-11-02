@@ -1,4 +1,0 @@
-Wasim Niyaz Munshi <munshiw0@gmail.com>
-Chandrasekhar Annavarapu <annavarapuc@civil.iitm.ac.in>
-Wolfgang Bangerth <bangerth@colostate.edu>
-Marc Fehling <marc.fehling@colostate.edu>

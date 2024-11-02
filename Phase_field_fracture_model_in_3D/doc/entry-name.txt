@@ -1,1 +1,0 @@
-Phase-field fracture model in 3D
