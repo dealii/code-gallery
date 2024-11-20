@@ -38,7 +38,7 @@ jobs:
 
       - name: Install preCICE
         run: |
-          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.0.0/libprecice3_3.0.0_${{ matrix.ubuntu_version }}.deb
+          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.1.2/libprecice3_3.1.2_${{ matrix.ubuntu_version }}.deb
           apt-get -y install ./libprecice.deb
 
       - name: Install XBraid
@@ -78,7 +78,7 @@ jobs:
 
       - name: Create issue about failure
         if: failure() && github.event_name == 'schedule'
-        uses: JasonEtco/create-an-issue@v2.9.1
+        uses: JasonEtco/create-an-issue@v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
