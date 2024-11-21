@@ -7,33 +7,47 @@ Motivation for project
 ----------------------
 
 From the source free Maxwell equations in differential form, we may find the following eigenvalue problem involving the electric field $\mathbf{E}$,
-$$ \nabla\times(\mu_r^{-1}\nabla\times\mathbf{E})-k_0^2\varepsilon_r\mathbf{E} = 0 \textrm{ in } \Omega, $$
- where $\mu_r$ and $\varepsilon_r$ denote, respectively, the relative permeability and permitivity of the medium (which we assume to be homogeneous), and $k_0$ signifies the free space wavenumber, for some $\Omega \subset \mathbb{R}^d, \, d = 2,3.$ Finding (approximate) solutions of this eigenvalue problem poses a number of challenges computationally; for those interested, we refer to the excellent thesis of S. Zaglmayr [2].
+@f{align*}{
+\nabla\times(\mu_r^{-1}\nabla\times\mathbf{E})-k_0^2\varepsilon_r\mathbf{E} = 0 \text{ in } \Omega,
+@f}
+where $\mu_r$ and $\varepsilon_r$ denote, respectively, the relative permeability and permitivity of the medium (which we assume to be homogeneous), and $k_0$ signifies the free space wavenumber, for some $\Omega \subset \mathbb{R}^d, \, d = 2,3.$ Finding (approximate) solutions of this eigenvalue problem poses a number of challenges computationally; for those interested, we refer to the excellent thesis of S. Zaglmayr [2].
 
- In the remainder of this project, we assume $d=2$, though the methodology is largely unaffected by this choice. We further assume perfect electrical conductor (PEC) boundary conditions: $\hat{\textbf{n}}\times\textbf{E}=0 \textrm{ on }\partial\Omega$, $\hat{\textbf{n}}$ being the outward normal vector.
+ In the remainder of this project, we assume $d=2$, though the methodology is largely unaffected by this choice. We further assume perfect electrical conductor (PEC) boundary conditions: $\hat{\textbf{n}}\times\textbf{E}=0 \text{ on }\partial\Omega$, $\hat{\textbf{n}}$ being the outward normal vector.
 
  In the standard way, we consider *weak* solutions by solving the variational form of the eigenvalue problem, which, in the 2-D case, is found to be the following after Galerkin testing:
- $$ \textrm{Find } U_{hp}=\left\{ \mathbf{u}_{hp},\,\lambda_{hp}\right\}\in V_{hp}\times \mathbb{R}_{>0} \textrm{ such that} $$
- $$ a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \lambda_{hp} m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) \quad \forall\boldsymbol{\phi}\in V_{hp}, $$
+ @f{align*}{
+ \text{Find } U_{hp}=\left\{ \mathbf{u}_{hp},\,\lambda_{hp}\right\}\in V_{hp}\times \mathbb{R}_{>0} \text{ such that}
+ @f}
+ @f{align*}{
+ a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \lambda_{hp} m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) \quad \forall\boldsymbol{\phi}\in V_{hp},
+ @f}
  with $a(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \nabla_t\times\textbf{u}_{hp},\,\nabla_t\times\boldsymbol{\phi}_{hp}\rangle$ (note: $\nabla_t$ represents the transversal gradient operator and $\langle \cdot ,\, \cdot \rangle$ represents the $L^2$ inner-product), and $m(\textbf{u}_{hp},\,\boldsymbol{\phi}_{hp}) = \langle \textbf{u}_{hp},\,\boldsymbol{\phi}_{hp} \rangle$. The finite dimensional subspace $V_{hp}$ will be further specified below along with its infinite dimensional analog $V$ associated with an exact solution $U=\left\{ \textbf{u},\, \lambda \right\}$.
 
 
 
 For this problem, we consider a single family of quantities of interest (QoIs), namely the approximation error of the approximate eigenvalue $\lambda_{hp}$, i.e.,
-$$ e_{\lambda_{hp}} := \lambda-\lambda_{hp}. $$
+@f{align*}{
+e_{\lambda_{hp}} := \lambda-\lambda_{hp}.
+@f}
 
 Some comments on the discretization of Maxwell's equations
 ----------------------------------------------------------
 In the proper solution of variational problem, $V_{hp}$ is not arbitrary, but should instead a subspace of $H(\mathrm{curl};\,\Omega)$ or, with the boundary conditions indicated above, $H_{0}(\mathrm{curl};\,\Omega)$, where
-$$ H(\mathrm{curl};\,\Omega) = \left\{\textbf{u}\in \left[ L_2(\Omega)\right]^d \, \mathrm{s.t.} \, \nabla\times\textbf{u}\in \left[ L_2(\Omega)\right]^{2d-3} \right\}$$
+@f{align*}{
+H(\mathrm{curl};\,\Omega) = \left\{\textbf{u}\in \left[ L_2(\Omega)\right]^d \, \mathrm{s.t.} \, \nabla\times\textbf{u}\in \left[ L_2(\Omega)\right]^{2d-3} \right\}
+@f}
 and 
-$$
+@f{align*}{
 H_{0}(\mathrm{curl};\,\Omega) = \left\{ \textbf{u}\in H(\mathrm{curl};\,\Omega) \, \mathrm{s.t.} \, \hat{\textbf{n}}\times\textbf{u} = 0 \text{ on $\partial\Omega$}\right\}.
-$$
+@f}
 
 The convergence of the discrete problem (e.g., as $h\rightarrow 0$) to the continuous one may be proved via a discrete compactness property [3]. It is also possible for other choices of finite element spaces to *converge*, just not necessarily to the *correct* solution, which was the case for discretizations (which typically treated the components of $\textbf{u}$ as belonging to $H^1$) of the Maxwell PDE prior to the work of Nédélec.
 
-It should be noted that while the choice of the appropriate finite element space eliminates most spurious solutions to the generalized eigenvalue problem above, not all are absent. Specifically, those which do not satisfy the source free divergence condition on the electric field $\textbf{E}$ $$\nabla\cdot\textbf{E} = 0$$ still cluster around $\lambda = 0$. For $\lambda > 0$, corresponding to physical eigenpairs, the divergence condition is automatically satisfied.
+It should be noted that while the choice of the appropriate finite element space eliminates most spurious solutions to the generalized eigenvalue problem above, not all are absent. Specifically, those which do not satisfy the source free divergence condition on the electric field $\textbf{E}$
+@f{align*}{
+\nabla\cdot\textbf{E} = 0
+@f}
+still cluster around $\lambda = 0$. For $\lambda > 0$, corresponding to physical eigenpairs, the divergence condition is automatically satisfied.
 
 A variety of techniques may be leveraged to enforce the divergence condition explicitly, e.g., mixed finite element formulations. However (as noted above), we instead restate the variational problem, restricting our eigenvalues to $\lambda\in\mathbb{R}_{>0}$, which implies some additional mechanics in how we solve the eigenvalue problem. Solving for interior eigenvalues, as is required for this approach, is less than ideal; however, formalizing the divergence condition in the discretization is left as an extension of this project by the reader.
 
@@ -48,11 +62,15 @@ Galerkin projection, being a global process, is *not* interpolation. The questio
 Several assumptions as outlined in [5], some of which may likely not be satisfied, should be stated first. Firstly, the algorithm assumes that the eigenvalues are simple. Secondly, for approximating $\lambda$, $\lambda_h$ should be closer to $\lambda$ than any other eigenvalue of the approximate problem. This outlines a necessarily vague condition on the coarseness/fineness of the starting discretization, provided the natural assumption that $\lambda_{h}\rightarrow\lambda$ as $h\rightarrow 0$ holds.
 
 With this in mind, the error may be expressed in DWR-form:
-$$ e_{\lambda_{hp}}(1-\sigma_{hp}) = a(\textbf{u}_{hp},\, \textbf{u} - \boldsymbol{\psi}_{hp}) - \lambda_{hp}m(\textbf{u}_{hp},\, \textbf{u}-\boldsymbol{\psi}_{hp})$$
+@f{align*}{
+e_{\lambda_{hp}}(1-\sigma_{hp}) = a(\textbf{u}_{hp},\, \textbf{u} - \boldsymbol{\psi}_{hp}) - \lambda_{hp}m(\textbf{u}_{hp},\, \textbf{u}-\boldsymbol{\psi}_{hp})
+@f}
 for arbitrary $\boldsymbol{\psi}_{hp}\in V_{hp}$, with $\sigma_{hp} = \frac12m(\textbf{u}-\textbf{u}_{hp},\,\textbf{u}-\textbf{u}_{hp})$.
 
 It is important to note that the expression above assumes normalization such that
-$$ \langle \textbf{u},\,\textbf{u}\rangle = 1, $$
+@f{align*}{
+\langle \textbf{u},\,\textbf{u}\rangle = 1,
+@f}
 and likewise for $\textbf{u}_{hp}$, though naturally, given that our solutions are eigenfunctions, this normalization is not a unique choice.
 
 That $\boldsymbol{\psi}_{hp}$ is arbitrary *does not* imply that any choice is equally good (i.e., informative) for generating refinement indicators. Certainly the most obvious and easiest choice of $\boldsymbol{\psi_{hp}} = 0$ yields the same global error, yet in the accumulation of error *contributions* retains irrelevant "contributions" that hamper adaptivity.
@@ -60,8 +78,10 @@ That $\boldsymbol{\psi}_{hp}$ is arbitrary *does not* imply that any choice is e
 As a result we extract from $\textbf{u}$ the portions that belong to $V_{hp}$ by some interpolation or projection. According to the hierarchical nature of the `FENedelec` cell we can simply retain the coefficients associated with higher-order shape functions and discard the rest.
 
 In any event, the global error estimate (in DWR-form) is accumulated in a cellwise fashion. Based on the continuity requirements of the Nédélec cell (continuous in the tangential direction), not every DoF is constrained to a single cell, motivating some "sharing" of contributions. One way is through integration-by-parts, producing a cell and boundary residual. The sharing is conducted by averaging the boundary term for one cell with its neighbor. In total, the error is computed over every cell $K$ as
-$$\begin{align} e_{\lambda_{hp}}(1-\sigma_{hp}) = &\sum_K {\langle \nabla\times\nabla\times\textbf{u}_{hp},\,\textbf{u}-\boldsymbol\psi_{hp}\rangle}_K \\ &- \frac12 \left[ {\langle \hat{\textbf{n}}\times(\nabla\times\textbf{u}_{hp}),\,\textbf{u}-\boldsymbol\psi_{hp}\rangle}_{\partial K}\right. \\ &\,\,\,- \left. {\langle \hat{\textbf{n}}\times(\nabla\times\textbf{u}_{hp}),\,\textbf{u}-\boldsymbol\psi_{hp}\rangle}_{\partial K^{'}} \right] \\ &- \lambda_{hp} m_K(\textbf{u}_{hp}, \textbf{u}-\boldsymbol\psi_{hp}),\end{align}$$
-where $K^{'}$ denotes the neighbor cells to $K$.
+@f{align*}{
+e_{\lambda_{hp}}(1-\sigma_{hp}) = &\sum_K {\langle \nabla\times\nabla\times\textbf{u}_{hp},\,\textbf{u}-\boldsymbol\psi_{hp}\rangle}_K \\ &- \frac12 \left[ {\langle \hat{\textbf{n}}\times(\nabla\times\textbf{u}_{hp}),\,\textbf{u}-\boldsymbol\psi_{hp}\rangle}_{\partial K}\right. \\ &\,\,\,- \left. {\langle \hat{\textbf{n}}\times(\nabla\times\textbf{u}_{hp}),\,\textbf{u}-\boldsymbol\psi_{hp}\rangle}_{\partial K'} \right] \\ &- \lambda_{hp} m_K(\textbf{u}_{hp}, \textbf{u}-\boldsymbol\psi_{hp}),
+@f}
+where $K'$ denotes the neighbor cells to $K$.
 
 Given the tangential continuity of $\textbf{u}-\boldsymbol{\psi}_{hp}$, its evaluation may be performed once for each edge/face.
 
