@@ -1435,7 +1435,6 @@ namespace Step854
         bool stoppingCriterion = false;
         while (stoppingCriterion == false)
           {
-            iteration = iteration + 1;
             pcout << " \n iteration number:" << iteration << std::endl;
             solve_elastic_subproblem (load_step);
             solve_damage_subproblem ();
@@ -1443,7 +1442,7 @@ namespace Step854
             locally_relevant_solution_damage.update_ghost_values ();
             locally_relevant_solution_elastic.update_ghost_values ();
 
-            if (iteration == 1)
+            if (iteration == 0)
               {
                 completely_distributed_solution_damage_old =
                     locally_relevant_solution_damage;
@@ -1454,9 +1453,10 @@ namespace Step854
               stoppingCriterion = check_convergence ();
 
             if (stoppingCriterion == false)
+	    {
               refine_grid (load_step);
-            else
-              break;
+	    }
+	    iteration = iteration + 1;
           }
 
         // Once converged, do some clean-up operations
