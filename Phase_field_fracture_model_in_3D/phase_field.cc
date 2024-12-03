@@ -798,7 +798,7 @@ namespace Step854
     SolverControl solver_control (10000,
         1e-12/** system_rhs_elastic.l2_norm()*/);
 
-    SolverCG<TrilinosWrappers::MPI::Vector> solver (solver_control);
+    SolverCG<LA::MPI::Vector> solver (solver_control);
 
     LA::MPI::PreconditionAMG::AdditionalData data;
 #ifdef USE_PETSC_LA
@@ -1007,7 +1007,7 @@ namespace Step854
     SolverControl solver_control (10000,
         1e-12/** system_rhs_damage.l2_norm()*/);
 
-    SolverCG<TrilinosWrappers::MPI::Vector> solver (solver_control);
+    SolverCG<LA::MPI::Vector> solver (solver_control);
 
     LA::MPI::PreconditionAMG::AdditionalData data;
 #ifdef USE_PETSC_LA
