@@ -275,7 +275,7 @@ namespace Step854
         {
           const unsigned int N = 1000;
 
-          std::vector < Point < 3 >> centers_list (N);
+          std::vector<Point<3>> centers_list (N);
           for (unsigned int i = 0; i < N; ++i)
             for (unsigned int d = 0; d < 3; ++d)
               if (d == 0 || d == 1)
@@ -343,7 +343,7 @@ namespace Step854
           computing_timer (mpi_communicator, pcout, TimerOutput::never,
               TimerOutput::wall_times),
           triangulation (mpi_communicator),
-          fe_elastic (FE_Q < 3 > (1), 3),
+          fe_elastic (FE_Q<3> (1), 3),
           dof_handler_elastic (triangulation),
           quadrature_formula_elastic (fe_elastic.degree + 1),
           fe_damage (1),
@@ -421,8 +421,8 @@ namespace Step854
       }
 
     return d;
-
   }
+
 
   void
   PhaseField::setup_mesh_and_bcs ()
@@ -540,7 +540,7 @@ namespace Step854
           }
       }
 
-    FEValues < 3 > fe_values_damage (fe_damage, quadrature_formula_damage,
+    FEValues<3> fe_values_damage (fe_damage, quadrature_formula_damage,
         update_values | update_gradients | update_JxW_values
         | update_quadrature_points);
 
@@ -621,15 +621,15 @@ namespace Step854
     const double u_fix = 0.0;
 
     VectorTools::interpolate_boundary_values (dof_handler_elastic, 1,
-        Functions::ConstantFunction < 3 > (u_x_values_right, 3),
+        Functions::ConstantFunction<3> (u_x_values_right, 3),
         constraints_elastic, u_x_mask);
 
     VectorTools::interpolate_boundary_values (dof_handler_elastic, 2,
-        Functions::ConstantFunction < 3 > (u_fix, 3), constraints_elastic,
+        Functions::ConstantFunction<3> (u_fix, 3), constraints_elastic,
         u_y_mask);
 
     VectorTools::interpolate_boundary_values (dof_handler_elastic, 3,
-        Functions::ConstantFunction < 3 > (u_y_values, 3), constraints_elastic,
+        Functions::ConstantFunction<3> (u_y_values, 3), constraints_elastic,
         u_y_mask);
 
     constraints_elastic.close ();
@@ -673,7 +673,7 @@ namespace Step854
   {
     TimerOutput::Scope ts (computing_timer, "assembly_elastic");
 
-    FEValues < 3 > fe_values_elastic (fe_elastic, quadrature_formula_elastic,
+    FEValues<3> fe_values_elastic (fe_elastic, quadrature_formula_elastic,
         update_values | update_gradients | update_quadrature_points
         | update_JxW_values);
 
@@ -683,7 +683,7 @@ namespace Step854
     FullMatrix<double> cell_matrix_elastic (dofs_per_cell, dofs_per_cell);
     Vector<double> cell_rhs_elastic (dofs_per_cell);
 
-    std::vector < types::global_dof_index > local_dof_indices (dofs_per_cell);
+    std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
     std::vector<Tensor<1, 3>> rhs_values_elastic (n_q_points);
 
@@ -798,7 +798,7 @@ namespace Step854
     SolverControl solver_control (10000,
         1e-12/** system_rhs_elastic.l2_norm()*/);
 
-    SolverCG < TrilinosWrappers::MPI::Vector > solver (solver_control);
+    SolverCG<TrilinosWrappers::MPI::Vector> solver (solver_control);
 
     LA::MPI::PreconditionAMG::AdditionalData data;
 #ifdef USE_PETSC_LA
@@ -898,10 +898,10 @@ namespace Step854
 
     TimerOutput::Scope ts (computing_timer, "assembly_damage");
 
-    FEValues < 3 > fe_values_damage (fe_damage, quadrature_formula_damage,
+    FEValues<3> fe_values_damage (fe_damage, quadrature_formula_damage,
         update_values | update_gradients | update_JxW_values
         | update_quadrature_points);
-    FEValues < 3 > fe_values_elastic (fe_elastic, quadrature_formula_damage,
+    FEValues<3> fe_values_elastic (fe_elastic, quadrature_formula_damage,
         update_values | update_gradients | update_JxW_values
         | update_quadrature_points);
 
@@ -911,7 +911,7 @@ namespace Step854
     FullMatrix<double> cell_matrix_damage (dofs_per_cell, dofs_per_cell);
     Vector<double> cell_rhs_damage (dofs_per_cell);
 
-    std::vector < types::global_dof_index > local_dof_indices (dofs_per_cell);
+    std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
     const RandomMedium::EnergyReleaseRate energy_release_rate;
     std::vector<double> energy_release_rate_values (n_q_points);
@@ -922,11 +922,11 @@ namespace Step854
     for (const auto &cell : dof_handler_damage.active_cell_iterators ())
       if (cell->is_locally_owned ())
         {
-          std::vector < std::shared_ptr < MyQData >> qpdH =
+          std::vector<std::shared_ptr<MyQData>> qpdH =
               quadrature_point_history_field.get_data (cell);
 
           const DoFHandler<3>::active_cell_iterator elastic_cell =
-              Triangulation < 3 > ::active_cell_iterator (cell)->as_dof_handler_iterator (
+              Triangulation<3>::active_cell_iterator (cell)->as_dof_handler_iterator (
                   dof_handler_elastic);
 
           fe_values_damage.reinit (cell);
@@ -951,7 +951,7 @@ namespace Step854
 
               const double H = std::max(H_call, qpdH[q_index]->value_H);
               qpdH[q_index]->value_H_new = H;
-              Point < 3 > cell_center = cell->center ();
+              Point<3> cell_center = cell->center ();
 
               double g_c;
               if (is_in_middle_layer (cell_center,z1,z2))
@@ -1007,7 +1007,7 @@ namespace Step854
     SolverControl solver_control (10000,
         1e-12/** system_rhs_damage.l2_norm()*/);
 
-    SolverCG < TrilinosWrappers::MPI::Vector > solver (solver_control);
+    SolverCG<TrilinosWrappers::MPI::Vector> solver (solver_control);
 
     LA::MPI::PreconditionAMG::AdditionalData data;
 #ifdef USE_PETSC_LA
@@ -1040,11 +1040,11 @@ namespace Step854
   PhaseField::output_results (const unsigned int load_step) const
 
   {
-    std::vector < std::string > displacement_names (3, "displacement");
-    std::vector < DataComponentInterpretation::DataComponentInterpretation > displacement_component_interpretation (
+    std::vector<std::string> displacement_names (3, "displacement");
+    std::vector<DataComponentInterpretation::DataComponentInterpretation> displacement_component_interpretation (
         3, DataComponentInterpretation::component_is_part_of_vector);
 
-    DataOut < 3 > data_out_phasefield;
+    DataOut<3> data_out_phasefield;
     data_out_phasefield.add_data_vector (dof_handler_elastic,
         locally_relevant_solution_elastic, displacement_names,
         displacement_component_interpretation);
@@ -1069,16 +1069,16 @@ namespace Step854
     static Vector<double> load_values_y (num_load_steps + 1);
     static Vector<double> displacement_values (num_load_steps + 1);
 
-    Tensor < 1, 3 > x_max_force; //force vector on the x_max face
-    Tensor < 1, 3 > y_max_force; //force vector on the y_max face
+    Tensor<1, 3> x_max_force; //force vector on the x_max face
+    Tensor<1, 3> y_max_force; //force vector on the y_max face
 
-    const QGauss < 2 > face_quadrature (fe_elastic.degree);
-    FEFaceValues < 3 > fe_face_values (fe_elastic, face_quadrature,
+    const QGauss<2> face_quadrature (fe_elastic.degree);
+    FEFaceValues<3> fe_face_values (fe_elastic, face_quadrature,
         update_gradients | update_normal_vectors);
     std::vector<SymmetricTensor<2, 3>> strain_values (face_quadrature.size ());
     const FEValuesExtractors::Vector displacements (0);
 
-    FEValues < 3 > fe_values_elastic (fe_elastic, quadrature_formula_elastic,
+    FEValues<3> fe_values_elastic (fe_elastic, quadrature_formula_elastic,
         update_values | update_gradients | update_quadrature_points
         | update_JxW_values);
     for (const auto &cell : dof_handler_elastic.active_cell_iterators ())
@@ -1100,7 +1100,7 @@ namespace Step854
                   double d = damage_gauss_pt (locally_relevant_solution_damage,
                       cell, q, fe_values_elastic);
 
-                  Tensor < 2, 3 > stress;
+                  Tensor<2, 3> stress;
                   stress[0][0] = pow ((1 - d), 2)
                       * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
                                                       * strain[0][0]);
@@ -1139,7 +1139,7 @@ namespace Step854
                   const double d = damage_gauss_pt (locally_relevant_solution_damage,
                       cell, q, fe_values_elastic);
 
-                  Tensor < 2, 3 > stress;
+                  Tensor<2, 3> stress;
                   stress[0][0] = pow ((1 - d), 2)
                       * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
                                                       * strain[0][0]);
@@ -1221,7 +1221,7 @@ namespace Step854
   void
   PhaseField::refine_grid (const unsigned int load_step)
   {
-    FEValues < 3 > fe_values_damage (fe_damage, quadrature_formula_damage,
+    FEValues<3> fe_values_damage (fe_damage, quadrature_formula_damage,
         update_values | update_gradients | update_JxW_values
         | update_quadrature_points);
 
@@ -1234,15 +1234,15 @@ namespace Step854
     Vector<float> estimated_error_per_cell (
         triangulation.n_locally_owned_active_cells ());
 
-    KellyErrorEstimator < 3 > ::estimate (dof_handler_damage,
-        QGauss < 2 > (fe_damage.degree + 1),
+    KellyErrorEstimator<3>::estimate (dof_handler_damage,
+        QGauss<2> (fe_damage.degree + 1),
           { }, locally_relevant_solution_damage, estimated_error_per_cell);
 
     // Initialize SolutionTransfer object
-    parallel::distributed::SolutionTransfer < 3, LA::MPI::Vector > soltransDamage (dof_handler_damage);
+    parallel::distributed::SolutionTransfer<3, LA::MPI::Vector> soltransDamage (dof_handler_damage);
 
     // Initialize SolutionTransfer object
-    parallel::distributed::SolutionTransfer < 3, LA::MPI::Vector > soltransElastic (dof_handler_elastic);
+    parallel::distributed::SolutionTransfer<3, LA::MPI::Vector> soltransElastic (dof_handler_elastic);
 
     parallel::distributed::GridRefinement::refine_and_coarsen_fixed_fraction (
         triangulation, estimated_error_per_cell, 0.01, // top 1% cells marked for refinement
@@ -1379,7 +1379,7 @@ namespace Step854
   void
   PhaseField::update_history_field ()
   {
-    FEValues < 3 > fe_values_damage (fe_damage, quadrature_formula_damage,
+    FEValues<3> fe_values_damage (fe_damage, quadrature_formula_damage,
         update_values | update_gradients | update_JxW_values
         | update_quadrature_points);
 
