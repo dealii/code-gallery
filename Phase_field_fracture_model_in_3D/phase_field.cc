@@ -75,11 +75,6 @@ namespace Step854
       assemble_system_elastic ();
       void
       solve_linear_system_elastic ();
-      double
-      damage_gauss_pt (LA::MPI::Vector &locally_relevant_solution_damage,
-          const DoFHandler<3>::active_cell_iterator &cell,
-          const unsigned int q_point,
-          const FEValues<3> &fe_values_elastic); // Called during system assembly for the elastic subproblem
       void
       solve_elastic_subproblem (const unsigned int load_step); // Calls the above functions
 
@@ -403,26 +398,6 @@ namespace Step854
     return H_plus_val;
   }
 
-  double
-  PhaseField::damage_gauss_pt (LA::MPI::Vector &locally_relevant_solution_damage,
-      const DoFHandler<3>::active_cell_iterator &cell,
-      const unsigned int q_point,
-      const FEValues<3> &fe_values_elastic)
-  {
-    int node = 0;
-    double d = 0;
-
-    for (const auto vertex : cell->vertex_indices ())
-      {
-        int a = (int) ((cell->vertex_dof_index (vertex, 0)) / 3);
-        d = d + locally_relevant_solution_damage[a]
-            * fe_values_elastic.shape_value (3 * node, q_point);
-        node = node + 1;
-      }
-
-    return d;
-  }
-
 
   void
   PhaseField::setup_mesh_and_bcs ()
@@ -676,6 +651,8 @@ namespace Step854
     FEValues<3> fe_values_elastic (fe_elastic, quadrature_formula_elastic,
         update_values | update_gradients | update_quadrature_points
         | update_JxW_values);
+    FEValues<3> fe_values_damage (fe_damage, quadrature_formula_elastic,
+        update_values);
 
     const unsigned int dofs_per_cell = fe_elastic.n_dofs_per_cell ();
     const unsigned int n_q_points = quadrature_formula_elastic.size ();
@@ -685,6 +662,7 @@ namespace Step854
 
     std::vector<types::global_dof_index> local_dof_indices (dofs_per_cell);
 
+    std::vector<double>       damage_values (n_q_points);
     std::vector<Tensor<1, 3>> rhs_values_elastic (n_q_points);
 
     for (const auto &cell : dof_handler_elastic.active_cell_iterators ())
@@ -694,13 +672,16 @@ namespace Step854
           cell_matrix_elastic = 0;
           cell_rhs_elastic = 0;
           fe_values_elastic.reinit (cell);
+          fe_values_damage.reinit (cell);
 
+          fe_values_damage.get_function_values(locally_relevant_solution_damage,
+                                               damage_values);
           right_hand_side_elastic (fe_values_elastic.get_quadrature_points (),
               rhs_values_elastic);
+          
           for (const unsigned int q_point : fe_values_elastic.quadrature_point_indices ())
             {
-              double d = damage_gauss_pt (locally_relevant_solution_damage,
-                  cell, q_point, fe_values_elastic);
+              const double d = damage_values[q_point];
 
               for (const unsigned int i : fe_values_elastic.dof_indices ())
 
@@ -1078,9 +1059,9 @@ namespace Step854
     std::vector<SymmetricTensor<2, 3>> strain_values (face_quadrature.size ());
     const FEValuesExtractors::Vector displacements (0);
 
-    FEValues<3> fe_values_elastic (fe_elastic, quadrature_formula_elastic,
-        update_values | update_gradients | update_quadrature_points
-        | update_JxW_values);
+    FEFaceValues<3> fe_face_values_damage (fe_damage, face_quadrature, update_values);
+    std::vector<double> damage_values (fe_face_values_damage.n_quadrature_points);
+
     for (const auto &cell : dof_handler_elastic.active_cell_iterators ())
       if (cell->is_locally_owned ())
         for (unsigned int f : cell->face_indices ())
@@ -1088,17 +1069,17 @@ namespace Step854
               == 1))
             {
               fe_face_values.reinit (cell, f);
-              fe_values_elastic.reinit (cell);
               fe_face_values[displacements].get_function_symmetric_gradients (
                   locally_relevant_solution_elastic, strain_values);
-              for (unsigned int q = 0; q < fe_face_values.n_quadrature_points;
-                  ++q)
+
+              fe_face_values_damage.get_function_values (locally_relevant_solution_damage, damage_values);
+              
+              for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
 
                 {
                   const Tensor<2, 3> strain = strain_values[q]; //strain tensor at a gauss point
-                  double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
-                  double d = damage_gauss_pt (locally_relevant_solution_damage,
-                      cell, q, fe_values_elastic);
+                  const double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
+                  const double d = damage_values[q];
 
                   Tensor<2, 3> stress;
                   stress[0][0] = pow ((1 - d), 2)
@@ -1127,17 +1108,18 @@ namespace Step854
               && (cell->face (f)->boundary_id () == 3))
             {
               fe_face_values.reinit (cell, f);
-              fe_values_elastic.reinit (cell);
+              fe_face_values_damage.reinit (cell, f);
               fe_face_values[displacements].get_function_symmetric_gradients (
                   locally_relevant_solution_elastic, strain_values);
+              fe_face_values_damage.get_function_values (locally_relevant_solution_damage, damage_values);
+
               for (unsigned int q = 0; q < fe_face_values.n_quadrature_points;
                   ++q)
 
                 {
                   const Tensor<2, 3> strain = strain_values[q]; //strain tensor at a gauss point
                   const double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
-                  const double d = damage_gauss_pt (locally_relevant_solution_damage,
-                      cell, q, fe_values_elastic);
+                  const double d = damage_values[q];
 
                   Tensor<2, 3> stress;
                   stress[0][0] = pow ((1 - d), 2)
