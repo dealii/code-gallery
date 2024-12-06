@@ -26,6 +26,8 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/dofs/dof_accessor.h>
+#include <deal.II/grid/tria_accessor.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_q.h>
@@ -403,9 +405,9 @@ namespace Step854
   PhaseField::setup_mesh_and_bcs ()
 
   {
-    const unsigned int nx = 80;
-    const unsigned int ny = 80;
-    const unsigned int nz = 40;
+    const unsigned int nx = 20;
+    const unsigned int ny = 20;
+    const unsigned int nz = 10;
     const std::vector<unsigned int> repetitions = {nx,ny,nz};
 
     const Point<3> p1(x_min,y_min,z_min), p2(x_max,y_max,z_max);
@@ -671,8 +673,13 @@ namespace Step854
         {
           cell_matrix_elastic = 0;
           cell_rhs_elastic = 0;
+
+          const DoFHandler<3>::active_cell_iterator damage_cell =
+              Triangulation<3>::active_cell_iterator (cell)->as_dof_handler_iterator (
+                  dof_handler_damage);
+
+          fe_values_damage.reinit (damage_cell);
           fe_values_elastic.reinit (cell);
-          fe_values_damage.reinit (cell);
 
           fe_values_damage.get_function_values(locally_relevant_solution_damage,
                                                damage_values);
@@ -1064,85 +1071,91 @@ namespace Step854
 
     for (const auto &cell : dof_handler_elastic.active_cell_iterators ())
       if (cell->is_locally_owned ())
-        for (unsigned int f : cell->face_indices ())
-          if (cell->face (f)->at_boundary () && (cell->face (f)->boundary_id ()
-              == 1))
-            {
-              fe_face_values.reinit (cell, f);
-              fe_face_values[displacements].get_function_symmetric_gradients (
-                  locally_relevant_solution_elastic, strain_values);
+        {
+          const DoFHandler<3>::active_cell_iterator damage_cell =
+              Triangulation<3>::active_cell_iterator (cell)->as_dof_handler_iterator (
+                  dof_handler_damage);
+          for (unsigned int f : cell->face_indices ())
+            if (cell->face (f)->at_boundary () && (cell->face (f)->boundary_id ()
+                == 1))
+              {
+                fe_face_values.reinit (cell, f);
+                fe_face_values[displacements].get_function_symmetric_gradients (
+                    locally_relevant_solution_elastic, strain_values);
+                fe_face_values_damage.reinit(damage_cell, f);
 
-              fe_face_values_damage.get_function_values (locally_relevant_solution_damage, damage_values);
-              
-              for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
+                fe_face_values_damage.get_function_values (locally_relevant_solution_damage, damage_values);
 
-                {
-                  const Tensor<2, 3> strain = strain_values[q]; //strain tensor at a gauss point
-                  const double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
-                  const double d = damage_values[q];
+                for (unsigned int q = 0; q < fe_face_values.n_quadrature_points; ++q)
 
-                  Tensor<2, 3> stress;
-                  stress[0][0] = pow ((1 - d), 2)
-                      * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
-                                                      * strain[0][0]);
-                  stress[0][1] = pow ((1 - d), 2)
-                      * (2 * mu (E, nu) * strain[0][1]);
-                  stress[0][2] = pow ((1 - d), 2)
-                      * (2 * mu (E, nu) * strain[0][2]);
-                  stress[1][1] = pow ((1 - d), 2)
-                      * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
-                                                      * strain[1][1]);
-                  stress[1][2] = pow ((1 - d), 2)
-                      * (2 * mu (E, nu) * strain[1][2]);
-                  stress[2][2] = pow ((1 - d), 2)
-                      * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
-                                                      * strain[2][2]);
+                  {
+                    const Tensor<2, 3> strain = strain_values[q]; //strain tensor at a gauss point
+                    const double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
+                    const double d = damage_values[q];
 
-                  const Tensor<1, 3> force_density = stress
-                      * fe_face_values.normal_vector (q);
-                  x_max_force += force_density * fe_face_values.JxW (q);
-                }
-            }
+                    Tensor<2, 3> stress;
+                    stress[0][0] = pow ((1 - d), 2)
+                          * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
+                    * strain[0][0]);
+                    stress[0][1] = pow ((1 - d), 2)
+                          * (2 * mu (E, nu) * strain[0][1]);
+                    stress[0][2] = pow ((1 - d), 2)
+                          * (2 * mu (E, nu) * strain[0][2]);
+                    stress[1][1] = pow ((1 - d), 2)
+                          * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
+                    * strain[1][1]);
+                    stress[1][2] = pow ((1 - d), 2)
+                          * (2 * mu (E, nu) * strain[1][2]);
+                    stress[2][2] = pow ((1 - d), 2)
+                          * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
+                    * strain[2][2]);
 
-          else if (cell->face (f)->at_boundary ()
-              && (cell->face (f)->boundary_id () == 3))
-            {
-              fe_face_values.reinit (cell, f);
-              fe_face_values_damage.reinit (cell, f);
-              fe_face_values[displacements].get_function_symmetric_gradients (
-                  locally_relevant_solution_elastic, strain_values);
-              fe_face_values_damage.get_function_values (locally_relevant_solution_damage, damage_values);
+                    const Tensor<1, 3> force_density = stress
+                        * fe_face_values.normal_vector (q);
+                    x_max_force += force_density * fe_face_values.JxW (q);
+                  }
+              }
 
-              for (unsigned int q = 0; q < fe_face_values.n_quadrature_points;
-                  ++q)
+            else if (cell->face (f)->at_boundary ()
+                && (cell->face (f)->boundary_id () == 3))
+              {
+                fe_face_values.reinit (cell, f);
+                fe_face_values_damage.reinit (damage_cell, f); //Convert f?
+                fe_face_values[displacements].get_function_symmetric_gradients (
+                    locally_relevant_solution_elastic, strain_values);
+                fe_face_values_damage.get_function_values (locally_relevant_solution_damage, damage_values);
 
-                {
-                  const Tensor<2, 3> strain = strain_values[q]; //strain tensor at a gauss point
-                  const double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
-                  const double d = damage_values[q];
+                for (unsigned int q = 0; q < fe_face_values.n_quadrature_points;
+                    ++q)
 
-                  Tensor<2, 3> stress;
-                  stress[0][0] = pow ((1 - d), 2)
-                      * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
-                                                      * strain[0][0]);
-                  stress[0][1] = pow ((1 - d), 2)
-                      * (2 * mu (E, nu) * strain[0][1]);
-                  stress[0][2] = pow ((1 - d), 2)
-                      * (2 * mu (E, nu) * strain[0][2]);
-                  stress[1][1] = pow ((1 - d), 2)
-                      * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
-                                                      * strain[1][1]);
-                  stress[1][2] = pow ((1 - d), 2)
-                      * (2 * mu (E, nu) * strain[1][2]);
-                  stress[2][2] = pow ((1 - d), 2)
-                      * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
-                                                      * strain[2][2]);
+                  {
+                    const Tensor<2, 3> strain = strain_values[q]; //strain tensor at a gauss point
+                    const double tr_strain = strain[0][0] + strain[1][1] + strain[2][2];
+                    const double d = damage_values[q];
 
-                  const Tensor<1, 3> force_density = stress
-                      * fe_face_values.normal_vector (q);
-                  y_max_force += force_density * fe_face_values.JxW (q);
-                }
-            }
+                    Tensor<2, 3> stress;
+                    stress[0][0] = pow ((1 - d), 2)
+                          * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
+                    * strain[0][0]);
+                    stress[0][1] = pow ((1 - d), 2)
+                          * (2 * mu (E, nu) * strain[0][1]);
+                    stress[0][2] = pow ((1 - d), 2)
+                          * (2 * mu (E, nu) * strain[0][2]);
+                    stress[1][1] = pow ((1 - d), 2)
+                          * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
+                    * strain[1][1]);
+                    stress[1][2] = pow ((1 - d), 2)
+                          * (2 * mu (E, nu) * strain[1][2]);
+                    stress[2][2] = pow ((1 - d), 2)
+                          * (lambda (E, nu) * tr_strain + 2 * mu (E, nu)
+                    * strain[2][2]);
+
+                    const Tensor<1, 3> force_density = stress
+                        * fe_face_values.normal_vector (q);
+                    y_max_force += force_density * fe_face_values.JxW (q);
+                  }
+              }
+        }
     double x_max_force_x;
     x_max_force_x = x_max_force[0];
     x_max_force_x = Utilities::MPI::sum (x_max_force_x, mpi_communicator);
@@ -1230,9 +1243,9 @@ namespace Step854
         triangulation, estimated_error_per_cell, 0.01, // top 1% cells marked for refinement
         0.0); // bottom 0 % cells marked for coarsening
 
-    if (triangulation.n_global_levels () >= 2)
+    if (triangulation.n_global_levels () >= 4)
       {
-        for (const auto &cell : triangulation.active_cell_iterators_on_level (1))
+        for (const auto &cell : triangulation.active_cell_iterators_on_level (3))
           if (cell->is_locally_owned ())
             cell->clear_refine_flag ();
       }
@@ -1415,7 +1428,7 @@ namespace Step854
         // Loop over staggered iterations
         unsigned int iteration = 0;
         bool stoppingCriterion = false;
-        while (stoppingCriterion == false)
+        while (stoppingCriterion == false && iteration<1)
           {
             pcout << " \n iteration number:" << iteration << std::endl;
             solve_elastic_subproblem (load_step);
