@@ -42,7 +42,6 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/grid_refinement.h>
 #include <deal.II/distributed/solution_transfer.h>
-//This header gives us the functionality to store data at quadrature points
 #include <deal.II/base/quadrature_point_data.h>
 #include <deal.II/base/tensor_function.h>
 #include <fstream>
@@ -196,21 +195,21 @@ namespace Step854
 
   };
 
-  double
+  inline double
   lambda (const float E,
       const float nu)
   {
     return (E * nu) / ((1 + nu) * (1 - 2 * nu));
   }
 
-  double
+  inline double
   mu (const float E,
       const float nu)
   {
     return E / (2 * (1 + nu));
   }
 
-  double
+  inline double
   gc (const float GC,
       const float beta,
       const float z1,
@@ -297,7 +296,7 @@ namespace Step854
   } // namespace RandomMedium
 
   
-  double
+  inline double
   Conductivity_damage (const Point<3> &p) //const
   {
     return p[0] - p[0] + 1;
@@ -357,14 +356,8 @@ namespace Step854
         tr_sqr_Mac_Principal_strain;
 
     const double tr_strain = trace (strain);
-    if (tr_strain > 0)
-      {
-        Mac_tr_strain = tr_strain;
-      }
-    else
-      {
-        Mac_tr_strain = 0;
-      }
+
+    Mac_tr_strain = tr_strain >0 ? tr_strain : 0;
     const std::array<double, 3> Principal_strains = eigenvalues (strain);
     if (Principal_strains[0] > 0)
       {
@@ -382,14 +375,8 @@ namespace Step854
       {
         Mac_second_principal_strain = 0;
       }
-    if (Principal_strains[2] > 0)
-      {
-        Mac_third_principal_strain = Principal_strains[2];
-      }
-    else
-      {
-        Mac_third_principal_strain = 0;
-      }
+    Mac_third_principal_strain = (Principal_strains[2] > 0) ? Principal_strains[2] : 0;
+
     tr_sqr_Mac_Principal_strain = pow (Mac_first_principal_strain, 2)
         + pow (Mac_second_principal_strain, 2)
         + pow (Mac_third_principal_strain, 2);
@@ -405,9 +392,9 @@ namespace Step854
   PhaseField::setup_mesh_and_bcs ()
 
   {
-    const unsigned int nx = 20;
-    const unsigned int ny = 20;
-    const unsigned int nz = 10;
+    const unsigned int nx = 2;
+    const unsigned int ny = 2;
+    const unsigned int nz = 1;
     const std::vector<unsigned int> repetitions = {nx,ny,nz};
 
     const Point<3> p1(x_min,y_min,z_min), p2(x_max,y_max,z_max);
@@ -441,40 +428,6 @@ namespace Step854
 
     pcout << "No. of levels in triangulation: "
     << triangulation.n_global_levels () << std::endl;
-
-    // Refining the mesh for pre-crack
-
-    /*for (unsigned int cycle = 0; cycle < 2; ++cycle)
-     {
-     for (const auto &cell : triangulation.active_cell_iterators()) // active_cell_iterator iterates over cells which have not been refined.
-     //In other words, it does not include cells that have been refined.
-
-     {
-     if (cell->is_locally_owned()) // is_locally_owned  can only be called for active_cell
-     {
-     double min_x_cell = std::numeric_limits<double>::infinity();
-     double min_y_cell = std::numeric_limits<double>::infinity();
-     double max_y_cell = -std::numeric_limits<double>::infinity();
-     for (const auto vertex_number : cell->vertex_indices())
-     {
-     const auto vert = cell->vertex(vertex_number);
-     min_x_cell = std::min(min_x_cell, vert[0]);
-     min_y_cell = std::min(min_y_cell, vert[1]);
-     max_y_cell = std::max(max_y_cell, vert[1]);
-     }
-
-     if (((std::fabs(min_y_cell - y_mid) <= l) && (min_x_cell <= x_mid))
-     || ((std::fabs(max_y_cell - y_mid) <= l) && (min_x_cell <= x_mid)))
-     cell->set_refine_flag();
-     }
-
-     }
-
-     triangulation.prepare_coarsening_and_refinement();
-     triangulation.execute_coarsening_and_refinement();
-     pcout << "No. of levels in triangulation: "  << triangulation.n_global_levels() << std::endl;
-
-     }*/
 
     dof_handler_damage.distribute_dofs (fe_damage);
     dof_handler_elastic.distribute_dofs (fe_elastic);
