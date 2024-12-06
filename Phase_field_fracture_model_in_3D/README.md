@@ -54,6 +54,7 @@ An animation of how the crack system in this setup evolves can be found as `./do
   volume={55},
   pages={383--405},
   year={2015},
-  publisher={Springer}
+  publisher={Springer},
+ doi={10.1007/s00466-014-1109-y} 
 }
 ```
