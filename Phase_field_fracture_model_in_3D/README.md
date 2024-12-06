@@ -34,15 +34,14 @@ Here, $\boldsymbol{u}, d$ represent the displacement and damage(crack) fields, $
 ## To run the Code
 After running `cmake .`, run `make release` or `make debug` to switch between `release` and `debug`mode. Compile using `make`.
 Run the executable by using `make run` on the command line.
-
+Run the executable on 'n' processes using 'mpirun -np $n$ ./phase_field'. For example 'mpirun -np 40 ./phase_field' runs the program on 40 processes.
 ## Numerical example
 The program currently models fracture propagation in a 3-layered material subjected to equibiaxial loading along $+x$ and $+y$ directions. The problem setup is shown in the following picture:
 ![Setup](./doc/polyhedral_setup.png)
 Results are compared for two different initial meshes, the finer $80\times80\times40$ mesh and the coarser $20\times20\times10$ mesh. The following picture shows results for the fracture patterns and the load-displacement curves for the 2 meshes:
 ![Load displacement curves](./doc/load_displacement_curves.png)
 
-An animation of how the crack system in this setup evolves can be found as `./doc/polyhedral_cracks.mp4` in the code gallery source directory (left: coarse mesh; right: fine mesh).
-
+An animation of how the crack system in this setup evolves can be found [here](./doc/polyhedral_cracks.mp4) (left: coarse mesh; right: fine mesh).
 
 ## References
 [1]
