@@ -48,7 +48,7 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <iostream>
 #include <random>
 
-namespace PhaseField
+namespace PF
 
 {
   using namespace dealii;
@@ -1437,7 +1437,7 @@ main (int argc,
   try
     {
       using namespace dealii;
-      using namespace PhaseField;
+      using namespace PF;
 
       Utilities::MPI::MPI_InitFinalize mpi_initialization (argc, argv, 1);
 
