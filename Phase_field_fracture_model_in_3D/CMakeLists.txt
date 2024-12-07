@@ -1,5 +1,5 @@
 ##
-#  CMake script for the step-854 tutorial program:
+#  CMake script for the phase_field program:
 ##
 
 # Set the name of the project and target:
@@ -33,6 +33,28 @@ IF(NOT ${deal.II_FOUND})
     "or set an environment variable \"DEAL_II_DIR\" that contains this path."
     )
 ENDIF()
+
+#
+# Are all dependencies fulfilled?
+#
+if(NOT ((DEAL_II_WITH_PETSC AND NOT DEAL_II_PETSC_WITH_COMPLEX) OR DEAL_II_WITH_TRILINOS) OR NOT DEAL_II_WITH_P4EST)
+  message(FATAL_ERROR "
+Error! This tutorial requires a deal.II library that was configured with the following options:
+    DEAL_II_WITH_PETSC = ON
+    DEAL_II_PETSC_WITH_COMPLEX = OFF
+    DEAL_II_WITH_P4EST = ON
+or
+    DEAL_II_WITH_TRILINOS = ON
+    DEAL_II_WITH_P4EST = ON
+However, the deal.II library found at ${DEAL_II_PATH} was configured with these options:
+    DEAL_II_WITH_PETSC = ${DEAL_II_WITH_PETSC}
+    DEAL_II_PETSC_WITH_COMPLEX = ${DEAL_II_PETSC_WITH_COMPLEX}
+    DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}
+    DEAL_II_WITH_TRILINOS = ${DEAL_II_WITH_TRILINOS}
+This conflicts with the requirements.
+One or both of the aforementioned combinations of prerequisites are not met by your installation, but at least one is required for this tutorial step."
+    )
+endif()
 
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
