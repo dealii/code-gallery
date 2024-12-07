@@ -48,7 +48,7 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <iostream>
 #include <random>
 
-namespace Step854
+namespace StepPhaseField
 
 {
   using namespace dealii;
@@ -1437,7 +1437,7 @@ main (int argc,
   try
     {
       using namespace dealii;
-      using namespace Step854;
+      using namespace StepPhaseField;
 
       Utilities::MPI::MPI_InitFinalize mpi_initialization (argc, argv, 1);
 
