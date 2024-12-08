@@ -174,14 +174,6 @@ namespace PF
 
       CellDataStorage<typename Triangulation<3>::cell_iterator, MyQData> quadrature_point_history_field;
 
-      const double x_min = 0;
-      const double y_min = 0;
-      const double z_min = 0;
-      const double x_max = 30;
-      const double y_max = 30;
-      const double z_max = 13;
-      const double z1 = 5;
-      const double z2 = 8;
       const double ux = 1e-3; // increment in loading
       const double alpha = 1;
       const double uy = alpha * ux;
@@ -226,6 +218,19 @@ namespace PF
   is_in_middle_layer (const Point<3> &cell_center,const float z1,const float z2)
   {
     return (cell_center[2] >= z1 && cell_center[2] <= z2);
+  }
+
+  namespace Domain
+
+  {
+    const double x_min = 0;
+    const double y_min = 0;
+    const double z_min = 0;
+    const double x_max = 30;
+    const double y_max = 30;
+    const double z_max = 13;
+    const double z1 = 5;
+    const double z2 = 8;
   }
 
   namespace RandomMedium
@@ -277,13 +282,13 @@ namespace PF
               if (d == 0 || d == 1)
                 {
                   centers_list[i][d] =
-                      static_cast<double> ((rand ()) / RAND_MAX) * 30; //domain_size; //generates a number between 0 and domain_size
-                  // x,y will be between 0 to x_max (i.e 30)
+                      static_cast<double> ((rand ()) / RAND_MAX) * Domain::x_max; //domain_size; //generates a number between 0 and domain_size
+                  // x,y will be between 0 to x_max
                 }
               else if (d == 2)
                 {
-                  centers_list[i][d] = static_cast<double> (5.0
-                      + ((rand ()) / RAND_MAX) * (8.0 - 5.0));
+                  centers_list[i][d] = static_cast<double> (Domain::z1
+                      + ((rand ()) / RAND_MAX) * (Domain::z2 - Domain::z1));
                 }
 
           return centers_list;
@@ -397,7 +402,7 @@ namespace PF
     const unsigned int nz = 1;
     const std::vector<unsigned int> repetitions = {nx,ny,nz};
 
-    const Point<3> p1(x_min,y_min,z_min), p2(x_max,y_max,z_max);
+    const Point<3> p1(Domain::x_min,Domain::y_min,Domain::z_min), p2(Domain::x_max,Domain::y_max,Domain::z_max);
 
     GridGenerator::subdivided_hyper_rectangle (triangulation, repetitions, p1,
         p2); // create coarse mesh
@@ -411,16 +416,16 @@ namespace PF
             if (face->at_boundary ())
               {
                 const auto center = face->center ();
-                if (std::fabs (center (0) - (x_min)) < 1e-12)
+                if (std::fabs (center (0) - (Domain::x_min)) < 1e-12)
                   face->set_boundary_id (0);
 
-                else if (std::fabs (center (0) - x_max) < 1e-12)
+                else if (std::fabs (center (0) - Domain::x_max) < 1e-12)
                   face->set_boundary_id (1);
 
-                else if (std::fabs (center (1) - (y_min)) < 1e-12)
+                else if (std::fabs (center (1) - (Domain::y_min)) < 1e-12)
                   face->set_boundary_id (2);
 
-                else if (std::fabs (center (1) - y_max) < 1e-12)
+                else if (std::fabs (center (1) - Domain::y_max) < 1e-12)
                   face->set_boundary_id (3);
               }
           }
@@ -504,17 +509,17 @@ namespace PF
               if (face->at_boundary ())
                 {
                   const auto center = face->center ();
-                  if (std::fabs (center (0) - x_min) < 1e-12) //face lies at x=x_min
+                  if (std::fabs (center (0) - Domain::x_min) < 1e-12) //face lies at x=x_min
                     {
 
                       for (const auto vertex_number : cell->vertex_indices ())
                         {
                           const auto vert = cell->vertex (vertex_number);
-                          const double z_mid = 0.5 * (z_max + z_min);
+                          const double z_mid = 0.5 * (Domain::z_max + Domain::z_min);
                           if (std::fabs (vert (2) - z_mid) < 1e-12 && std::fabs (
                                                                           vert (
                                                                               0)
-                                                                          - x_min)
+                                                                          - Domain::x_min)
                                                                       < 1e-12) // vertex at x=x_min,z=z_mid;
                             {
                               const unsigned int z_dof =
@@ -526,7 +531,7 @@ namespace PF
                               constraints_elastic.add_line (x_dof);
                               constraints_elastic.set_inhomogeneity (x_dof, 0);
                             }
-                          else if (std::fabs (vert (0) - x_min) < 1e-12) // vertex at x_min
+                          else if (std::fabs (vert (0) - Domain::x_min) < 1e-12) // vertex at x_min
 
                             {
                               const unsigned int x_dof =
@@ -783,12 +788,12 @@ namespace PF
      {
      const auto vert = cell->vertex(vertex_number);
      const Point<3>& node = vert;
-     if (((std::fabs((z_max*(node(0)-0.5*x_max + A)) - 2*A*( node(2))) <10*l)
-     && node(1)>=0.9*y_max)
-     || ((std::fabs((node(0)-0.5*x_max + A)*z_max+2*A*(node(2)-z_max))<10*l)
-     && node(1)<=0.1*y_max))
-     if ((vert(0) - 0.5*(x_min+x_max) < 1e-12) &&
-     (std::fabs(vert(1) - 0.5*(y_min + y_max)) <= bandwidth))  // nodes on initial damage plane
+     if (((std::fabs((Domain::z_max*(node(0)-0.5*Domian::x_max + A)) - 2*A*( node(2))) <10*l)
+     && node(1)>=0.9*Domain::y_max)
+     || ((std::fabs((node(0)-0.5*Domian::x_max + A)*Domain::z_max+2*A*(node(2)-Domain::z_max))<10*l)
+     && node(1)<=0.1*Domain::y_max))
+     if ((vert(0) - 0.5*(Domain::x_min+Domian::x_max) < 1e-12) &&
+     (std::fabs(vert(1) - 0.5*(Domain::y_min + Domain::y_max)) <= bandwidth))  // nodes on initial damage plane
 
 
      {
@@ -895,10 +900,10 @@ namespace PF
               Point<3> cell_center = cell->center ();
 
               double g_c;
-              if (is_in_middle_layer (cell_center,z1,z2))
+              if (is_in_middle_layer (cell_center,Domain::z1,Domain::z2))
                 g_c = energy_release_rate_values[q_index];
               else
-                g_c = gc (GC, beta, z1, z2, x_q);
+                g_c = gc (GC, beta, Domain::z1, Domain::z2, x_q);
 
               for (const unsigned int i : fe_values_damage.dof_indices ())
                 {
