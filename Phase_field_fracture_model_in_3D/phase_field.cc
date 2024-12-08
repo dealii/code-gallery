@@ -364,22 +364,9 @@ namespace PF
 
     Mac_tr_strain = tr_strain >0 ? tr_strain : 0;
     const std::array<double, 3> Principal_strains = eigenvalues (strain);
-    if (Principal_strains[0] > 0)
-      {
-        Mac_first_principal_strain = Principal_strains[0];
-      }
-    else
-      {
-        Mac_first_principal_strain = 0;
-      }
-    if (Principal_strains[1] > 0)
-      {
-        Mac_second_principal_strain = Principal_strains[1];
-      }
-    else
-      {
-        Mac_second_principal_strain = 0;
-      }
+
+    Mac_first_principal_strain = (Principal_strains[0] > 0) ? Principal_strains[0] : 0;
+    Mac_second_principal_strain = (Principal_strains[1] > 0) ? Principal_strains[1] : 0;
     Mac_third_principal_strain = (Principal_strains[2] > 0) ? Principal_strains[2] : 0;
 
     tr_sqr_Mac_Principal_strain = pow (Mac_first_principal_strain, 2)
