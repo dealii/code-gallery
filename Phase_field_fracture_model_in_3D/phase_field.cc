@@ -139,6 +139,22 @@ namespace PF
       LA::MPI::Vector system_rhs_damage;
       const QGauss<3> quadrature_formula_damage;
 
+      const double ux = 1e-3; // increment in loading
+      const double alpha = 1;
+      const double uy = alpha * ux;
+      const double l = 0.6; // length scale parameter
+      const unsigned int num_load_steps = 100; // number of load steps
+      const double tol = 1e-2; // tolerance for error in solution
+      const double GC = 1e-3; //energy release rate
+      const double E = 37.5;
+      const double beta = 25;
+      const double nu = 0.25;
+
+      // Objects for load-displacement calculation
+      Vector<double> load_values_x;
+      Vector<double> load_values_y;
+      Vector<double> displacement_values;
+
       class MyQData : public TransferableQuadraturePointData
       {
         public:
@@ -173,17 +189,6 @@ namespace PF
       };
 
       CellDataStorage<typename Triangulation<3>::cell_iterator, MyQData> quadrature_point_history_field;
-
-      const double ux = 1e-3; // increment in loading
-      const double alpha = 1;
-      const double uy = alpha * ux;
-      const double l = 0.6; // length scale parameter
-      const unsigned int num_load_steps = 100; // number of load steps
-      const double tol = 1e-2; // tolerance for error in solution
-      const double GC = 1e-3; //energy release rate
-      const double E = 37.5;
-      const double beta = 25;
-      const double nu = 0.25;
 
   };
 
@@ -349,7 +354,10 @@ namespace PF
           quadrature_formula_elastic (fe_elastic.degree + 1),
           fe_damage (1),
           dof_handler_damage (triangulation),
-          quadrature_formula_damage (fe_elastic.degree + 1)
+          quadrature_formula_damage (fe_elastic.degree + 1),
+          load_values_x(num_load_steps+1),
+          load_values_y(num_load_steps+1),
+          displacement_values(num_load_steps+1)
   {
   }
 
@@ -997,11 +1005,6 @@ namespace PF
   PhaseField::load_disp_calculation (const unsigned int load_step)
 
   {
-    // TODO: You mark these vectors as 'static' because you want them to carry state from one call to this function to the next. That is exactly what member variables are there for -- so make these vectors member variables.
-    static Vector<double> load_values_x (num_load_steps + 1);
-    static Vector<double> load_values_y (num_load_steps + 1);
-    static Vector<double> displacement_values (num_load_steps + 1);
-
     Tensor<1, 3> x_max_force; //force vector on the x_max face
     Tensor<1, 3> y_max_force; //force vector on the y_max face
 
