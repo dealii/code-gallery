@@ -392,9 +392,9 @@ namespace PF
   PhaseField::setup_mesh_and_bcs ()
 
   {
-    const unsigned int nx = 2;
-    const unsigned int ny = 2;
-    const unsigned int nz = 1;
+    const unsigned int nx = 20;
+    const unsigned int ny = 20;
+    const unsigned int nz = 10;
     const std::vector<unsigned int> repetitions = {nx,ny,nz};
 
     const Point<3> p1(Domain::x_min,Domain::y_min,Domain::z_min), p2(Domain::x_max,Domain::y_max,Domain::z_max);
@@ -737,7 +737,7 @@ namespace PF
     TimerOutput::Scope ts (computing_timer, "solve_linear_system_elastic");
 
     SolverControl solver_control (10000,
-        1e-12/** system_rhs_elastic.l2_norm()*/);
+        1e-12* system_rhs_elastic.l2_norm());
 
     SolverCG<LA::MPI::Vector> solver (solver_control);
 
@@ -946,7 +946,7 @@ namespace PF
     TimerOutput::Scope ts (computing_timer, "solve_linear_system_damage");
 
     SolverControl solver_control (10000,
-        1e-12/** system_rhs_damage.l2_norm()*/);
+        1e-12* system_rhs_damage.l2_norm());
 
     SolverCG<LA::MPI::Vector> solver (solver_control);
 
@@ -1376,7 +1376,7 @@ namespace PF
         // Loop over staggered iterations
         unsigned int iteration = 0;
         bool stoppingCriterion = false;
-        while (stoppingCriterion == false && iteration<1)
+        while (stoppingCriterion == false)
           {
             pcout << " \n iteration number:" << iteration << std::endl;
             solve_elastic_subproblem (load_step);
