@@ -1317,11 +1317,6 @@ namespace PF
     error_elastic_solution = error_elastic_solution_numerator
         / error_elastic_solution_denominator;
 
-    completely_distributed_solution_elastic_old =
-        locally_relevant_solution_elastic;
-    completely_distributed_solution_damage_old =
-        locally_relevant_solution_damage;
-
     if ((error_elastic_solution < tol) && (error_damage_solution < tol))
       return true;
     else
@@ -1394,15 +1389,13 @@ namespace PF
             locally_relevant_solution_damage.update_ghost_values ();
             locally_relevant_solution_elastic.update_ghost_values ();
 
-            if (iteration == 0)
-              {
-                completely_distributed_solution_damage_old =
-                    locally_relevant_solution_damage;
-                completely_distributed_solution_elastic_old =
-                    locally_relevant_solution_elastic;
-              }
-            else
+            if (iteration > 0)
               stoppingCriterion = check_convergence ();
+
+            completely_distributed_solution_elastic_old =
+                locally_relevant_solution_elastic;
+            completely_distributed_solution_damage_old =
+                locally_relevant_solution_damage;
 
             if (stoppingCriterion == false)
 	    {
