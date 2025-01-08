@@ -57,7 +57,7 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <iostream>
 #include <random>
 
-namespace PF
+namespace FracturePropagation
 
 {
   using namespace dealii;
@@ -1434,7 +1434,7 @@ main (int argc,
   try
     {
       using namespace dealii;
-      using namespace PF;
+      using namespace FracturePropagation;
 
       Utilities::MPI::MPI_InitFinalize mpi_initialization (argc, argv, 1);
 
