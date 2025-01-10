@@ -196,7 +196,7 @@ for the reaction-progress variable. The value in the interval $(0, 1)$ is chosen
 
 
 ### Boundary conditions
-In the numerical solution, the boundary conditions described in the [beginning](#problem) are imposed at the ends of the interval $I$. In addition, a homogeneous Neumann condition is applied to the function $d\lambda$ at the left boundary.
+In the numerical solution, the boundary conditions described in the beginning are imposed at the ends of the interval $I$. In addition, a homogeneous Neumann condition is applied to the function $d\lambda$ at the left boundary.
 
 
 ## Program
@@ -216,7 +216,7 @@ Decreasing the dissipation parameter $\delta$ leads to the appearance of large g
 
 
 ### Error estimation
-Integration of the [governing equations](#problem) over the real line gives the following relations:
+Integration of the governing equations over the real line gives the following relations:
 @f{align*}{
     u_l (1 - c) + \frac{\epsilon}{2} u_l^2 + \frac{\epsilon}{2} T_l &=  u_r (1 - c) + \frac{\epsilon}{2} u_r^2 + \frac{\epsilon}{2} T_r , \\
     T_l - u_l &= T_r - u_r + q.
