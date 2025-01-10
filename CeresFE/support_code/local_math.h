@@ -11,7 +11,6 @@
 #define PI 3.14159265358979323846
 #define TWOPI 6.283185307179586476925287
 #define SECSINYEAR 3.155692608e+07
-//#define ABS(a) ((a) < 0 ? -(a) : (a))
 
 //double factorial(int n)
 //{

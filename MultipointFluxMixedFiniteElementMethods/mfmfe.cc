@@ -843,7 +843,7 @@ namespace MFMFE
 
   // The implementation of this function is almost identical to step-20.
   // We use @ref ComponentSelectFunction as masks to use the right
-  // solution component (velocity or pressure) and @ref integrate_difference
+  // solution component (velocity or pressure) and `integrate_difference()`
   // to compute the errors. Since we also want to compute Hdiv seminorm of the
   // velocity error, one must provide gradients in the <code>ExactSolution</code>
   // class implementation to avoid exceptions. The only noteworthy thing here

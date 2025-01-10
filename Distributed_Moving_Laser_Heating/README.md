@@ -1,6 +1,6 @@
 
 # Introduction
-In this tutorial, the studied problem is to simulate temperature distributions of a sample under a moving laser. Light penetrates the substrate without loss. The top-covered thin-film is, however, a light absorbing material. For simplicity, the thin-film is assumed to be TiO$_2$ mixed with silver nanoparticles, which supports light heating of the material by absorbing light energy. For this tutorial, we only consider the isotropic absorption. Figure \ref{fgr:s1} illustrates the sketch of the problem. The absorption coefficient is assumed to be $10^4 m^{-1}$. The substrate is glass. The thickness of the thin-film is assumed to be 400 nm. The spot size at the top of thin film is $20 \mu m$ at $e^{-2}$. The writing speed is assumed to be 10 mm/s. The laser power is 0.4 W. The time step is set as 10 $\mu s$. The initial position of laser center is $-50 \mu m$ with 50 $\mu m$ distance away from the left boundary to avoid boundary effects.
+In this tutorial, the studied problem is to simulate temperature distributions of a sample under a moving laser. Light penetrates the substrate without loss. The top-covered thin-film is, however, a light absorbing material. For simplicity, the thin-film is assumed to be TiO$_2$ mixed with silver nanoparticles, which supports light heating of the material by absorbing light energy. For this tutorial, we only consider the isotropic absorption. The Figure below illustrates the sketch of the problem. The absorption coefficient is assumed to be $10^4 m^{-1}$. The substrate is glass. The thickness of the thin-film is assumed to be 400 nm. The spot size at the top of thin film is $20 \mu m$ at $e^{-2}$. The writing speed is assumed to be 10 mm/s. The laser power is 0.4 W. The time step is set as 10 $\mu s$. The initial position of laser center is $-50 \mu m$ with 50 $\mu m$ distance away from the left boundary to avoid boundary effects.
 
 ## Illustration of the problem
 
@@ -33,7 +33,7 @@ since the test function is time invariant (because the grid is not changed), we 
     \int T T^{'}_{i} dV &= u_{i}
 @f}
 
-\noindent let 
+Let 
 @f{align*}
     M &= \int \rho C_m T^{'_i} T^{'_j} dV  \\
     A & = \int k \nabla T^{'_i} \cdot \nabla T^{'_j} dV \\
@@ -135,8 +135,7 @@ The colors stand for different cores.
 ![threads](./images/threads-2d.png)
 
 # References
-<code>
-	
+```	
 @article{ma2021numerical,
   title={Numerical study of laser micro-and nano-processing of nanocomposite porous materials},
   author={Ma, Hongfeng},
@@ -179,5 +178,4 @@ The colors stand for different cores.
   year={1947},
   organization={Cambridge University Press}
 }
-
-</code>
+```

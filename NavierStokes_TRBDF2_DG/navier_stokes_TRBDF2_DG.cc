@@ -230,7 +230,7 @@ namespace NS_TRBDF2 {
   };
 
 
-  // @sect{ <code>NavierStokesProjectionOperator::NavierStokesProjectionOperator</code> }
+  // @sect3{ <code>NavierStokesProjectionOperator::NavierStokesProjectionOperator</code> }
 
   // The following class sets effectively the weak formulation of the problems for the different stages
   // and for both velocity and pressure.
@@ -2060,7 +2060,7 @@ namespace NS_TRBDF2 {
   }
 
 
-  // @sect{The <code>NavierStokesProjection</code> class}
+  // @sect3{The <code>NavierStokesProjection</code> class}
 
   // Now we are ready for the main class of the program. It implements the calls to the various steps
   // of the projection method for Navier-Stokes equations.
@@ -2633,7 +2633,7 @@ namespace NS_TRBDF2 {
   }
 
 
-  // @sect{<code>NavierStokesProjection::compute_lift_and_drag</code>}
+  // @sect3{<code>NavierStokesProjection::compute_lift_and_drag</code>}
 
   // This routine computes the lift and the drag forces in a non-dimensional framework
   // (so basically for the classical coefficients, it is necessary to multiply by a factor 2).
@@ -2708,7 +2708,7 @@ namespace NS_TRBDF2 {
   }
 
 
-  // @sect{ <code>NavierStokesProjection::refine_mesh</code>}
+  // @sect3{ <code>NavierStokesProjection::refine_mesh</code>}
 
   // After finding a good initial guess on the coarse mesh, we hope to
   // decrease the error through refining the mesh. We also need to transfer the current solution to the
@@ -2914,7 +2914,7 @@ namespace NS_TRBDF2 {
   }
 
 
-  // @sect{ <code>NavierStokesProjection::run</code> }
+  // @sect3{ <code>NavierStokesProjection::run</code> }
 
   // This is the time marching function, which starting at <code>t_0</code>
   // advances in time using the projection method with time step <code>dt</code>
@@ -3022,7 +3022,7 @@ namespace NS_TRBDF2 {
 } // namespace NS_TRBDF2
 
 
-// @sect{ The main function }
+// @sect3{ The main function }
 
 // The main function looks very much like in all the other tutorial programs. We first initialize MPI,
 // we initialize the class 'NavierStokesProjection' with the dimension as template parameter and then

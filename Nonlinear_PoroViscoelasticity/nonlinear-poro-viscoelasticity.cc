@@ -1588,7 +1588,7 @@ namespace NonLinearPoroViscoElasticity
             std::vector<types::global_dof_index>   element_indices_p_fluid;
 
             //Declare an instance of dealii QGauss class (The Gauss-Legendre family of quadrature rules for numerical integration)
-            //Gauss Points in element, with n quadrature points (in each space direction <dim> )
+            //Gauss Points in element, with n quadrature points (in each of the dim space directions)
             const QGauss<dim>                qf_cell;
             //Gauss Points on element faces (used for definition of BCs)
             const QGauss<dim - 1>            qf_face;

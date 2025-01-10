@@ -104,7 +104,7 @@ midway point on the traction surface for the compressible 3d case.
 Since the material is compressible, shear-locking is not exhibited by the
 beam for low-order elements.
 
-#### Number of degrees of freedom
+### Number of degrees of freedom
 
 Elements per edge |        Q1       |        Q2
 :---------------: | :-------------: | :-------------:

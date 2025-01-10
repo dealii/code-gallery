@@ -13,7 +13,7 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/function.h>
 
-// @sect{Equation data}
+// @sect3{Equation data}
 
 // In the next namespace, we declare and implement suitable functions that may be used for the initial and boundary conditions
 //

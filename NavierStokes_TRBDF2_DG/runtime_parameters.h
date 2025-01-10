@@ -12,7 +12,7 @@
 //
 #include <deal.II/base/parameter_handler.h>
 
-// @sect{Run time parameters}
+// @sect3{Run time parameters}
 //
 // Since our method has several parameters that can be fine-tuned we put them
 // into an external file, so that they can be determined at run-time.
