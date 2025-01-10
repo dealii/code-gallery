@@ -852,8 +852,8 @@ AdvectionReaction<dim>::compute_local_projection_and_estimate()
       }
   };
 
-  // Here, we finally handle the assembly of the Mass matrix (M)_{ij} = (\phi_j,
-  // \phi_i)_T. We pass in ScratchData and CopyData objects
+  // Here, we finally handle the assembly of the Mass matrix $(M)_{ij} = (\phi_j,
+  // \phi_i)_T$. We pass in ScratchData and CopyData objects
   CopyData copy_data;
   MeshWorker::mesh_loop(dof_handler.begin_active(),
                         dof_handler.end(),

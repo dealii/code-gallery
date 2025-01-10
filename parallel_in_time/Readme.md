@@ -138,7 +138,7 @@ This is expected behavior as second order finite elements are used.
 Code Organization
 -----------------
 
-#### The src directory
+### The src directory
 
 The entry point of the code is in parallel\_in\_time.cc and sets up XBraid for a simulation.
 The XBraid setup involves initializing the app struct and configuring XBraid for the desired number of timesteps, number of iterations, and so forth.
@@ -147,12 +147,12 @@ The HeatEquation class and all deal.II functionality is declared in `HeatEquatio
 Since HeatEquation is a class template, its definition file `HeatEquationImplem.hh` is included at the bottom of `HeatEquation.hh`.
 Lastly various helper functions and variables such as the current processor id and the output stream are declared in `Utilities.hh` and defined in `Utilities.cc`.
 
-#### The test directory
+### The test directory
 
 This directory contains tests to be built and run with CMake.
 These tests verify the correct implementation of the various functions.
 
-#### The doc directory
+### The doc directory
 
 This directory is for storing further documentation of the code.
 Not much is in this directory right now as most of the documentation is in the Readme or in comments of the source code files.

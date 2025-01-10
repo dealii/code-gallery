@@ -15,7 +15,7 @@ Coupled simulations deal mostly with time-dependent problems. Hence, we make the
   \\
   u &= g(t) \qquad\qquad & \text{on}\ \partial\Omega_c.
 @f}
-with the fixed Dirichlet boundary \Omega_s, the coupling boundary \Omega_c and the time-dependent coupling data g(t).
+with the fixed Dirichlet boundary $\Omega_s$, the coupling boundary $\Omega_c$ and the time-dependent coupling data $g(t)$.
 
 The system is consequently discretized by a first-order backward Euler method, resulting in
 @f{align*}
