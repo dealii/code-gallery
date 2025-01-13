@@ -1,8 +1,13 @@
-/*
- * File:   localmath.h
- * Author: antonermakov
+/* -----------------------------------------------------------------------------
  *
- * Created on September 21, 2013, 7:14 PM
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR LGPL-2.1-or-later
+ * Copyright (C) 2013 by Anton Ermakov
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ *
+ * Author: antonermakov
  */
 
 #ifndef LOCAL_MATH_
