@@ -1,8 +1,13 @@
-/*
- * config_in.h
+/* -----------------------------------------------------------------------------
  *
- *  Created on: Aug 17, 2015
- *      Author: antonermakov
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR LGPL-2.1-or-later
+ * Copyright (C) 2015 by Anton Ermakov
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ *
+ * Author: antonermakov
  */
 
 
