@@ -6,7 +6,7 @@ Phase-field models have been proven to be effective in modeling complicated frac
 Despite this, these models are mostly limited to 2D because of the high computational cost, as these models require very fine meshes to resolve the diffused representation of the crack.
 This code explores the use of parallel computing and adaptive mesh refinement to model fracture propagation using the hybrid phase-field model.
 
-@dealiiTutorialDOI{10.5281/zenodo.14665574,https://zenodo.org/badge/DOI/10.5281/zenodo.14665574.svg}
+@dealiiTutorialDOI{10.5281/zenodo.14682543,https://zenodo.org/badge/DOI/10.5281/zenodo.14682543.svg}
 
 ## Governing equations
 
