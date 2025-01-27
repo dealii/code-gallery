@@ -24,6 +24,9 @@
 #include <deal.II/fe/fe_series.h>
 #include <deal.II/fe/fe_values.h>
 
+#if DEAL_II_VERSION_GTE(9, 7, 0)
+  #include <deal.II/grid/cell_data.h>
+#endif
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_iterator.h>
 
