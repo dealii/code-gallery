@@ -25,6 +25,10 @@ jobs:
         build_type: ["Debug"]
         dealii_version: ["master", "v9.6.0", "v9.5.0"]
         ubuntu_version: ["jammy"]
+        include:
+          - build_type: "Debug"
+            dealii_version: "master"
+            ubuntu_version: "noble"
 
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-${{ matrix.ubuntu_version }}
