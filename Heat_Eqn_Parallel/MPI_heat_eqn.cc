@@ -387,8 +387,8 @@ template <int dim> void HeatEquation<dim>::run() {
         << " on " << Utilities::MPI::n_mpi_processes(mpi_communicator)
         << " MPI rank(s)..." << std::endl;
 
-  const unsigned int initial_global_refinement = 2;      
-  const unsigned int n_adaptive_pre_refinement_steps = 4; 
+  const unsigned int initial_global_refinement = 12;//2;
+  const unsigned int n_adaptive_pre_refinement_steps = 0;//4;
   GridGenerator::hyper_L(triangulation);
   triangulation.refine_global(initial_global_refinement);
 
@@ -414,8 +414,9 @@ start_time_iteration:
     output_results();
   }
 
-  const double end_time = 0.5; 
-  while (time <= end_time) {
+  const double end_time = 1./500;//0.5;
+  while (time < end_time) {
+  //while (time <= end_time) {
     time += time_step;
     ++timestep_number;
 
