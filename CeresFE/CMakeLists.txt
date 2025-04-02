@@ -2,9 +2,9 @@
 #  CMake script for the CeresFE program:
 ##
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.13.4)
 
-FIND_PACKAGE(deal.II 9.5
+FIND_PACKAGE(deal.II 9.5.0
   HINTS ${deal.II_DIR} ${DEAL_II_DIR} ../ ../../ $ENV{DEAL_II_DIR}
   )
 
