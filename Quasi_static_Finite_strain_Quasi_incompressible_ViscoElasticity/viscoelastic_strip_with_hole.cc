@@ -695,7 +695,7 @@ namespace ViscoElasStripHole
     mutable ConditionalOStream       pcout;
 
     Parameters::AllParameters parameters;
-    Triangulation<dim>        triangulation;
+    parallel::shared::Triangulation<dim> triangulation;
     Time                      time;
     mutable TimerOutput       timer;
     CellDataStorage<typename Triangulation<dim>::cell_iterator,
@@ -787,7 +787,7 @@ namespace ViscoElasStripHole
     this_mpi_process (Utilities::MPI::this_mpi_process(mpi_communicator)),
     pcout(std::cout, this_mpi_process == 0),
     parameters(input_file),
-    triangulation(Triangulation<dim>::maximum_smoothing),
+    triangulation(mpi_communicator, Triangulation<dim>::maximum_smoothing),
     time(parameters.end_time, parameters.delta_t),
     timer(mpi_communicator,
           pcout,
@@ -823,17 +823,10 @@ namespace ViscoElasStripHole
 
     make_grid();
     setup_system(solution_delta);
-    {
-      AffineConstraints<double> constraints;
-      constraints.close();
-      const ComponentSelectFunction<dim>
-      J_mask (J_component, n_components);
-      VectorTools::project (dof_handler,
-                            constraints,
-                            QGauss<dim>(degree+2),
-                            J_mask,
-                            solution_n);
-    }
+
+    // Set the J component to one, and all others to zero:
+    solution_n = 0;
+    solution_n.block(J_block) = 1.;
     output_results(time.get_timestep(), time.current());
     time.increment();
 
@@ -1320,10 +1313,6 @@ namespace ViscoElasStripHole
   {
     timer.enter_subsection("Setup system");
     pcout << "Setting up linear system..." << std::endl;
-
-    // Partition triangulation
-    GridTools::partition_triangulation (n_mpi_processes,
-                                        triangulation);
 
     block_component = std::vector<unsigned int> (n_components, u_block); // Displacement
     block_component[p_component] = p_block; // Pressure
