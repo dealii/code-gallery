@@ -42,12 +42,12 @@ jobs:
 
       - name: Install preCICE
         run: |
-          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.1.2/libprecice3_3.1.2_${{ matrix.ubuntu_version }}.deb
+          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.2.0/libprecice3_3.2.0_${{ matrix.ubuntu_version }}.deb
           apt-get -y install ./libprecice.deb
 
       - name: Install XBraid
         run: |
-          wget -O xbraid.tar.gz https://github.com/XBraid/xbraid/archive/refs/tags/v3.1.0.tar.gz
+          wget -O xbraid.tar.gz https://github.com/XBraid/xbraid/archive/refs/tags/v3.1.1.tar.gz
           mkdir /opt/xbraid
           tar xf xbraid.tar.gz -C /opt/xbraid --strip-components 1
           cd /opt/xbraid/braid
