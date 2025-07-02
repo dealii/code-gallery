@@ -1832,6 +1832,9 @@ namespace ViscoElasStripHole
     if (it_nr > 1)
       return;
     constraints.clear();
+    constraints.reinit (dof_handler.locally_owned_dofs(),
+                        DoFTools::extract_locally_relevant_dofs(dof_handler));
+    
     const bool apply_dirichlet_bc = (it_nr == 0);
     const FEValuesExtractors::Scalar x_displacement(0);
     const FEValuesExtractors::Scalar y_displacement(1);
