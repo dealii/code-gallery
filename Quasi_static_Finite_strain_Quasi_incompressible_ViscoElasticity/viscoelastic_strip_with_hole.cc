@@ -1832,8 +1832,12 @@ namespace ViscoElasStripHole
     if (it_nr > 1)
       return;
     constraints.clear();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
     constraints.reinit (dof_handler.locally_owned_dofs(),
                         DoFTools::extract_locally_relevant_dofs(dof_handler));
+#else
+    constraints.reinit (dof_handler.locally_owned_dofs());
+#endif
     
     const bool apply_dirichlet_bc = (it_nr == 0);
     const FEValuesExtractors::Scalar x_displacement(0);
