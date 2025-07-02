@@ -364,7 +364,7 @@ make_dofs()
   // pattern we use the DoFTools::make_flux_sparsity_pattern function
   // since we using a DG method and need to take into account the DG
   // fluxes in the sparsity pattern.
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
+  DynamicSparsityPattern dsp(locally_relevant_dofs);
   DoFTools::make_flux_sparsity_pattern(dof_handler,
                                        dsp);
 
