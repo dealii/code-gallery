@@ -70,5 +70,7 @@ To run the code
 After running cmake and compiling, run the executable with one argument, 
 which is the config file:
 
-$ceres ${SOURCE_DIR}/config/sample_CeresFE_config.cfg
+```
+./ceres ${SOURCE_DIR}/config/sample_CeresFE_config.cfg
+```
 
