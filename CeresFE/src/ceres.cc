@@ -1768,13 +1768,13 @@ namespace Step22
     std::cout << endl;
     for (unsigned int i = 0; i<system_parameters::sizeof_material_id; ++i)
       {
+        ellipse_axes.clear();
         ellipsoid.compute_fit(ellipse_axes, system_parameters::material_id[i]);
         system_parameters::q_axes.push_back(ellipse_axes[0]);
         system_parameters::p_axes.push_back(ellipse_axes[1]);
 
         std::cout << "a_"<< system_parameters::material_id[i] <<" = " << ellipse_axes[0]
                   << " " << " c_"<< system_parameters::material_id[i] <<" = " << ellipse_axes[1] << std::endl;
-        ellipse_axes.clear();
 
         std::ofstream fout_ellipses(ellipses_filename.str().c_str(), std::ios::app);
         fout_ellipses << system_parameters::present_timestep << " a_"<< system_parameters::material_id[i] <<" = " << ellipse_axes[0]
@@ -1935,13 +1935,13 @@ namespace Step22
     std::cout << endl;
     for (unsigned int i = 0; i<system_parameters::sizeof_material_id; ++i)
       {
+        ellipse_axes.clear();
         ellipsoid.compute_fit(ellipse_axes, system_parameters::material_id[i]);
         system_parameters::q_axes.push_back(ellipse_axes[0]);
         system_parameters::p_axes.push_back(ellipse_axes[1]);
 
         std::cout << "a_"<< system_parameters::material_id[i] <<" = " << ellipse_axes[0]
                   << " " << " c_"<< system_parameters::material_id[i] <<" = " << ellipse_axes[1] << std::endl;
-        ellipse_axes.clear();
 
         std::ofstream fout_ellipses(ellipses_filename.str().c_str(), std::ios::app);
         fout_ellipses << system_parameters::present_timestep << " a_"<< system_parameters::material_id[i] <<" = " << ellipse_axes[0]
