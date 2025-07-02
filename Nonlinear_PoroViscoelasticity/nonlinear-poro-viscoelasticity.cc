@@ -1970,11 +1970,16 @@ namespace NonLinearPoroViscoElasticity
         if (apply_dirichlet_bc)
         {
           constraints.clear();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+          constraints.reinit(locally_owned_dofs, locally_relevant_dofs);
+#else
+          constraints.reinit(locally_relevant_dofs);
+#endif
           make_dirichlet_constraints(constraints);
         }
         else
         {
-          for (unsigned int i=0; i<dof_handler_ref.n_dofs(); ++i)
+          for (const auto i : locally_relevant_dofs)
             if (constraints.is_inhomogeneously_constrained(i) == true)
               constraints.set_inhomogeneity(i,0.0);
         }
