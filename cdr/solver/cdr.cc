@@ -195,7 +195,7 @@ template <int dim>
 void
 CDRProblem<dim>::setup_system()
 {
-  DynamicSparsityPattern dynamic_sparsity_pattern(dof_handler.n_dofs());
+  DynamicSparsityPattern dynamic_sparsity_pattern(locally_relevant_dofs);
   DoFTools::make_sparsity_pattern(dof_handler,
                                   dynamic_sparsity_pattern,
                                   constraints,
