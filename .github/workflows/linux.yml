@@ -47,7 +47,7 @@ jobs:
 
       - name: Install XBraid
         run: |
-          wget -O xbraid.tar.gz https://github.com/XBraid/xbraid/archive/refs/tags/v3.1.1.tar.gz
+          wget -O xbraid.tar.gz https://github.com/XBraid/xbraid/archive/refs/tags/v3.1.0.tar.gz
           mkdir /opt/xbraid
           tar xf xbraid.tar.gz -C /opt/xbraid --strip-components 1
           cd /opt/xbraid/braid
