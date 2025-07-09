@@ -390,11 +390,19 @@ template <int dim>
 void TestLevelSet<dim>::init_constraints()
 {
   constraints.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints);
   constraints.close ();
   constraints_disp_field.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints_disp_field.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints_disp_field.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints_disp_field);
   constraints_disp_field.close ();
 }
