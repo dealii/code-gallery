@@ -626,14 +626,12 @@ int main(int argc, char *argv[])
     {
       using namespace dealii;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
       deallog.depth_console (0);
       {
         unsigned int degree = 1;
         TestLevelSet<2> multiphase(degree, degree);
         multiphase.run();
       }
-      PetscFinalize();
     }
   catch (std::exception &exc)
     {

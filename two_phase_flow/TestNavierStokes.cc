@@ -674,18 +674,13 @@ int main(int argc, char *argv[])
     {
       using namespace dealii;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
       deallog.depth_console (0);
-
       {
         unsigned int degree_LS = 1;
         unsigned int degree_U = 2;
         TestNavierStokes<2> test_navier_stokes(degree_LS, degree_U);
         test_navier_stokes.run();
       }
-
-      PetscFinalize();
-
     }
 
   catch (std::exception &exc)
