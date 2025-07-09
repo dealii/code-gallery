@@ -341,19 +341,23 @@ void TestLevelSet<dim>::setup()
   // MASS MATRIX
   DynamicSparsityPattern dsp (locally_relevant_dofs_LS);
   DoFTools::make_sparsity_pattern (dof_handler_LS,dsp,constraints,false);
+
+  const std::vector<types::global_dof_index> n_locally_owned_dofs_per_processor =
+    Utilities::MPI::all_gather(mpi_communicator, dof_handler_LS.n_locally_owned_dofs());
+
   SparsityTools::distribute_sparsity_pattern (dsp,
-                                              dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                                              n_locally_owned_dofs_per_processor,
                                               mpi_communicator,
                                               locally_relevant_dofs_LS);
   matrix_MC.reinit (mpi_communicator,
                     dsp,
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                    n_locally_owned_dofs_per_processor,
+                    n_locally_owned_dofs_per_processor,
                     Utilities::MPI::this_mpi_process(mpi_communicator));
   matrix_MC_tnm1.reinit (mpi_communicator,
                          dsp,
-                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                         n_locally_owned_dofs_per_processor,
+                         n_locally_owned_dofs_per_processor,
                          Utilities::MPI::this_mpi_process(mpi_communicator));
 }
 
