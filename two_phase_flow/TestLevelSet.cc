@@ -341,19 +341,23 @@ void TestLevelSet<dim>::setup()
   // MASS MATRIX
   DynamicSparsityPattern dsp (locally_relevant_dofs_LS);
   DoFTools::make_sparsity_pattern (dof_handler_LS,dsp,constraints,false);
+
+  const std::vector<types::global_dof_index> n_locally_owned_dofs_per_processor =
+    Utilities::MPI::all_gather(mpi_communicator, dof_handler_LS.n_locally_owned_dofs());
+
   SparsityTools::distribute_sparsity_pattern (dsp,
-                                              dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                                              n_locally_owned_dofs_per_processor,
                                               mpi_communicator,
                                               locally_relevant_dofs_LS);
   matrix_MC.reinit (mpi_communicator,
                     dsp,
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                    dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                    n_locally_owned_dofs_per_processor,
+                    n_locally_owned_dofs_per_processor,
                     Utilities::MPI::this_mpi_process(mpi_communicator));
   matrix_MC_tnm1.reinit (mpi_communicator,
                          dsp,
-                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
-                         dof_handler_LS.n_locally_owned_dofs_per_processor(),
+                         n_locally_owned_dofs_per_processor,
+                         n_locally_owned_dofs_per_processor,
                          Utilities::MPI::this_mpi_process(mpi_communicator));
 }
 
@@ -390,11 +394,19 @@ template <int dim>
 void TestLevelSet<dim>::init_constraints()
 {
   constraints.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints);
   constraints.close ();
   constraints_disp_field.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints_disp_field.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints_disp_field.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints_disp_field);
   constraints_disp_field.close ();
 }
@@ -618,14 +630,12 @@ int main(int argc, char *argv[])
     {
       using namespace dealii;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
       deallog.depth_console (0);
       {
         unsigned int degree = 1;
         TestLevelSet<2> multiphase(degree, degree);
         multiphase.run();
       }
-      PetscFinalize();
     }
   catch (std::exception &exc)
     {

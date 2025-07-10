@@ -444,7 +444,11 @@ void LevelSetSolver<dim>::setup()
   // INIT CONSTRAINTS //
   //////////////////////
   constraints.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints);
   constraints.close ();
   /////////////////////////

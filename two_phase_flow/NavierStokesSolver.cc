@@ -607,12 +607,20 @@ void NavierStokesSolver<dim>::init_constraints()
 {
   //grl constraints
   constraints.clear();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints.reinit(locally_owned_dofs_U, locally_relevant_dofs_U);
+#else
   constraints.reinit(locally_relevant_dofs_U);
+#endif
   DoFTools::make_hanging_node_constraints(dof_handler_U,constraints);
   constraints.close();
   //constraints for dpsi
   constraints_psi.clear();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints_psi.reinit(locally_owned_dofs_P, locally_relevant_dofs_P);
+#else
   constraints_psi.reinit(locally_relevant_dofs_P);
+#endif
   DoFTools::make_hanging_node_constraints(dof_handler_P,constraints_psi);
   //if (constraints_psi.can_store_line(0))
   //constraints_psi.add_line(0); //constraint u0 = 0

@@ -266,7 +266,11 @@ template <int dim>
 void MultiPhase<dim>::init_constraints()
 {
   constraints.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints);
   constraints.close ();
 }
@@ -634,7 +638,6 @@ int main(int argc, char *argv[])
     {
       using namespace dealii;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      PetscInitialize(&argc, &argv, nullptr, nullptr);
       deallog.depth_console (0);
       {
         unsigned int degree_LS = 1;
@@ -642,7 +645,6 @@ int main(int argc, char *argv[])
         MultiPhase<2> multi_phase(degree_LS, degree_U);
         multi_phase.run();
       }
-      PetscFinalize();
     }
 
   catch (std::exception &exc)

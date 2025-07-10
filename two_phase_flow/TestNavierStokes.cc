@@ -262,7 +262,11 @@ template <int dim>
 void TestNavierStokes<dim>::init_constraints()
 {
   constraints.clear ();
+#if DEAL_II_VERSION_GTE(9, 6, 0)
+  constraints.reinit (locally_owned_dofs_LS, locally_relevant_dofs_LS);
+#else
   constraints.reinit (locally_relevant_dofs_LS);
+#endif
   DoFTools::make_hanging_node_constraints (dof_handler_LS, constraints);
   constraints.close ();
 }
@@ -670,18 +674,13 @@ int main(int argc, char *argv[])
     {
       using namespace dealii;
       Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-      PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
       deallog.depth_console (0);
-
       {
         unsigned int degree_LS = 1;
         unsigned int degree_U = 2;
         TestNavierStokes<2> test_navier_stokes(degree_LS, degree_U);
         test_navier_stokes.run();
       }
-
-      PetscFinalize();
-
     }
 
   catch (std::exception &exc)
