@@ -875,6 +875,7 @@ void NavierStokesSolver<dim>::assemble_system_U()
         }
     }
   rebuild_Matrix_U=true;
+  rebuild_Matrix_U_preconditioners=true;
 }
 
 template<int dim>
