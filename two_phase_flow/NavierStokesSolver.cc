@@ -1014,10 +1014,10 @@ void NavierStokesSolver<dim>::solve_U(const AffineConstraints<double> &constrain
                                       const PETScWrappers::MPI::Vector &rhs)
 {
   SolverControl solver_control(dof_handler_U.n_dofs(),1e-6);
-  //PETScWrappers::SolverCG solver(solver_control, mpi_communicator);
-  //PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
-  //PETScWrappers::SolverChebychev solver(solver_control, mpi_communicator);
-  PETScWrappers::SolverBicgstab solver(solver_control,mpi_communicator);
+  //PETScWrappers::SolverCG solver(solver_control);
+  //PETScWrappers::SolverGMRES solver(solver_control);
+  //PETScWrappers::SolverChebychev solver(solver_control);
+  PETScWrappers::SolverBicgstab solver(solver_control);
   constraints.distribute(completely_distributed_solution);
   solver.solve(Matrix,completely_distributed_solution,rhs,*preconditioner);
   constraints.distribute(completely_distributed_solution);
@@ -1035,8 +1035,8 @@ void NavierStokesSolver<dim>::solve_P(const AffineConstraints<double> &constrain
                                       const PETScWrappers::MPI::Vector &rhs)
 {
   SolverControl solver_control(dof_handler_P.n_dofs(),1e-6);
-  PETScWrappers::SolverCG solver(solver_control,mpi_communicator);
-  //PETScWrappers::SolverGMRES solver(solver_control, mpi_communicator);
+  PETScWrappers::SolverCG solver(solver_control);
+  //PETScWrappers::SolverGMRES solver(solver_control);
   constraints.distribute(completely_distributed_solution);
   solver.solve(Matrix,completely_distributed_solution,rhs,*preconditioner);
   constraints.distribute(completely_distributed_solution);

@@ -493,8 +493,7 @@ namespace fluid
       TimerOutput::Scope timer_section(timer, "CG for Mp");
       SolverControl mp_control(src.block(1).size(),
                                1e-6 * src.block(1).l2_norm());
-      PETScWrappers::SolverCG cg_mp(mp_control,
-                                    mass_schur->get_mpi_communicator());
+      PETScWrappers::SolverCG cg_mp(mp_control);
       // $-(\nu + \gamma)M_p^{-1}v_1$
       PETScWrappers::PreconditionBlockJacobi Mp_preconditioner;
       Mp_preconditioner.initialize(mass_matrix->block(1, 1));
@@ -507,8 +506,7 @@ namespace fluid
       TimerOutput::Scope timer_section(timer, "CG for Sm");
       SolverControl sm_control(src.block(1).size(),
                                1e-6 * src.block(1).l2_norm());
-      PETScWrappers::SolverCG cg_sm(sm_control,
-                                    mass_schur->get_mpi_communicator());
+      PETScWrappers::SolverCG cg_sm(sm_control);
       // PreconditionBlockJacobi works find on Sm if we do not refine the mesh.
       // Because after refine_mesh is called, zero entries will be created on
       // the diagonal (not sure why), which prevents PreconditionBlockJacobi
@@ -531,8 +529,7 @@ namespace fluid
       TimerOutput::Scope timer_section(timer, "CG for A");
       SolverControl a_control(src.block(0).size(),
                               1e-6 * src.block(0).l2_norm());
-      PETScWrappers::SolverCG cg_a(a_control,
-                                   mass_schur->get_mpi_communicator());
+      PETScWrappers::SolverCG cg_a(a_control);
       // We do not use any preconditioner for this block, which is of course
       // slow,
       // only because the performance of the only two preconditioners available
