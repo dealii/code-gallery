@@ -1,0 +1,7 @@
+Topology optimization is a class of algorithms designed to optimize a design or structure to accomplish some goal. It is part of a process of computer generated design that allows engineers to design better products faster.
+
+Several topology optimization algorithms have been developed to generate these designs, and having several methods is itself a good thing. The minimization problems resulting from topology optimization have many local minima, and different algorithms often hit different local minima. Topology optimization is a tool used by engineers, and having more generated designs allows engineers to better make decisions with these designs.
+
+One such algorithm that has piqued the imagination of developers is called Simultaneous Analysis and Design (SAND), especially in the context of Interior Point Optimization (IPO). This method is known to generate extremely optimal designs, and is good at avoiding local minima. However, this method is not used in practice, due to its computational cost.
+
+This code is an attempt at an effective algorithm to generate a design using it. The most expensive part is a linear solve of a block system. A multi-tier preconditioning approach is used to solve this system in a reasonable amount of time.
