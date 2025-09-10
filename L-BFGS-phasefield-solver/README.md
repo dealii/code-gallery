@@ -1,7 +1,7 @@
 ## Phasefield L-BFGS monolithic solver
 A monolithic solver based on the limited-memory BFGS (L-BFGS) method for phase-field fracture simulations.
 
-### Purpose 
+### Purpose
 This repository provides the source code and the input files for the numerical examples used in the paper titled “A novel phase-field monolithic scheme for brittle crack propagation based on the limited-memory BFGS method with adaptive mesh refinement”. The L-BFGS monolithic solver has the following features:
 1. It uses the limited-memory BFGS (L-BFGS) method to overcome the non-convexity of the total energy functional of the phase-field fracture formulation.
 2. It uses the history variable (the maximum of the positive strain energy in history) approach to enforce the phase-field irreversibility.
@@ -14,7 +14,8 @@ The repository contains the following content:
 2. the input files for several 2D and 3D phase-field fracture simulations included in the aforementioned manuscript.
 
 ### Latest update:
-1. (Sept. 1st, 2025) Add a new gradient-based line search method. Comparing with the previously implemented Strong Wolfe line search, the new line search method could reduce the wall-clock time by 30 to 50 percent.
+1. (Sept. 10th, 2025) Add a compiler macro so that the code works for the older version of deal.ii due to the interface change of the function `interpolate()` in the `SolutionTransfer` class.
+2. (Sept. 1st, 2025) Add a new gradient-based line search method. Comparing with the previously implemented Strong Wolfe line search, the new line search method could reduce the wall-clock time by 30 to 50 percent.
 
 ### Representative results
 A series of widely adopted phase-field crack benchmark problems are included in this code. Here are some examples:
@@ -71,15 +72,12 @@ The classical BFGS method (a type of quasi-Newton method) involves the following
 **The problem of this update in the context of finite element simulations is that the second term and the third term both generate a fully dense matrix of n by n needs to be stored, where n represents the number of degrees of freedom.** The above Hessian matrix update is too restrictive even for a mid-size finite element problem due to the required memory for the storage of the fully dense matrix. This limitation motivated this work to introduce the limited-memory feature for the phase-field crack simulations. The limited-memory BFGS method implemented in this work follows the algorithm represented in Chapter 7.2 (page 176) of the following textbook by *Nocedal J, Wright SJ. Numerical optimization (2nd edition). Springer New York, NY, 2006*.
 
 ### How to compile
-The L-BFGS finite element procedure is implemented in [deal.II](https://www.dealii.org/) (originally with version 9.4.0 and also works for 9.5.1, it is also tested with the develop branch as April 25th, 2025). In order to use the code (**main.cc**) provided here, deal.II should be configured with MPI and at least with the interfaces to BLAS, LAPACK, Threading Building Blocks (TBB), and UMFPACK. For optional interfaces to other software packages, see https://www.dealii.org/developer/readme.html.
+The L-BFGS finite element procedure is implemented in [deal.II](https://www.dealii.org/) (originally with version 9.4.0 and also works for 9.5.1, it is also tested with the develop branch as Sept. 10th, 2025). In order to use the code (**main.cc**) provided here, deal.II should be configured with MPI and at least with the interfaces to BLAS, LAPACK, Threading Building Blocks (TBB), and UMFPACK. For optional interfaces to other software packages, see https://www.dealii.org/developer/readme.html.
 
 Once the deal.II library is compiled, for instance, to "~/dealii-dev/bin/", follow the steps listed below:
 1. cmake -DDEAL_II_DIR=~/dealii-dev/bin/  .
 2. make debug or make release
 3. make
-
-### Potential compilation and compatibility issues
-The code uses the `SolutionTransfer` class during the adaptive mesh refinement technique. The member function `interpolate()` of the `SolutionTransfer` class has different interfaces between the develop ("master") branch and older versions of deal.ii (for instance, 9.4.0 and 9.5.1). If you use the develop branch, you should use the following interface: `interpolate(std::vector< VectorType > & all_out)`. If you use an older version of deal.ii, you should use the following interface: `interpolate(const std::vector< VectorType > & all_in, std::vector< VectorType > & all_out )`. Please look at the interfaces of the member function `interpolate()` in the `SolutionTransfer` class in the specific version of deal.ii used by you.
 
 ### How to run
 1. Go into one of the examples folders.
@@ -89,7 +87,7 @@ The code uses the `SolutionTransfer` class during the adaptive mesh refinement t
 5. Run via ./../../main 3
 
 ### How to expand this code
-If you want to use the current code to solve new 2D or 3D phase-field crack problems, you need to do the following: 
+If you want to use the current code to solve new 2D or 3D phase-field crack problems, you need to do the following:
 1. Add a new mesh under the function `void make_grid()`.
 2. Add the boundary conditions for your new mesh in the function `void make_constraints(const unsigned int it_nr)`.
 3. Modify the text file `timeDataFile` for the load/time step sizes and the text file `materialDataFile` for the material properties.
@@ -97,7 +95,7 @@ If you want to use the current code to solve new 2D or 3D phase-field crack prob
 
 If you want to use a new phase-field degradation function (the current code uses the standard quadratic degradation function), you can modify the following functions `double degradation_function(const double d)`, `double degradation_function_derivative(const double d)`, and `double degradation_function_2nd_order_derivative(const double d)`.
 
-If you want to modify the phase-field model completely but still use the L-BFGS monolithic solver, you need to modify the calculations of the initial BFGS matrix 
+If you want to modify the phase-field model completely but still use the L-BFGS monolithic solver, you need to modify the calculations of the initial BFGS matrix
 ```
 void assemble_system_B0_one_cell(
       const typename DoFHandler<dim>::active_cell_iterator &cell,
@@ -130,4 +128,3 @@ Jin T, Li Z, Chen K. A novel phase-field monolithic scheme for brittle crack pro
   publisher = {Wiley}
 }
 ```
-

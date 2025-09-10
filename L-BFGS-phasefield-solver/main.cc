@@ -5389,11 +5389,13 @@ namespace PhaseField
 	    std::vector<BlockVector<double>> tmp_solutions(2);
 	    tmp_solutions[0].reinit(m_dofs_per_block);
 	    tmp_solutions[1].reinit(m_dofs_per_block);
-
-	    solution_transfer.interpolate(tmp_solutions);
+	    #  if DEAL_II_VERSION_GTE(9, 7, 0)
+	      solution_transfer.interpolate(tmp_solutions);
+            #  else
 	    // If an older version of dealII is used, for example, 9.4.0, interpolate()
             // needs to use the following interface.
-            //solution_transfer.interpolate(old_solutions, tmp_solutions);
+              solution_transfer.interpolate(old_solutions, tmp_solutions);
+            #  endif
 	    solution_next_step = tmp_solutions[0];
 	    m_solution = tmp_solutions[1];
 
