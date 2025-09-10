@@ -1,0 +1,120 @@
+# Listing of Parameters
+# ---------------------
+subsection Scenario  
+  # Geometry, loading and boundary conditions scenario
+  # 1 - square tension (2D unstructured mesh)
+  # 2 - square shear   (2D unstructured mesh)
+  # 3 - square tension (2D structured mesh)
+  # 4 - square shear   (2D structured mesh)
+  # 5 - three-point bending (2D structured mesh)
+  # 6 - 3D sphere inclusion (3D structured mesh 1)
+  # 7 - 3D sphere inclusion (3D structured mesh 2) 
+  # 8 - 3D sphere inclusion (3D structured mesh 2 with barriers) 
+  set Scenario number = 5
+  
+  # Name of the log file
+  set Log file name = three_point_bending_structured.log
+  
+  # Shall we write the iteration history to the log file? (yes or no)
+  set Output iteration history = yes
+  
+  # Nonlinear solver type (Newton or BFGS or LBFGS)
+  set Nonlinear solver type = LBFGS
+  
+  # Line search method type (GradientBased or StrongWolfe)
+  set Line search type = GradientBased
+
+  # Linear solver type for B0 (Direct or CG)
+  set Linear solver type = Direct
+  
+  # Mesh refinement strategy (pre-refine or adaptive-refine)
+  set Mesh refinement strategy = pre-refine
+  
+  # Number of vectors used in LBFGS
+  set LBFGS m = 40
+
+  # Global refinement times across the entire domain
+  set Global refinement times = 0
+  
+  # Local pre-refinement times along the crack path that is known a priori
+  set Local prerefinement times = 4
+  
+  # Maximum number of adaptive mesh refinement allowed in each step
+  # A large number means that we don't terminate adaptive refinement
+  set Max adaptive refinement times = 100
+  
+  # Maximum allowed cell refinement level
+  # A large number means there are no restrictions
+  set Max allowed refinement level = 100
+  
+  # Phasefield-based refinement threshold value 
+  # (when nodal phasefield value is larger than threshold, elmt needs to be refined)
+  set Phasefield refine threshold = 0.4
+  
+  # Allowed maximum ratio between mesh size h and phasefield length scale l
+  # insdie the crack zone (nodal phasefield value larger than threshold)
+  set Allowed max hl ratio = 0.5
+  
+  # Total number of material regions
+  set Material regions = 1
+  
+  # Material data file name
+  set Material data file = materialDataFile
+  
+  # Reaction forces face ID (negative number means not to find reaction force)
+  set Reaction force face ID = 0
+end
+
+subsection Finite element system
+  # Displacement system polynomial order
+  set Polynomial degree = 1
+
+  # Gauss quadrature order
+  set Quadrature order  = 2
+end
+
+subsection Body force
+  # Body force in the reference configuration, unit: N/m^3
+  # If the body force is gravity, then the body force = (0, 0, rho_0*g)
+  # x component
+  set Body force x component = 0.0
+
+  # y component
+  set Body force y component = 0.0
+
+  # z component
+  set Body force z component = 0.0
+end
+
+subsection Nonlinear solver
+  # Number of Newton-Raphson iterations allowed
+  set Max iterations Newton-Raphson = 20
+  
+  # Number of BFGS iterations allowed
+  set Max iterations BFGS = 10000
+  
+  # Relative residual (yes|no)
+  # yes - relative residual
+  # no  - absolute residual
+  set Relative residual = no
+
+  # Displacement residual tolerance
+  set Tolerance displacement residual       = 1.0e-9
+
+  # Phasefield residual tolerance
+  set Tolerance phasefield residual         = 1.0e-9
+  
+  # Displacement increment tolerance
+  set Tolerance displacement increment      = 1.0e-9
+  
+  # Phasefield increment tolerance
+  set Tolerance phasefield increment        = 1.0e-9
+end
+
+subsection Time
+  # End time
+  set End time       = 6.0e-2
+  
+  # Time data groups
+  set Time data file = timeDataFile
+end
