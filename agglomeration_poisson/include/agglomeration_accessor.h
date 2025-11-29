@@ -1,15 +1,13 @@
-// -----------------------------------------------------------------------------
-//
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR LGPL-2.1-or-later
-// Copyright (C) XXXX - YYYY by the polyDEAL authors
-//
-// This file is part of the polyDEAL library.
-//
-// Detailed license information governing the source code
-// can be found in LICENSE.md at the top level directory.
-//
-// -----------------------------------------------------------------------------
-
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2025 by Marco Feder, Pasquale Claudio Africa, Xinping Gui,
+ * Andrea Cangiani
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
 
 #ifndef agglomeration_accessor_h
 #define agglomeration_accessor_h

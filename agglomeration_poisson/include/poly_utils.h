@@ -1,19 +1,16 @@
-// -----------------------------------------------------------------------------
-//
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR LGPL-2.1-or-later
-// Copyright (C) XXXX - YYYY by the polyDEAL authors
-//
-// This file is part of the polyDEAL library.
-//
-// Detailed license information governing the source code
-// can be found in LICENSE.md at the top level directory.
-//
-// -----------------------------------------------------------------------------
-
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2025 by Marco Feder, Pasquale Claudio Africa, Xinping Gui,
+ * Andrea Cangiani
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
 
 #ifndef poly_utils_h
 #define poly_utils_h
-
 
 #include <deal.II/base/config.h>
 
@@ -25,6 +22,8 @@
 #include <deal.II/boost_adaptors/bounding_box.h>
 #include <deal.II/boost_adaptors/point.h>
 #include <deal.II/boost_adaptors/segment.h>
+
+#include <deal.II/cgal/point_conversion.h>
 
 #include <deal.II/distributed/tria.h>
 
@@ -47,8 +46,6 @@
 #include <boost/geometry/index/detail/rtree/utilities/print.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
-
-#include <deal.II/cgal/point_conversion.h>
 
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <EpetraExt_RowMatrixOut.h>
@@ -841,7 +838,7 @@ namespace dealii::PolyUtils
 
     const double overlap_factor =
       Utilities::MPI::sum(covering_bboxes,
-                          ah.get_dof_handler().get_mpi_communicator()) /
+                          ah.get_dof_handler().get_communicator()) /
       GridTools::volume(ah.get_triangulation()); // assuming a linear mapping
 
 
@@ -1091,7 +1088,7 @@ namespace dealii::PolyUtils
 
       if constexpr (std::is_same_v<MatrixType, TrilinosWrappers::SparseMatrix>)
         {
-          const MPI_Comm &communicator = tria.get_mpi_communicator();
+          const MPI_Comm &communicator = tria.get_communicator();
           SparsityTools::distribute_sparsity_pattern(dsp,
                                                      locally_owned_dofs,
                                                      communicator,
@@ -1602,7 +1599,7 @@ namespace dealii::PolyUtils
 
     if constexpr (std::is_same_v<MatrixType, TrilinosWrappers::SparseMatrix>)
       {
-        const MPI_Comm &communicator = tria.get_mpi_communicator();
+        const MPI_Comm &communicator = tria.get_communicator();
         SparsityTools::distribute_sparsity_pattern(dsp,
                                                    locally_owned_dofs,
                                                    communicator,
@@ -1734,7 +1731,7 @@ namespace dealii::PolyUtils
     // Perform reduction and take sqrt of each error
     global_errors[0] = Utilities::MPI::reduce<double>(
       local_errors[0],
-      agglomeration_handler.get_triangulation().get_mpi_communicator(),
+      agglomeration_handler.get_triangulation().get_communicator(),
       [](const double a, const double b) { return a + b; });
 
     global_errors[0] = std::sqrt(global_errors[0]);
@@ -1743,7 +1740,7 @@ namespace dealii::PolyUtils
       {
         global_errors[1] = Utilities::MPI::reduce<double>(
           local_errors[1],
-          agglomeration_handler.get_triangulation().get_mpi_communicator(),
+          agglomeration_handler.get_triangulation().get_communicator(),
           [](const double a, const double b) { return a + b; });
         global_errors[1] = std::sqrt(global_errors[1]);
       }
@@ -1774,7 +1771,7 @@ namespace dealii::PolyUtils
     GridTools::Cache<dim> cached_tria(tria);
     Assert(parallel_tria->n_active_cells() > 0, ExcInternalError());
 
-    const MPI_Comm     comm = parallel_tria->get_mpi_communicator();
+    const MPI_Comm     comm = parallel_tria->get_communicator();
     ConditionalOStream pcout(std::cout,
                              (Utilities::MPI::this_mpi_process(comm) == 0));
 
@@ -2183,9 +2180,9 @@ namespace dealii::PolyUtils
                             constraints.distribute_local_to_global(
                               M22, local_dof_indices_neighbor, system_matrix);
                           } // ghosted polytope case
-                      }     // only once
-                  }         // internal face
-              }             // face loop
+                      } // only once
+                  } // internal face
+              } // face loop
             constraints.distribute_local_to_global(cell_matrix,
                                                    local_dof_indices,
                                                    system_matrix);
@@ -2231,18 +2228,17 @@ namespace dealii::PolyUtils
 
     DynamicSparsityPattern dsp(locally_relevant_dofs);
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
-    SparsityTools::distribute_sparsity_pattern(
-      dsp,
-      dof_handler.locally_owned_dofs(),
-      dof_handler.get_mpi_communicator(),
-      locally_relevant_dofs);
+    SparsityTools::distribute_sparsity_pattern(dsp,
+                                               dof_handler.locally_owned_dofs(),
+                                               dof_handler.get_communicator(),
+                                               locally_relevant_dofs);
 
     system_matrix.reinit(locally_owned_dofs,
                          locally_owned_dofs,
                          dsp,
-                         dof_handler.get_mpi_communicator());
+                         dof_handler.get_communicator());
 
-    system_rhs.reinit(locally_owned_dofs, dof_handler.get_mpi_communicator());
+    system_rhs.reinit(locally_owned_dofs, dof_handler.get_communicator());
 
     const unsigned int quadrature_degree = fe_dg.degree + 1;
     FEFaceValues<dim>  fe_faces0(mapping,
@@ -2449,7 +2445,7 @@ namespace dealii::PolyUtils
                           M22, local_dof_indices_neighbor, system_matrix);
 
                       } // check idx neighbors
-                  }     // over faces
+                  } // over faces
               }
             constraints.distribute_local_to_global(cell_matrix,
                                                    cell_rhs,

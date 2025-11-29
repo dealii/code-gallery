@@ -1,16 +1,13 @@
-// -----------------------------------------------------------------------------
-//
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR LGPL-2.1-or-later
-// Copyright (C) XXXX - YYYY by the polyDEAL authors
-//
-// This file is part of the polyDEAL library.
-//
-// Detailed license information governing the source code
-// can be found in LICENSE.md at the top level directory.
-//
-// -----------------------------------------------------------------------------
-
-
+/* -----------------------------------------------------------------------------
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ * Copyright (C) 2025 by Marco Feder, Pasquale Claudio Africa, Xinping Gui,
+ * Andrea Cangiani
+ *
+ * This file is part of the deal.II code gallery.
+ *
+ * -----------------------------------------------------------------------------
+ */
 
 #include <deal.II/lac/sparsity_tools.h>
 
@@ -22,7 +19,7 @@ AgglomerationHandler<dim, spacedim>::AgglomerationHandler(
   : cached_tria(std::make_unique<GridTools::Cache<dim, spacedim>>(
       cache_tria.get_triangulation(),
       cache_tria.get_mapping()))
-  , communicator(cache_tria.get_triangulation().get_mpi_communicator())
+  , communicator(cache_tria.get_triangulation().get_communicator())
 {
   Assert(dim == spacedim, ExcNotImplemented("Not available with codim > 0"));
   Assert(dim == 2 || dim == 3, ExcImpossibleInDim(1));
@@ -252,8 +249,8 @@ void
 AgglomerationHandler<dim, spacedim>::initialize_agglomeration_data(
   const std::unique_ptr<GridTools::Cache<dim, spacedim>> &cache_tria)
 {
-  tria    = &cache_tria->get_triangulation();
-  mapping = &cache_tria->get_mapping();
+  tria    = &(cache_tria->get_triangulation());
+  mapping = &(cache_tria->get_mapping());
 
   agglo_dh.reinit(*tria);
 
@@ -1328,8 +1325,8 @@ namespace dealii
                                            .visited_cell_and_faces))
                               {
                                 handler.polytope_cache
-                                  .interface[{
-                                  current_polytope_id, neighbor_polytope_id}]
+                                  .interface[{current_polytope_id,
+                                              neighbor_polytope_id}]
                                   .emplace_back(cell, f);
 
                                 handler.polytope_cache.visited_cell_and_faces
@@ -1343,8 +1340,8 @@ namespace dealii
                                            .visited_cell_and_faces))
                               {
                                 handler.polytope_cache
-                                  .interface[{
-                                  neighbor_polytope_id, current_polytope_id}]
+                                  .interface[{neighbor_polytope_id,
+                                              current_polytope_id}]
                                   .emplace_back(neighboring_cell, nof);
 
                                 handler.polytope_cache.visited_cell_and_faces
@@ -1395,8 +1392,8 @@ namespace dealii
                                            .visited_cell_and_faces))
                               {
                                 handler.polytope_cache
-                                  .interface[{
-                                  current_polytope_id, neighbor_polytope_id}]
+                                  .interface[{current_polytope_id,
+                                              neighbor_polytope_id}]
                                   .emplace_back(cell, f);
 
                                 handler.polytope_cache.visited_cell_and_faces
@@ -1409,8 +1406,8 @@ namespace dealii
                                            .visited_cell_and_faces))
                               {
                                 handler.polytope_cache
-                                  .interface[{
-                                  neighbor_polytope_id, current_polytope_id}]
+                                  .interface[{neighbor_polytope_id,
+                                              current_polytope_id}]
                                   .emplace_back(neighboring_cell, nof);
 
                                 handler.polytope_cache.visited_cell_and_faces
@@ -1488,8 +1485,8 @@ namespace dealii
                               handler.polytope_cache.visited_cell_and_faces_id))
                           {
                             handler.polytope_cache
-                              .interface[{
-                              current_polytope_id, check_neigh_polytope_id}]
+                              .interface[{current_polytope_id,
+                                          check_neigh_polytope_id}]
                               .emplace_back(cell, f);
 
                             // std::cout << "ADDED ("
@@ -1510,8 +1507,8 @@ namespace dealii
                               handler.polytope_cache.visited_cell_and_faces_id))
                           {
                             handler.polytope_cache
-                              .interface[{
-                              check_neigh_polytope_id, current_polytope_id}]
+                              .interface[{check_neigh_polytope_id,
+                                          current_polytope_id}]
                               .emplace_back(neighboring_cell, nof);
 
                             handler.polytope_cache.visited_cell_and_faces_id
@@ -1559,8 +1556,7 @@ namespace dealii
                         std::end(handler.polytope_cache.visited_cell_and_faces))
                       {
                         handler.polytope_cache
-                          .interface[{
-                          current_polytope_id, current_polytope_id}]
+                          .interface[{current_polytope_id, current_polytope_id}]
                           .emplace_back(cell, f);
 
                         handler.polytope_cache.visited_cell_and_faces.insert(
@@ -1568,7 +1564,7 @@ namespace dealii
                       }
                   }
               } // loop over faces
-          }     // loop over all cells of agglomerate
+          } // loop over all cells of agglomerate
 
 
 
