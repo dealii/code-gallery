@@ -1,5 +1,4 @@
-# A posteriori error estimator for first order hyperbolic problems
-
+# A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration
 
 ## Running the code:
 
@@ -12,13 +11,6 @@ on the command line to configure the program. After that you can compile with `m
 `./DG_advection_reaction`
 
 on the command line. 
-
-### Parameter file:
-
-If you run `./DG_advection_reaction parameters.prm`, an error message will tell you that a parameter file has been created for you. You can open it and change some useful parameters like the number of refinement cycles, the advection coefficient, and others. If you don't specify anything, then the default values used for the test case (see paragraph below) will be used.
-
-
-
 
 ## The problem:
 This program solves the problem, for $\Omega \in \mathbb{R^2}$
@@ -39,8 +31,6 @@ for some positive $\gamma_0$ so that we have coercivity in $L^2$ at the continuo
 
 
 ## The weak formulation:
-
-
 
 As trial space we choose $V_h = \{ v_h \in L^2(\Omega): v_h \in P^1(\mathbb{T_h})\} \notin H^1(\Omega)$. If we integrate by parts and sum over all cells
 
@@ -95,8 +85,6 @@ valid for $u \in H^{k+1}(\Omega)$.
 
 See Brezzi-Marini-Süli [3] for more details.
 
-
-
 ## A-posteriori error estimator:
 
 The estimator is the one proposed by Georgoulis, Edward Hall and Charalambos Makridakis in [3]. This approach is quite different with respect to other works in the field, as the authors are trying to develop an estimator for the original hyperbolic problem, rather than taking the hyperbolic regime as the vanishing diffusivity limit.
@@ -121,8 +109,6 @@ where:
 
 - $u_h^+$ is the interior trace from the current cell $T$ of a the finite element function $u_h$.
 
-
-
 ## Test case:
 
 The following test case has been taken from [3]. Consider:
@@ -137,7 +123,6 @@ The next image is the 3D view of the numerical solution:
 
 More interestingly, we see that the estimator has been able to capture the layer. Here a bulk-chasing criterion is used, with bottom fraction ´0.5´ and no coarsening. This mesh is obtained after 12 refinement cycles.
 ![Screenshot](./doc/images/refined_mesh_internal_layer.png)
-
 
 If we look at the decrease of the energy norm of the error in the globally refined case and in the adaptively case, with respect to the DoFs, we obtain:
 

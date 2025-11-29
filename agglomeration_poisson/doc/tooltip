@@ -1,1 +1,1 @@
-Implementation of an a-posteriori error estimator for first order hyperbolic problems
+A Discontinuous Galerkin solver for the Poisson problem on general polytopal meshes generated through mesh agglomeration
