@@ -1,10 +1,9 @@
 ##
-#  CMake script for the Elastoplastic Torsion problem
-#   at the deal.ii code-gallery 
+#  CMake script for the MPI_heat_eqn tutorial program:
 ##
 
 # Set the name of the project and target:
-SET(TARGET "ElastoplasticTorsion")
+SET(TARGET "MPI_heat_eqn")
 
 # Declare all source files the target consists of. Here, this is only
 # the one step-X.cc file, but as you expand your project you may wish
@@ -12,7 +11,7 @@ SET(TARGET "ElastoplasticTorsion")
 # you may want to either replace the following statement by something like
 #    FILE(GLOB_RECURSE TARGET_SRC  "source/*.cc")
 #    FILE(GLOB_RECURSE TARGET_INC  "include/*.h")
-#    SET(TARGET_SRC ${TARGET_SRC}  ${TARGET_INC}) 
+#    SET(TARGET_SRC ${TARGET_SRC}  ${TARGET_INC})
 # or switch altogether to the large project CMakeLists.txt file discussed
 # in the "CMake in user projects" page accessible from the "User info"
 # page of the documentation.
@@ -35,6 +34,28 @@ IF(NOT ${deal.II_FOUND})
     )
 ENDIF()
 
+#
+# Are all dependencies fulfilled?
+#
+if(NOT ((DEAL_II_WITH_PETSC AND NOT DEAL_II_PETSC_WITH_COMPLEX) OR DEAL_II_WITH_TRILINOS) OR NOT DEAL_II_WITH_P4EST)
+  message(FATAL_ERROR "
+Error! This tutorial requires a deal.II library that was configured with the following options:
+    DEAL_II_WITH_PETSC = ON
+    DEAL_II_PETSC_WITH_COMPLEX = OFF
+    DEAL_II_WITH_P4EST = ON
+or
+    DEAL_II_WITH_TRILINOS = ON
+    DEAL_II_WITH_P4EST = ON
+However, the deal.II library found at ${DEAL_II_PATH} was configured with these options:
+    DEAL_II_WITH_PETSC = ${DEAL_II_WITH_PETSC}
+    DEAL_II_PETSC_WITH_COMPLEX = ${DEAL_II_PETSC_WITH_COMPLEX}
+    DEAL_II_WITH_P4EST = ${DEAL_II_WITH_P4EST}
+    DEAL_II_WITH_TRILINOS = ${DEAL_II_WITH_TRILINOS}
+This conflicts with the requirements.
+One or both of the aforementioned combinations of prerequisites are not met by your installation, but at least one is required for this tutorial step."
+    )
+
+endif()
 DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
 DEAL_II_INVOKE_AUTOPILOT()
