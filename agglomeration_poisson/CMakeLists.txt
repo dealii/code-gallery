@@ -2,15 +2,7 @@
 SET(TARGET "agglomeration_poisson")
 
 # Declare all source files the target consists of.
-SET(TARGET_SRC
-  ${TARGET}.cc
-  source/agglomeration_handler.cc
-  source/mapping_box.cc
-)
-
-# Add include directory
-INCLUDE_DIRECTORIES(include)
-
+FILE(GLOB TARGET_SRC CONFIGURE_DEPENDS ${TARGET}.cc ${CMAKE_CURRENT_SOURCE_DIR}/source/*.cc)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.13.4)
 
@@ -29,5 +21,38 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
 DEAL_II_INVOKE_AUTOPILOT()
 
-# Define SOURCE_DIR for mesh file paths
-target_compile_definitions(${TARGET} PRIVATE SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+TARGET_INCLUDE_DIRECTORIES(${TARGET} PRIVATE include)
+TARGET_COMPILE_DEFINITIONS(${TARGET} PRIVATE SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+
+
+# -------------------------------------------------------------------
+# Coverage target: "make coverage"
+# -------------------------------------------------------------------
+target_compile_options(${TARGET} PRIVATE
+    -O0
+    -g
+    --coverage
+    -fprofile-arcs
+    -fprofile-update=atomic
+    -ftest-coverage
+)
+target_link_options(${TARGET} PRIVATE "--coverage")
+
+find_program(LCOV_EXEC lcov)
+find_program(GENHTML_EXEC genhtml)
+
+if(LCOV_EXEC AND GENHTML_EXEC)
+    add_custom_target(coverage
+        COMMAND ${CMAKE_COMMAND} -E echo "Generating coverage report..."
+        COMMAND ${CMAKE_COMMAND} -E rm -rf coverage_report coverage.info
+        COMMAND ${LCOV_EXEC} --capture --directory . --output-file coverage.info
+        COMMAND ${LCOV_EXEC} --extract coverage.info "*${CMAKE_SOURCE_DIR}*" --output-file coverage.info
+        COMMAND ${GENHTML_EXEC} --function-coverage --output-directory coverage_report coverage.info
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running LCOV + genhtml"
+        VERBATIM
+    )
+else()
+    message(WARNING "lcov/genhtml not found - coverage target will not be available.")
+endif()

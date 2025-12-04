@@ -379,21 +379,6 @@ public:
       &master_cell) const;
 
   /**
-   * Display the indices of the vector identifying which cell is agglomerated
-   * with which master.
-   */
-  template <class StreamType>
-  void
-  print_agglomeration(StreamType &out)
-  {
-    for (const auto &cell : tria->active_cell_iterators())
-      out << "Cell with index: " << cell->active_cell_index()
-          << " has associated value: "
-          << master_slave_relationships[cell->global_active_cell_index()]
-          << std::endl;
-  }
-
-  /**
    *
    * Return a constant reference to the DoFHandler underlying the
    * agglomeration. It knows which cell have been agglomerated, and which FE
