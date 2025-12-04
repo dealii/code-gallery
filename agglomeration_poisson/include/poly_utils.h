@@ -45,9 +45,7 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/geometry/strategies/strategies.hpp>
 
-#ifdef DEAL_II_WITH_TRILINOS
-#  include <EpetraExt_RowMatrixOut.h>
-#endif
+#include <EpetraExt_RowMatrixOut.h>
 
 #include <memory>
 
@@ -597,7 +595,6 @@ namespace dealii::PolyUtils
                                 const std::string &matrix_name,
                                 const TrilinosWrappers::SparseMatrix &matrix)
   {
-#ifdef DEAL_II_WITH_TRILINOS
     const Epetra_CrsMatrix &trilinos_matrix = matrix.trilinos_matrix();
 
     const int ierr =
@@ -607,11 +604,6 @@ namespace dealii::PolyUtils
                                              0 /*description field empty*/,
                                              true /*write header*/);
     AssertThrow(ierr == 0, ExcTrilinosError(ierr));
-#else
-    (void)filename;
-    (void)matrix_name;
-    (void)matrix;
-#endif
   }
 
   namespace internal
