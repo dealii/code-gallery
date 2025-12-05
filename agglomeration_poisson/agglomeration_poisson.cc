@@ -453,10 +453,8 @@ Poisson<dim>::make_grid()
       if constexpr (dim == 2)
         {
           grid_in.attach_triangulation(tria);
-          std::ifstream gmsh_file(
-            std::string(SOURCE_DIR) +
-            "/meshes/t3.msh"); // unstructured quadrilateral mesh of the unit
-                               // square
+          std::ifstream gmsh_file(std::string(MESH_DIR) +
+                                  "/unit_square_quad_unstructured.msh");
           grid_in.read_msh(gmsh_file);
           tria.refine_global(2); // 4
         }

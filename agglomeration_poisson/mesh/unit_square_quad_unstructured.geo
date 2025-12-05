@@ -24,5 +24,4 @@ Curve Loop(4) = {1, 2, 3, 4}; Plane Surface(100) = {4};
 Background Field = 1;
 
 // To generate quadrangles instead of triangles, we can simply add
-
 Recombine Surface{100};
