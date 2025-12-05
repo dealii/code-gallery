@@ -45,26 +45,16 @@ struct ConvergenceInfo
   print()
   {
     Assert(vec_data.size() > 0, ExcInternalError());
-    for (const auto &dof_and_errs : vec_data)
-      std::cout << std::left << std::setw(24) << std::scientific
-                << "N DoFs: " << dof_and_errs.first << std::endl;
+    std::cout << std::left << "#DoFs, L2 error, H1 error" << std::endl;
 
     for (const auto &dof_and_errs : vec_data)
-      std::cout << std::left << std::setw(24) << std::scientific
-                << "L2 error: " << dof_and_errs.second.first << std::endl;
-    for (const auto &dof_and_errs : vec_data)
-      std::cout << std::left << std::setw(24) << std::scientific
-                << "H1 error: " << dof_and_errs.second.second << std::endl;
+      std::cout << std::scientific << dof_and_errs.first << ", "
+                << dof_and_errs.second.first << ", "
+                << dof_and_errs.second.second << std::endl;
   }
 
   std::vector<std::pair<types::global_dof_index, std::pair<double, double>>>
     vec_data;
-};
-
-enum class GridType
-{
-  grid_generator, // hyper_cube or hyper_ball
-  unstructured    // square generated with gmsh, unstructured
 };
 
 enum class PartitionerType
@@ -74,289 +64,66 @@ enum class PartitionerType
   no_partition
 };
 
-enum SolutionType
-{
-  linear,      // x+y-1
-  quadratic,   // x^2+y^2-1
-  product,     // xy(x-1)(y-1)
-  product_sine // sin(pi*x)*sin(pi*y)
-};
-
 template <int dim>
 class RightHandSide : public Function<dim>
 {
 public:
-  RightHandSide(const SolutionType &sol_type = SolutionType::linear)
-    : Function<dim>()
-  {
-    solution_type = sol_type;
-  }
-
-  virtual void
-  value_list(const std::vector<Point<dim>> &points,
-             std::vector<double>           &values,
-             const unsigned int /*component*/) const override;
-
-private:
-  SolutionType solution_type;
-};
-
-template <int dim>
-void
-RightHandSide<dim>::value_list(const std::vector<Point<dim>> &points,
-                               std::vector<double>           &values,
-                               const unsigned int /*component*/) const
-{
-  if (solution_type == SolutionType::linear)
-    {
-      for (unsigned int i = 0; i < values.size(); ++i)
-        values[i] = 0.; // Laplacian of linear function
-    }
-  else if (solution_type == SolutionType::quadratic)
-    {
-      for (unsigned int i = 0; i < values.size(); ++i)
-        values[i] = -4.; // quadratic (radial) solution
-    }
-  else if (solution_type == SolutionType::product)
-    {
-      for (unsigned int i = 0; i < values.size(); ++i)
-        values[i] = -2. * points[i][0] * (points[i][0] - 1.) -
-                    2. * points[i][1] * (points[i][1] - 1.);
-    }
-  else if (solution_type == SolutionType::product_sine)
-    {
-      // 2pi^2*sin(pi*x)*sin(pi*y)
-      for (unsigned int i = 0; i < values.size(); ++i)
-        values[i] = 2. * numbers::PI * numbers::PI *
-                    std::sin(numbers::PI * points[i][0]) *
-                    std::sin(numbers::PI * points[i][1]);
-    }
-  else
-    {
-      Assert(false, ExcNotImplemented());
-    }
-}
-
-template <int dim>
-class SolutionLinear : public Function<dim>
-{
-public:
-  SolutionLinear()
+  RightHandSide()
     : Function<dim>()
   {}
 
-  virtual double
-  value(const Point<dim> &p, const unsigned int component = 0) const override;
-
   virtual void
   value_list(const std::vector<Point<dim>> &points,
              std::vector<double>           &values,
-             const unsigned int /*component*/) const override;
-
-  virtual Tensor<1, dim>
-  gradient(const Point<dim>  &p,
-           const unsigned int component = 0) const override;
+             const unsigned int /*component*/) const override
+  {
+    for (unsigned int i = 0; i < values.size(); ++i)
+      values[i] = 2 * numbers::PI * numbers::PI *
+                  std::sin(numbers::PI * points[i][0]) *
+                  std::sin(numbers::PI * points[i][1]);
+  }
 };
 
 template <int dim>
-double
-SolutionLinear<dim>::value(const Point<dim> &p, const unsigned int) const
-{
-  double sum = 0;
-  for (unsigned int d = 0; d < dim; ++d)
-    sum += p[d];
-
-  return sum - 1; // p[0]+p[1]+p[2]-1
-}
-
-template <int dim>
-Tensor<1, dim>
-SolutionLinear<dim>::gradient(const Point<dim> &p, const unsigned int) const
-{
-  (void)p;
-  Tensor<1, dim> return_value;
-  for (unsigned int d = 0; d < dim; ++d)
-    return_value[d] = 0.;
-  return return_value;
-}
-
-template <int dim>
-void
-SolutionLinear<dim>::value_list(const std::vector<Point<dim>> &points,
-                                std::vector<double>           &values,
-                                const unsigned int /*component*/) const
-{
-  for (unsigned int i = 0; i < values.size(); ++i)
-    values[i] = this->value(points[i]);
-}
-
-template <int dim>
-class SolutionQuadratic : public Function<dim>
+class ExactSolution : public Function<dim>
 {
 public:
-  SolutionQuadratic()
+  ExactSolution()
     : Function<dim>()
   {
     Assert(dim == 2, ExcNotImplemented());
   }
 
   virtual double
-  value(const Point<dim> &p, const unsigned int component = 0) const override;
-
-  virtual void
-  value_list(const std::vector<Point<dim>> &points,
-             std::vector<double>           &values,
-             const unsigned int /*component*/) const override;
-
-  virtual Tensor<1, dim>
-  gradient(const Point<dim>  &p,
-           const unsigned int component = 0) const override;
-};
-
-template <int dim>
-double
-SolutionQuadratic<dim>::value(const Point<dim> &p, const unsigned int) const
-{
-  return p[0] * p[0] + p[1] * p[1] - 1; // ball, radial solution
-}
-
-template <int dim>
-Tensor<1, dim>
-SolutionQuadratic<dim>::gradient(const Point<dim> &p, const unsigned int) const
-{
-  Tensor<1, dim> return_value;
-  return_value[0] = 2. * p[0];
-  return_value[1] = 2. * p[1];
-  return return_value;
-}
-
-template <int dim>
-void
-SolutionQuadratic<dim>::value_list(const std::vector<Point<dim>> &points,
-                                   std::vector<double>           &values,
-                                   const unsigned int /*component*/) const
-{
-  for (unsigned int i = 0; i < values.size(); ++i)
-    values[i] = this->value(points[i]);
-}
-
-template <int dim>
-class SolutionProduct : public Function<dim>
-{
-public:
-  SolutionProduct()
-    : Function<dim>()
+  value(const Point<dim> &p,
+        const unsigned int /* component */ = 0) const override
   {
-    Assert(dim == 2, ExcNotImplemented());
+    return std::sin(numbers::PI * p[0]) * std::sin(numbers::PI * p[1]);
   }
 
-  virtual double
-  value(const Point<dim> &p, const unsigned int component = 0) const override;
 
   virtual void
   value_list(const std::vector<Point<dim>> &points,
              std::vector<double>           &values,
-             const unsigned int /*component*/) const override;
-
-  virtual Tensor<1, dim>
-  gradient(const Point<dim>  &p,
-           const unsigned int component = 0) const override;
-
-  virtual void
-  gradient_list(const std::vector<Point<dim>> &points,
-                std::vector<Tensor<1, dim>>   &gradients,
-                const unsigned int /*component*/) const override;
-};
-
-template <int dim>
-double
-SolutionProduct<dim>::value(const Point<dim> &p, const unsigned int) const
-{
-  return p[0] * (p[0] - 1.) * p[1] * (p[1] - 1.); // square
-}
-
-template <int dim>
-Tensor<1, dim>
-SolutionProduct<dim>::gradient(const Point<dim> &p, const unsigned int) const
-{
-  Tensor<1, dim> return_value;
-  return_value[0] = (-1 + 2 * p[0]) * (-1 + p[1]) * p[1];
-  return_value[1] = (-1 + 2 * p[1]) * (-1 + p[0]) * p[0];
-  return return_value;
-}
-
-template <int dim>
-void
-SolutionProduct<dim>::value_list(const std::vector<Point<dim>> &points,
-                                 std::vector<double>           &values,
-                                 const unsigned int /*component*/) const
-{
-  for (unsigned int i = 0; i < values.size(); ++i)
-    values[i] = this->value(points[i]);
-}
-
-template <int dim>
-void
-SolutionProduct<dim>::gradient_list(const std::vector<Point<dim>> &points,
-                                    std::vector<Tensor<1, dim>>   &gradients,
-                                    const unsigned int /*component*/) const
-{
-  for (unsigned int i = 0; i < gradients.size(); ++i)
-    gradients[i] = this->gradient(points[i]);
-}
-
-template <int dim>
-class SolutionProductSine : public Function<dim>
-{
-public:
-  SolutionProductSine()
-    : Function<dim>()
+             const unsigned int /*component*/) const override
   {
-    Assert(dim == 2, ExcNotImplemented());
+    for (unsigned int i = 0; i < values.size(); ++i)
+      values[i] = this->value(points[i]);
   }
 
-  virtual double
-  value(const Point<dim> &p, const unsigned int component = 0) const override;
-
-  virtual void
-  value_list(const std::vector<Point<dim>> &points,
-             std::vector<double>           &values,
-             const unsigned int /*component*/) const override;
-
   virtual Tensor<1, dim>
-  gradient(const Point<dim>  &p,
-           const unsigned int component = 0) const override;
+  gradient(const Point<dim> &p,
+           const unsigned int /* component */ = 0) const override
+  {
+    Tensor<1, dim> return_value;
+    return_value[0] =
+      numbers::PI * std::cos(numbers::PI * p[0]) * std::sin(numbers::PI * p[1]);
+    return_value[1] =
+      numbers::PI * std::cos(numbers::PI * p[1]) * std::sin(numbers::PI * p[0]);
+    return return_value;
+  }
 };
 
-template <int dim>
-double
-SolutionProductSine<dim>::value(const Point<dim> &p, const unsigned int) const
-{
-  return std::sin(numbers::PI * p[0]) * std::sin(numbers::PI * p[1]);
-}
-
-template <int dim>
-Tensor<1, dim>
-SolutionProductSine<dim>::gradient(const Point<dim> &p,
-                                   const unsigned int) const
-{
-  Tensor<1, dim> return_value;
-  return_value[0] =
-    numbers::PI * std::cos(numbers::PI * p[0]) * std::sin(numbers::PI * p[1]);
-  return_value[1] =
-    numbers::PI * std::cos(numbers::PI * p[1]) * std::sin(numbers::PI * p[0]);
-  return return_value;
-}
-
-template <int dim>
-void
-SolutionProductSine<dim>::value_list(const std::vector<Point<dim>> &points,
-                                     std::vector<double>           &values,
-                                     const unsigned int /*component*/) const
-{
-  for (unsigned int i = 0; i < values.size(); ++i)
-    values[i] = this->value(points[i]);
-}
 
 template <int dim>
 class Poisson
@@ -388,9 +155,7 @@ private:
   std::unique_ptr<const Function<dim>>       analytical_solution;
 
 public:
-  Poisson(const GridType        &grid_type        = GridType::grid_generator,
-          const PartitionerType &partitioner_type = PartitionerType::rtree,
-          const SolutionType    &solution_type    = SolutionType::linear,
+  Poisson(const PartitionerType &partitioner_type = PartitionerType::rtree,
           const unsigned int                      = 0,
           const unsigned int                      = 0,
           const unsigned int fe_degree            = 1);
@@ -403,9 +168,7 @@ public:
   std::pair<double, double>
   get_error() const;
 
-  GridType        grid_type;
   PartitionerType partitioner_type;
-  SolutionType    solution_type;
   unsigned int    extraction_level;
   unsigned int    n_subdomains;
   double penalty_constant = 60.; // 10*(p+1)(p+d) for p = 1 and d = 2 => 60
@@ -414,32 +177,20 @@ public:
 };
 
 template <int dim>
-Poisson<dim>::Poisson(const GridType        &grid_type,
-                      const PartitionerType &partitioner_type,
-                      const SolutionType    &solution_type,
+Poisson<dim>::Poisson(const PartitionerType &partitioner_type,
                       const unsigned int     extraction_level,
                       const unsigned int     n_subdomains,
                       const unsigned int     fe_degree)
   : mapping()
   , dg_fe(fe_degree)
-  , grid_type(grid_type)
   , partitioner_type(partitioner_type)
-  , solution_type(solution_type)
   , extraction_level(extraction_level)
   , n_subdomains(n_subdomains)
   , penalty_constant(10. * (fe_degree + 1) * (fe_degree + dim))
 {
-  // Initialize manufactured solution
-  if (solution_type == SolutionType::linear)
-    analytical_solution = std::make_unique<SolutionLinear<dim>>();
-  else if (solution_type == SolutionType::quadratic)
-    analytical_solution = std::make_unique<SolutionQuadratic<dim>>();
-  else if (solution_type == SolutionType::product)
-    analytical_solution = std::make_unique<SolutionProduct<dim>>();
-  else if (solution_type == SolutionType::product_sine)
-    analytical_solution = std::make_unique<SolutionProductSine<dim>>();
-
-  rhs_function = std::make_unique<const RightHandSide<dim>>(solution_type);
+  // Initialize manufactured solution.
+  analytical_solution = std::make_unique<ExactSolution<dim>>();
+  rhs_function        = std::make_unique<const RightHandSide<dim>>();
   constraints.close();
 }
 
@@ -448,30 +199,11 @@ void
 Poisson<dim>::make_grid()
 {
   GridIn<dim> grid_in;
-  if (grid_type == GridType::unstructured)
-    {
-      if constexpr (dim == 2)
-        {
-          grid_in.attach_triangulation(tria);
-          std::ifstream gmsh_file(std::string(MESH_DIR) +
-                                  "/unit_square_quad_unstructured.msh");
-          grid_in.read_msh(gmsh_file);
-          tria.refine_global(2); // 4
-        }
-      else if constexpr (dim == 3)
-        {
-          // We avoid to import large 3D meshes, and we just distort a unit cube
-          GridGenerator::hyper_cube(tria, 0., 1.);
-          tria.refine_global(5);
-          GridTools::distort_random(0.1, tria);
-        }
-    }
-  else
-    {
-      // We avoid to import large 3D meshes, and we just distort a unit cube
-      GridGenerator::hyper_cube(tria, 0., 1.);
-      tria.refine_global(5);
-    }
+  grid_in.attach_triangulation(tria);
+  std::ifstream gmsh_file(std::string(MESH_DIR) +
+                          "/unit_square_quad_unstructured.msh");
+  grid_in.read_msh(gmsh_file);
+  tria.refine_global(2);
 
   std::cout << "Size of tria: " << tria.n_active_cells() << std::endl;
   cached_tria = std::make_unique<GridTools::Cache<dim>>(tria, mapping);
@@ -498,7 +230,7 @@ Poisson<dim>::make_grid()
       std::chrono::duration<double> wctduration =
         (std::chrono::system_clock::now() - start);
       std::cout << "METIS built in " << wctduration.count()
-                << " seconds [Wall Clock]" << std::endl;
+                << " seconds [wall clock]" << std::endl;
     }
   else if (partitioner_type == PartitionerType::rtree)
     {
@@ -506,7 +238,7 @@ Poisson<dim>::make_grid()
 
       namespace bgi = boost::geometry::index;
       static constexpr unsigned int max_elem_per_node =
-        PolyUtils::constexpr_pow(2, dim); // 2^dim
+        PolyUtils::constexpr_pow(2, dim);
       std::vector<std::pair<BoundingBox<dim>,
                             typename Triangulation<dim>::active_cell_iterator>>
                    boxes(tria.n_active_cells());
@@ -528,7 +260,7 @@ Poisson<dim>::make_grid()
       std::chrono::duration<double> wctduration =
         (std::chrono::system_clock::now() - start);
       std::cout << "R-tree agglomerates built in " << wctduration.count()
-                << " seconds [Wall Clock]" << std::endl;
+                << " seconds [wall clock]" << std::endl;
     }
   else if (partitioner_type == PartitionerType::no_partition)
     {
@@ -566,7 +298,7 @@ Poisson<dim>::setup_agglomeration()
       partitioner = "no_partitioning";
 
     const std::string filename =
-      "grid" + partitioner + "_" + std::to_string(n_subdomains) + ".vtu";
+      "grid_" + partitioner + "_" + std::to_string(n_subdomains) + ".vtu";
     std::ofstream output(filename);
 
     DataOut<dim> data_out;
@@ -838,7 +570,7 @@ Poisson<dim>::output_results()
     else
       partitioner = "no_partitioning";
 
-    const std::string filename = "interpolated_solution" + partitioner + "_" +
+    const std::string filename = "interpolated_solution_" + partitioner + "_" +
                                  std::to_string(n_subdomains) + ".vtu";
     std::ofstream output(filename);
 
@@ -882,8 +614,6 @@ Poisson<dim>::output_results()
                                     errors);
     l2_err     = errors[0];
     semih1_err = errors[1];
-    std::cout << "Error (L2): " << l2_err << std::endl;
-    std::cout << "Error (H1): " << semih1_err << std::endl;
   }
 }
 
@@ -911,9 +641,9 @@ Poisson<dim>::run()
   assemble_system();
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration =
-    std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    std::chrono::duration_cast<std::chrono::seconds>(stop - start);
 
-  std::cout << "Time taken by assemble_system(): " << duration.count() / 1e6
+  std::cout << "Time taken by assemble_system(): " << duration.count()
             << " seconds" << std::endl;
   solve();
   output_results();
@@ -922,28 +652,25 @@ Poisson<dim>::run()
 int
 main()
 {
-  // Testing p-convergence
   ConvergenceInfo convergence_info;
-  std::cout << "Testing p-convergence" << std::endl;
-  {
-    for (unsigned int fe_degree : {1, 2, 3})
 
-      {
-        std::cout << "Fe degree: " << fe_degree << std::endl;
-        Poisson<2> poisson_problem{GridType::unstructured,
-                                   PartitionerType::rtree,
-                                   SolutionType::product_sine,
-                                   4 /*extraction_level*/,
-                                   256, //,364 /*0*/,
-                                   fe_degree};
-        poisson_problem.run();
-        convergence_info.add(
-          std::make_pair<types::global_dof_index, std::pair<double, double>>(
-            poisson_problem.get_n_dofs(), poisson_problem.get_error()));
-      }
-  }
+  for (unsigned int fe_degree : {1}) //, 2, 3})
+    {
+      std::cout << "Running with FE degree: " << fe_degree << std::endl;
+      Poisson<2> poisson_problem{PartitionerType::rtree,
+                                 4 /* extraction_level */,
+                                 256 /* n_subdomains */,
+                                 fe_degree};
+      poisson_problem.run();
+      convergence_info.add(
+        std::make_pair<types::global_dof_index, std::pair<double, double>>(
+          poisson_problem.get_n_dofs(), poisson_problem.get_error()));
+      std::cout << std::endl;
+    }
+
+  std::cout << "Convergence table:" << std::endl;
   convergence_info.print();
-
   std::cout << std::endl;
+
   return 0;
 }
