@@ -20,54 +20,37 @@ The repository contains the following content:
 ### Representative results
 A series of widely adopted phase-field crack benchmark problems are included in this code. Here are some examples:
 1. Simple tension test (pre-refined mesh):
-<p align="center">
-<img src="./doc/Tension_test_prerefine_mesh.png" width="250"><img src="./doc/Tension_test_step_15.png" width="250">
-</p>
+![Tension test, prerefine mesh](./doc/Tension_test_prerefine_mesh.png)
+![Tension test, mesh 15](./doc/Tension_test_step_15.png)
+
 2. Simple shear test (adpatively refined mesh):
-<p align="center">
-<img src="./doc/shear_test_adaptive_refine_step_14_mesh.png" width="250"><img src="./doc/shear_test_adaptive_refine_step_14.png" width="250">
-</p>
+![Shear test, mesh 14](./doc/shear_test_adaptive_refine_step_14_mesh.png)
+![Shear test, solution 14](./doc/shear_test_adaptive_refine_step_14.png)
+
 3. 3D torsion test (adpatively refined mesh):
-<p align="center">
-<img src="./doc/torsion_mesh_3.png" width="450"><img src="./doc/torsion_fracture_surface_view_3.png" width="450">
-</p>
+![Torsion test, mesh 3](./doc/torsion_mesh_3.png)
+![Torsion test, solution 3](./doc/torsion_fracture_surface_view_3.png)
 
 ### Phase-field model adopted in this work
 The phase-field fracture approach aims to minimize the following energy functional:
-<p align="center">
-<img src="./doc/eq1.png" width="450">
-</p>
+![eq. 1](./doc/eq1.png)
 where the approximated crack surface is defined as
-<p align="center">
-<img src="./doc/eq2.png" width="360">
-</p>
+![eq. 2](./doc/eq2.png)
 the strain energy density function is based on the isotropic linear elasticity and the additive decomposition
-<p align="center">
-<img src="./doc/eq3.png" width="280">
-</p>
+![eq. 3](./doc/eq3.png)
 and the phase-field degradation function adopts the following qudratic form
-<p align="center">
-<img src="./doc/eq4.png" width="150">
-</p>
+![eq. 4](./doc/eq4.png)
 
 Using the divergence theorem and the technique of integration by parts, the corresponding Euler-Lagrange equations are written as
-<p align="center">
-<img src="./doc/eq5.png" width="200">
-</p>
+![eq. 5](./doc/eq5.png)
 In the actual implementation, however, the governing equations of the cracked solid system are modified as
-<p align="center">
-<img src="./doc/eq6.png" width="250">
-</p>
+![eq. 6](./doc/eq6.png)
 where a viscosity regularization term is introduced to stabilize the numerical treatment. Even though this regularization term might not be necessary, we still include it in the formulation for flexibility. This term can always be turned off by setting the viscosity coefficient as zero. Among various approaches to enforce the phase-field irreversibility, the approach based on the history variable of the positive strain energy is adopted due to its relative simplicity,
-<p align="center">
-<img src="./doc/eq8.png" width="200">
-</p>
+![eq. 8](./doc/eq8.png)
 
 ### Main idea of the limited-memory BFGS (L-BFGS) solver
 The classical BFGS method (a type of quasi-Newton method) involves the following approximate Hessian matrix update during each iteration:
-<p align="center">
-<img src="./doc/eq7.png" width="220">
-</p>
+![eq. 7](./doc/eq7.png)
 
 **The problem of this update in the context of finite element simulations is that the second term and the third term both generate a fully dense matrix of n by n needs to be stored, where n represents the number of degrees of freedom.** The above Hessian matrix update is too restrictive even for a mid-size finite element problem due to the required memory for the storage of the fully dense matrix. This limitation motivated this work to introduce the limited-memory feature for the phase-field crack simulations. The limited-memory BFGS method implemented in this work follows the algorithm represented in Chapter 7.2 (page 176) of the following textbook by *Nocedal J, Wright SJ. Numerical optimization (2nd edition). Springer New York, NY, 2006*.
 
