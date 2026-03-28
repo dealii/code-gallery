@@ -53,18 +53,18 @@ structure and the computed solution.
 ## Problem description:
 
 We consider the Poisson problem in a bounded, simply connected domain
-@f$\Omega \subset \mathbb{R}^d @f$, @f$d = 2,3@f$.
+$\Omega \subset \mathbb{R}^d$, $d = 2,3$.
 The strong formulation reads
-@f{align*}
+@f{align*}{
   -\Delta u &= f  && \text{in } \Omega, \\
            u &= u_D && \text{on } \partial\Omega,
 @f}
-where the right-hand side satisfies @f$f \in L^2(\Omega) @f$ and the prescribed
-Dirichlet data satisfy @f$u_D \in H^{1/2}(\partial\Omega) @f$.
+where the right-hand side satisfies $f \in L^2(\Omega)$ and the prescribed
+Dirichlet data satisfy $u_D \in H^{1/2}(\partial\Omega)$.
 
-The corresponding weak formulation is: find @f$u \in H^1(\Omega)@f$ with
-@f$u = u_D @f$ on @f$\partial\Omega @f$ such that
-@f{equation}
+The corresponding weak formulation is: find $u \in H^1(\Omega)$ with
+$u = u_D$ on $\partial\Omega$ such that
+@f{align*}{
   \int_{\Omega} \nabla u \cdot \nabla v \,\mathrm d\mathbf{x}
   =\int_{\Omega} f\, v \,\mathrm d\mathbf{x}
   \qquad \text{for all } v \in H_0^1(\Omega).
@@ -74,29 +74,27 @@ The corresponding weak formulation is: find @f$u \in H^1(\Omega)@f$ with
 
 We discretize the weak formulation by a symmetric interior penalty
 discontinuous Galerkin (SIPDG) method on the agglomerated polytopal mesh
-@f$T_h @f$, whose elements @f$K \in T_h @f$ are mutually disjoint
-open polygons (for @f$d=2 @f$) or polyhedra (for @f$d=3 @f$).
+$T_h$, whose elements $K \in T_h$ are mutually disjoint
+open polygons (for $d=2$) or polyhedra (for $d=3$).
 The mesh skeleton is defined by
-@f{align*}
+@f{align*}{
   \Gamma := \bigcup_{K \in T_h} \partial K.
 @f}
-The mesh skeleton @f$\Gamma @f$ is decomposed into @f$(d-1)@f$–dimensional simplices @f$F @f$ representing the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or @f$\partial \Omega @f$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only. We denote by @f$\Gamma_{\mathrm{int}}@f$ the union of all interior faces, and by
-@f$
+The mesh skeleton $\Gamma$ is decomposed into $(d-1)$–dimensional simplices $F$ representing the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or $\partial \Omega$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only. We denote by $\Gamma_{\mathrm{int}}$ the union of all interior faces, and by
+$
   \Gamma_{\mathrm D} := \Gamma \cap \partial\Omega
-@f$
+$
 the union of Dirichlet boundary faces.
 
-In practice, the polytopic mesh is obtained by agglomeration, so that each element @f$K \in T_h @f$ is the union of a collection of leaf cells. For each agglomerated element @f$K @f$, we associate an axis-aligned bounding box @f$B_K @f$. On @f$B_K @f$ we define the standard polynomial space @f$Q_p(B_K)@f$ spanned by tensor-product Lagrange polynomials of degree @f$p @f$ in each coordinate direction. Since @f$K \subset B_K @f$, the basis on @f$K @f$ is defined by restricting each basis function to @f$K @f$. In the implementation, this corresponds to using the deal.II finite element `FE_DGQ` on the bounding box and taking its restriction to the agglomerated element. The global discrete space @f$V_h @f$ is then obtained by assembling these local spaces in a discontinuous manner over all @f$K \in T_h @f$. 
-For @f$u_h, v_h \in V_h @f$ we use the broken gradient @f$\nabla_h @f$ and the standard jump and average operators @f$[\![\cdot]\!]@f$ and @f$\{\!\!\{\cdot\}\!\!\}@f$ on faces. 
+In practice, the polytopic mesh is obtained by agglomeration, so that each element $K \in T_h$ is the union of a collection of leaf cells. For each agglomerated element $K$, we associate an axis-aligned bounding box $B_K$. On $B_K$ we define the standard polynomial space $Q_p(B_K)$ spanned by tensor-product Lagrange polynomials of degree $p$ in each coordinate direction. Since $K \subset B_K$, the basis on $K$ is defined by restricting each basis function to $K$. In the implementation, this corresponds to using the deal.II finite element `FE_DGQ` on the bounding box and taking its restriction to the agglomerated element. The global discrete space $V_h$ is then obtained by assembling these local spaces in a discontinuous manner over all $K \in T_h$. For $u_h, v_h \in V_h$ we use the broken gradient $\nabla_h$ and the standard jump and average operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
 
-
-The DG formulation reads: find @f$u_h \in V_h @f$ such that
-@f{equation}
+The DG formulation reads: find $u_h \in V_h$ such that
+@f{align*}{
   B(u_h,v_h) = l(v_h)
   \qquad \forall\, v_h \in V_h,
 @f}
 with
-@f{align*}
+@f{align*}{
   B(u_h,v_h)
   &=
   \int_{\Omega} \nabla_h u_h \cdot \nabla_h v_h \,\mathrm d\mathbf{x}
@@ -113,7 +111,7 @@ with
   + \int_{\Gamma} \sigma \,[\![u_h]\!] \cdot [\![v_h]\!] \,\mathrm d s,
 @f}
 and
-@f{equation}
+@f{align*}{
   l(v_h)
   =
   \int_\Omega f\, v_h \,\mathrm d\mathbf{x}
@@ -123,7 +121,7 @@ and
 @f}
 
 The penalty parameter is chosen as
-@f{equation}
+@f{align*}{
   \sigma(\mathbf x) = C_\sigma
   \begin{cases}
     \dfrac{(p+1)(p+d)}{ h_{B_K} }, &
@@ -132,22 +130,22 @@ The penalty parameter is chosen as
       \text{if } \mathbf x \in \Gamma_{\mathrm{int}},
   \end{cases}
 @f}
-where @f$h_{B_K}^\pm@f$ denote the diameters of the bounding boxes associated with the two elements sharing the interior face. In this program, we set @f$C_\sigma = 10@f$.
+where $h_{B_K}^\pm$ denote the diameters of the bounding boxes associated with the two elements sharing the interior face. In this program, we set $C_\sigma = 10$.
 
 
 This scheme is well posed and admits optimal-order a priori error
-estimates. More precisely, assuming that @f$u|_K \in H^{s+1}(K) @f$ for all
-@f$K \in T_h @f$ and some @f$1 \le s \le p @f$, there exists a constant
-@f$C > 0 @f$, independent of @f$h @f$, such that
-@f[
+estimates. More precisely, assuming that $u|_K \in H^{s+1}(K)$ for all
+$K \in T_h$ and some $1 \le s \le p$, there exists a constant
+$C > 0$, independent of $h$, such that
+@f{align*}{
   \|u - u_h\|_{L^2(\Omega)}
   \le C\, h^{s+1} \, |u|_{H^{s+1}(\Omega)},
-@f]
+@f}
 and
-@f[
+@f{align*}{
   \|\nabla(u - u_h)\|_{L^2(\Omega)}
   \le C\, h^{s} \, |u|_{H^{s+1}(\Omega)}.
-@f]
+@f}
 We refer to [2] for details of the analysis.
 
 
@@ -264,17 +262,17 @@ see [4] for details.
 
 ## Test case:
 
-We consider the Poisson problem on the unit square @f$\Omega = (0,1)^2 @f$
+We consider the Poisson problem on the unit square $\Omega = (0,1)^2$
 with the manufactured exact solution
-@f[
+@f{align*}{
   u(x,y) = \sin(\pi x)\sin(\pi y).
-@f]
+@f}
 The corresponding right-hand side is
-@f[
+@f{align*}{
   f(x,y) = 2\pi^2 \sin(\pi x)\sin(\pi y).
-@f]
+@f}
 This manufactured solution allows us to compute the global
-@f$L^2 @f$- and @f$H^1 @f$-seminorm errors of the discrete solution in order to
+$L^2$- and $H^1$-seminorm errors of the discrete solution in order to
 assess the quality of the numerical approximation.
 
 
@@ -331,14 +329,14 @@ reported error data.
   <span style="display:inline-block; width:700px;"><em>(12) h-convergence for Q_p elements (p=1,2,3) with METIS and R-tree agglomeration</em></span>
 </div>
 
-The figure reports the @f$ L^2-@f$norm error with respect to the
+The figure reports the $L^2$-norm error with respect to the
 manufactured solution. Optimal convergence rates are observed for all
 polynomial degrees and for both agglomeration strategies. In addition, the
 curves associated with the R-tree approach are marginally lower than or
 comparable to those obtained with METIS-based partitioning.
 
 We next compare p-convergence for the two agglomeration strategies in both
-the @f$L^2@f$-norm and the @f$H^1@f$-seminorm.
+the $L^2$-norm and the $H^1$-seminorm.
 
 <div align="center">
   <img src="./doc/images/p_convergence.png" width="660">
@@ -346,18 +344,6 @@ the @f$L^2@f$-norm and the @f$H^1@f$-seminorm.
   <span style="display:inline-block; width:900px;"><em>(13) Convergence under p-refinement for METIS and R-tree agglomeration (p = 1,2,3,4,5)</em></span>
 </div>
 
-<!--
-Below, we provide a more detailed comparison of p-convergence, including both the 
-@f$Q_p @f$  
-  versus 
-@f$P_p @f$ 
-  element choice and the R-tree versus METIS agglomeration strategies.
-<div align="center">
-  <img src="./doc/images/p_convergence_compare.png" width="800">
-  <br>
-  <span style="display:inline-block; width:700px;"><em>(13) p-convergence results for different element types and agglomeration strategies</em></span>
-</div>
- 这是注释，不会显示在 README 页面上 -->
  
 In addition to accuracy, the cost of constructing the agglomerated polytopal
 meshes is also relevant in practice. The following timing plot compares the
