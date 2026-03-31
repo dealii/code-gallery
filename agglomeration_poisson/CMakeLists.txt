@@ -23,36 +23,3 @@ DEAL_II_INVOKE_AUTOPILOT()
 
 TARGET_INCLUDE_DIRECTORIES(${TARGET} PRIVATE include)
 TARGET_COMPILE_DEFINITIONS(${TARGET} PRIVATE MESH_DIR="${CMAKE_SOURCE_DIR}/mesh")
-
-
-
-# -------------------------------------------------------------------
-# Coverage target: "make coverage"
-# -------------------------------------------------------------------
-target_compile_options(${TARGET} PRIVATE
-    -O0
-    -g
-    --coverage
-    -fprofile-arcs
-    -fprofile-update=atomic
-    -ftest-coverage
-)
-target_link_options(${TARGET} PRIVATE "--coverage")
-
-find_program(LCOV_EXEC lcov)
-find_program(GENHTML_EXEC genhtml)
-
-if(LCOV_EXEC AND GENHTML_EXEC)
-    add_custom_target(coverage
-        COMMAND ${CMAKE_COMMAND} -E echo "Generating coverage report..."
-        COMMAND ${CMAKE_COMMAND} -E rm -rf coverage_report coverage.info
-        COMMAND ${LCOV_EXEC} --capture --directory . --output-file coverage.info
-        COMMAND ${LCOV_EXEC} --extract coverage.info "*${CMAKE_SOURCE_DIR}*" --output-file coverage.info
-        COMMAND ${GENHTML_EXEC} --function-coverage --output-directory coverage_report coverage.info
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Running LCOV + genhtml"
-        VERBATIM
-    )
-else()
-    message(WARNING "lcov/genhtml not found - coverage target will not be available.")
-endif()
