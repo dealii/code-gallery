@@ -1,0 +1,10 @@
+subsection ParallelFlowRouter
+  # The number of global refinements to perform on the initial mesh.
+  # Higher values result in finer meshes and more accurate results,
+  # but require more computational resources.
+  set Number of refinements = 7
+
+  # Whether to generate graphical output files in VTU format.
+  # Set to 'false' to skip output generation and save time and disk space.
+  set Generate graphical output = true
+end
