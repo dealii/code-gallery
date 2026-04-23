@@ -729,11 +729,6 @@ namespace ParallelFlowRouting
     void
     output_results();
 
-    static constexpr FEValuesExtractors::Scalar elevation =
-      FEValuesExtractors::Scalar(0);
-    static constexpr FEValuesExtractors::Scalar water_flow_rate =
-      FEValuesExtractors::Scalar(1);
-
     const MPI_Comm mpi_communicator;
 
     unsigned int n_refinements;
