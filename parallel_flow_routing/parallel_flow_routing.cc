@@ -729,11 +729,6 @@ namespace ParallelFlowRouting
     void
     output_results();
 
-    static constexpr FEValuesExtractors::Scalar elevation =
-      FEValuesExtractors::Scalar(0);
-    static constexpr FEValuesExtractors::Scalar water_flow_rate =
-      FEValuesExtractors::Scalar(1);
-
     const MPI_Comm mpi_communicator;
 
     unsigned int n_refinements;
@@ -1331,7 +1326,7 @@ namespace ParallelFlowRouting
     // sending water further afield. In other words, we need to have
     // information about all locally active ones and at least some of
     // the locally relevant ones. We can check that this is the case:
-    if constexpr (running_in_debug_mode())
+#ifdef DEBUG
       {
         Assert(water_dofs_to_steepest_downhill_neighbor.size() <=
                  locally_relevant_water_dofs.n_elements(),
@@ -1353,6 +1348,7 @@ namespace ParallelFlowRouting
                    water_dofs_to_steepest_downhill_neighbor.end(),
                  ExcInternalError());
       }
+#endif
 
     // Up to this point, it was useful to work with a std::map, but ultimately
     // we want a faster representation. So convert things into a std::vector
@@ -1366,7 +1362,7 @@ namespace ParallelFlowRouting
     // in the src->dst relationships by invalid 'dst' values. This
     // should only be the case for 'src' nodes that are on the
     // boundary, and we can check that:
-    if constexpr (running_in_debug_mode())
+#ifdef DEBUG
       {
         const IndexSet boundary_nodes =
           DoFTools::extract_boundary_dofs(dof_handler);
@@ -1376,6 +1372,7 @@ namespace ParallelFlowRouting
             Assert(boundary_nodes.is_element(src),
                    ExcMessage("Found an interior depression in the DEM."));
       }
+#endif
   }
 
 
