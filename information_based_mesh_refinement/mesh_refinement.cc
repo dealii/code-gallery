@@ -467,14 +467,12 @@ void InformationDensityMeshRefinement<dim>::assemble_system ()
   hanging_node_constraints.condense (system_rhs);
 
   std::map<unsigned int,double> boundary_values;
-  std::vector<bool> component_mask (3);
-  component_mask[0] = component_mask[1] = true;
-  component_mask[2] = false;
+  const std::vector<bool> component_mask = { true, true, false };
   VectorTools::interpolate_boundary_values (dof_handler,
                                             0,
                                             Functions::ZeroFunction<dim>(3),
                                             boundary_values,
-                                            component_mask);
+                                            ComponentMask(component_mask));
   MatrixTools::apply_boundary_values (boundary_values,
                                       system_matrix,
                                       solution,

@@ -423,9 +423,9 @@ namespace fluid
     const double viscosity;
     const double dt;
 
-    const SmartPointer<const PETScWrappers::MPI::BlockSparseMatrix>
+    const ObserverPointer<const PETScWrappers::MPI::BlockSparseMatrix>
       system_matrix;
-    const SmartPointer<const PETScWrappers::MPI::BlockSparseMatrix> mass_matrix;
+    const ObserverPointer<const PETScWrappers::MPI::BlockSparseMatrix> mass_matrix;
     // As discussed, ${[B(diag(M_u))^{-1}B^T]}$ and its inverse
     // need to be computed.
     // We can either explicitly compute it out as a matrix, or define
@@ -433,7 +433,7 @@ namespace fluid
     // The second approach saves some computation to construct the matrix,
     // but leads to slow convergence in CG solver because it is impossible
     // to apply a preconditioner. We go with the first route.
-    const SmartPointer<PETScWrappers::MPI::BlockSparseMatrix> mass_schur;
+    const ObserverPointer<PETScWrappers::MPI::BlockSparseMatrix> mass_schur;
   };
 
   // @sect4{BlockSchurPreconditioner::BlockSchurPreconditioner}

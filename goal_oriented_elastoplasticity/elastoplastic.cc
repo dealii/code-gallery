@@ -2522,7 +2522,7 @@ namespace ElastoPlastic
                                                   2,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes_dual,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
         // the boundary y = 0
         component_mask[0] = false;
         component_mask[1] = true;
@@ -2530,7 +2530,7 @@ namespace ElastoPlastic
                                                   3,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes_dual,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
       }
     else if (base_mesh == "Perforated_strip_tension")
       {
@@ -2542,7 +2542,7 @@ namespace ElastoPlastic
                                                   4,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes_dual,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
         // the boundary y = 0
         component_mask[0] = false;
         component_mask[1] = true;
@@ -2551,7 +2551,7 @@ namespace ElastoPlastic
                                                   1,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes_dual,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
         // the boundary y = imposed incremental displacement
         component_mask[0] = false;
         component_mask[1] = true;
@@ -2560,7 +2560,7 @@ namespace ElastoPlastic
                                                   3,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes_dual,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
       }
     else if (base_mesh == "Cantiliver_beam_3d")
       {
@@ -2572,7 +2572,7 @@ namespace ElastoPlastic
                                                   1,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes_dual,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
       }
     else
       {
@@ -4155,7 +4155,7 @@ namespace ElastoPlastic
                                                   2,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
         // the boundary y = 0
         component_mask[0] = false;
         component_mask[1] = true;
@@ -4163,7 +4163,7 @@ namespace ElastoPlastic
                                                   3,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
       }
     else if (base_mesh == "Perforated_strip_tension")
       {
@@ -4175,7 +4175,7 @@ namespace ElastoPlastic
                                                   4,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
         // the boundary y = 0
         component_mask[0] = false;
         component_mask[1] = true;
@@ -4184,7 +4184,7 @@ namespace ElastoPlastic
                                                   1,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
         // the boundary y = imposed incremental displacement
         component_mask[0] = false;
         component_mask[1] = true;
@@ -4193,7 +4193,7 @@ namespace ElastoPlastic
                                                   3,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
       }
     else if (base_mesh == "Cantiliver_beam_3d")
       {
@@ -4205,7 +4205,7 @@ namespace ElastoPlastic
                                                   1,
                                                   EquationData::IncrementalBoundaryValues<dim>(present_time, end_time),
                                                   constraints_dirichlet_and_hanging_nodes,
-                                                  component_mask);
+                                                  ComponentMask(component_mask));
       }
     else
       {
