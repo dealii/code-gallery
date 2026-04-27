@@ -44,13 +44,10 @@
 #include <algorithm>
 #include <chrono>
 
-// Auxiliary data structures and manufactured solution data.
 
-/**
- * We use this struct to store the number of degrees of freedom together
- * with the corresponding L2 and H1 errors, and print a simple
- * convergence table to the console.
- */
+// We use the struct ConvergenceInfo to store the number of degrees of freedom together
+// with the corresponding L2 and H1 errors, and print a simple
+// convergence table to the console.
 struct ConvergenceInfo
 {
   ConvergenceInfo() = default;
@@ -77,10 +74,9 @@ struct ConvergenceInfo
     vec_data;
 };
 
-/** We will compare the performance of three different partitioning strategies:
-* using METIS, using an R-tree based agglomeration, or not performing any
-* partitioning at all.
-*/
+// We will compare the performance of three different partitioning strategies:
+// using METIS, using an R-tree based agglomeration, or not performing any
+// partitioning at all.
 enum class PartitionerType
 {
   metis,
@@ -88,11 +84,10 @@ enum class PartitionerType
   no_partition
 };
 
-/** We then implement the manufactured right-hand side
-*   f(x, y) = 2 π² sin(π x) sin(π y),
-* which corresponds to the exact solution
-*   u(x, y) = sin(π x) sin(π y).
- */
+//We then implement the manufactured right-hand side
+//   f(x, y) = 2 π² sin(π x) sin(π y),
+// which corresponds to the exact solution
+//   u(x, y) = sin(π x) sin(π y).
 template <int dim>
 class RightHandSide : public Function<dim>
 {
@@ -113,14 +108,11 @@ public:
   }
 };
 
-/**
- * Exact solution
- * u(x,y) = sin(pi x) sin(pi y).
- *
- * It is used to impose Dirichlet boundary conditions and to evaluate
- * the L2 and H1-seminorm errors. Its gradient is also provided for
- * the computation of the H1 error.
- */
+
+// Exact solution is set as u(x,y) = sin(pi x) sin(pi y).
+// It is used to impose Dirichlet boundary conditions and to evaluate
+// the L2 and H1-seminorm errors. Its gradient is also provided for
+// the computation of the H1 error.
 template <int dim>
 class ExactSolution : public Function<dim>
 {
@@ -160,19 +152,15 @@ public:
   }
 };
 
-// Main class implementing the agglomerated SIPG discretization.
-
-/** The Poisson<dim> class encapsulates the solution of the model Poisson
-* problem
-* @f[ -\Delta u = f \quad \text{in } \Omega, \qquad u = u_D \quad \text{on } \partial\Omega. @f]
- *
-* It sets up a fine triangulation, constructs agglomerated polytopal
-* cells according to the chosen partitioning strategy, assembles the
-* symmetric interior penalty DG discretization on the agglomerated mesh,
-* solves the resulting linear system, and finally postprocesses the
-* numerical solution by writing visualization output and computing
-* global error norms.
-*/
+// The Poisson<dim> class encapsulates the solution of the model Poisson
+// problem
+// @f[ -\Delta u = f \quad \text{in } \Omega, \qquad u = u_D \quad \text{on } \partial\Omega. @f]
+// It sets up a fine triangulation, constructs agglomerated polytopal
+// cells according to the chosen partitioning strategy, assembles the
+// symmetric interior penalty DG discretization on the agglomerated mesh,
+// solves the resulting linear system, and finally postprocesses the
+// numerical solution by writing visualization output and computing
+// global error norms.
 template <int dim>
 class Poisson
 {
@@ -224,11 +212,10 @@ public:
   double semih1_err;
 };
 
-/**
- * The constructor initializes the Poisson<dim> solver with the selected partitioning
- * strategy, agglomeration parameters, polynomial degree, and the
- * manufactured exact solution and right-hand side.
- */
+
+// The constructor initializes the Poisson<dim> solver with the selected partitioning
+// strategy, agglomeration parameters, polynomial degree, and the
+// manufactured exact solution and right-hand side.
 template <int dim>
 Poisson<dim>::Poisson(const PartitionerType &partitioner_type,
                       const unsigned int     extraction_level,
@@ -248,11 +235,11 @@ Poisson<dim>::Poisson(const PartitionerType &partitioner_type,
 }
 
 
-/**
- * Build the fine triangulation from a Gmsh mesh, apply a global
- * refinement, initialize the cache and agglomeration handler, and
- * define agglomerates according to the selected partitioning strategy.
- */
+
+// Build the fine triangulation from a Gmsh mesh, apply a global
+// refinement, initialize the cache and agglomeration handler, and
+// define agglomerates according to the selected partitioning strategy.
+
 template <int dim>
 void
 Poisson<dim>::make_grid()
@@ -263,21 +250,18 @@ Poisson<dim>::make_grid()
                           "/unit_square_quad_unstructured.msh");
   grid_in.read_msh(gmsh_file);
 
-   // Write the input mesh (before any refinement), for documentation/figures.
   {
     GridOut        grid_out;
     std::ofstream  out("grid_input_mesh.vtu");
-    grid_out.write_vtu(tria, out);
+    grid_out.write_vtu(tria, out); // Write the input mesh (before any refinement), for documentation/figures.
   }
 
-  // Refine the mesh to obtain the fine grid used for agglomeration.
-  tria.refine_global(5);
+  tria.refine_global(5); // Refine the mesh to obtain the fine grid used for agglomeration.
 
-  // Write the refined (fine) mesh used as starting point for agglomeration.
   {
     GridOut        grid_out;
     std::ofstream  out("grid_fine_mesh_refined.vtu");
-    grid_out.write_vtu(tria, out);
+    grid_out.write_vtu(tria, out); // Write the refined (fine) mesh used as starting point for agglomeration.
    }
 
 
@@ -286,8 +270,7 @@ Poisson<dim>::make_grid()
   ah          = std::make_unique<AgglomerationHandler<dim>>(*cached_tria);
 
   if (partitioner_type == PartitionerType::metis)
-    {
-      // Partition the triangulation with a graph partitioner.
+    { // Partition the triangulation with a graph partitioner.
       auto start = std::chrono::system_clock::now();
       GridTools::partition_triangulation(n_subdomains,
                                          tria,
@@ -299,8 +282,7 @@ Poisson<dim>::make_grid()
       for (const auto &cell : tria.active_cell_iterators())
         cells_per_subdomain[cell->subdomain_id()].push_back(cell);
 
-     // Define one agglomerate for each subdomain
-      for (std::size_t i = 0; i < n_subdomains; ++i)
+      for (std::size_t i = 0; i < n_subdomains; ++i) // Define one agglomerate for each subdomain
         ah->define_agglomerate(cells_per_subdomain[i]);
 
       std::chrono::duration<double> wctduration =
@@ -309,8 +291,7 @@ Poisson<dim>::make_grid()
                 << " seconds [wall clock]" << std::endl;
     }
   else if (partitioner_type == PartitionerType::rtree)
-    {
-     // Build agglomerates from the R-tree hierarchy
+    { // Build agglomerates from the R-tree hierarchy
 
       namespace bgi = boost::geometry::index;
       static constexpr unsigned int max_elem_per_node =
@@ -329,8 +310,7 @@ Poisson<dim>::make_grid()
                                                           extraction_level};
       const auto vec_agglomerates = agglomerator.extract_agglomerates();
 
-      // Flag elements for agglomeration
-      for (const auto &agglo : vec_agglomerates)
+      for (const auto &agglo : vec_agglomerates) // Flag elements for agglomeration
         ah->define_agglomerate(agglo);
 
       std::chrono::duration<double> wctduration =
@@ -349,22 +329,18 @@ Poisson<dim>::make_grid()
   std::cout << "N subdomains = " << n_subdomains << std::endl;
 }
 
-/**
- * Finalize the agglomeration.
- *
- * In the no-partition case, each fine cell is declared as its own
- * agglomerate. The function then distributes the degrees of freedom
- * on the agglomerated mesh, builds the corresponding sparsity pattern,
- * and writes a VTU file visualizing the agglomeration and the
- * partitioning of the fine grid.
- */
+
+// To finalize the agglomeration. In the no-partition case, each fine cell is declared as its own
+// agglomerate. The function then distributes the degrees of freedom
+// on the agglomerated mesh, builds the corresponding sparsity pattern,
+// and writes a VTU file visualizing the agglomeration and the
+// partitioning of the fine grid.
 template <int dim>
 void
 Poisson<dim>::setup_agglomeration()
 {
   if (partitioner_type == PartitionerType::no_partition)
-    {
-      // No partitioning means that each cell is a master cell
+    { // No partitioning means that each cell is a master cell
       for (const auto &cell : tria.active_cell_iterators())
         ah->define_agglomerate({cell});
     }
@@ -393,16 +369,14 @@ Poisson<dim>::setup_agglomeration()
 
     const auto &rel = ah->get_relationships();
 
-   // Store the agglomeration relationships on the fine grid by distinguishing master/slave cells
-    Vector<float> agglo_relationships(tria.n_active_cells());
+    Vector<float> agglo_relationships(tria.n_active_cells()); // Store the agglomeration relationships on the fine grid by distinguishing master/slave cells
     for (const auto &cell : tria.active_cell_iterators())
     {
      const unsigned int i = cell->active_cell_index();
      agglo_relationships[i] = rel[i];
     }
 
-    // Generate agglo_idx for visualization
-    Vector<float> agglo_idx(tria.n_active_cells());
+    Vector<float> agglo_idx(tria.n_active_cells()); // Generate agglo_idx for visualization
 
     for (const auto &polytope : ah->polytope_iterators())
     {
@@ -426,15 +400,13 @@ Poisson<dim>::setup_agglomeration()
     
 }
 
-/**
- * Assemble the global SIPG matrix and right-hand side on the
- * agglomerated mesh.
- *
- * It initializes the system matrix and right-hand side, sets up FEValues
- * objects on polytopal cells and interfaces, and then adds the volume,
- * boundary, and interior face contributions of the symmetric interior
- * penalty formulation.
- */
+// Assemble the global SIPG matrix and right-hand side on the
+// agglomerated mesh.
+//
+// It initializes the system matrix and right-hand side, sets up FEValues
+// objects on polytopal cells and interfaces, and then adds the volume,
+// boundary, and interior face contributions of the symmetric interior
+// penalty formulation.
 template <int dim>
 void
 Poisson<dim>::assemble_system()
@@ -494,7 +466,7 @@ Poisson<dim>::assemble_system()
             }
         }
 
-     // Assemble boundary and interior face contributions.
+    
       const unsigned int n_faces = polytope->n_faces();
       AssertThrow(n_faces > 0,
                   ExcMessage(
@@ -504,8 +476,7 @@ Poisson<dim>::assemble_system()
       for (unsigned int f = 0; f < n_faces; ++f)
         {
           if (polytope->at_boundary(f))
-            {
-              // std::cout << "at boundary!" << std::endl;
+            { // std::cout << "at boundary!" << std::endl;
               const auto &fe_face = ah->reinit(polytope, f);
 
               const unsigned int dofs_per_cell = fe_face.dofs_per_cell;
@@ -516,9 +487,8 @@ Poisson<dim>::assemble_system()
               analytical_solution->value_list(face_q_points,
                                               analytical_solution_values,
                                               1);
-
-              // Get normal vectors seen from each agglomeration.
-              const auto &normals = fe_face.get_normal_vectors();
+              
+              const auto &normals = fe_face.get_normal_vectors(); // Get normal vectors seen from each agglomeration.
 
               const double penalty =
                 penalty_constant / std::fabs(polytope->diameter());
@@ -552,8 +522,7 @@ Poisson<dim>::assemble_system()
             {
               const auto &neigh_polytope = polytope->neighbor(f);
 
-              // This is necessary to loop over internal faces only once.
-              if (polytope->index() < neigh_polytope->index())
+              if (polytope->index() < neigh_polytope->index()) // This is necessary to loop over internal faces only once.
                 {
                   unsigned int nofn =
                     polytope->neighbor_of_agglomerated_neighbor(f);
@@ -575,11 +544,9 @@ Poisson<dim>::assemble_system()
 
                   const double penalty =
                     penalty_constant / std::min(polytope->diameter(), neigh_polytope->diameter());
-                  //const double penalty =
-                   // penalty_constant / std::fabs(polytope->diameter());
 
-                  // M11
-                  for (unsigned int q_index :
+                  
+                  for (unsigned int q_index : // M11
                        fe_faces0.quadrature_point_indices())
                     {
                       for (unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -608,8 +575,8 @@ Poisson<dim>::assemble_system()
                                    fe_faces1.shape_value(j, q_index)) *
                                 fe_faces1.JxW(q_index);
 
-                              // A10
-                              M21(i, j) +=
+                              
+                              M21(i, j) += // A10
                                 (-0.5 * fe_faces1.shape_grad(i, q_index) *
                                    normals[q_index] *
                                    fe_faces0.shape_value(j, q_index) +
@@ -620,8 +587,8 @@ Poisson<dim>::assemble_system()
                                    fe_faces0.shape_value(j, q_index)) *
                                 fe_faces1.JxW(q_index);
 
-                              // A11
-                              M22(i, j) +=
+                              
+                              M22(i, j) += // A11
                                 (0.5 * fe_faces1.shape_grad(i, q_index) *
                                    normals[q_index] *
                                    fe_faces1.shape_value(j, q_index) +
@@ -662,9 +629,7 @@ Poisson<dim>::assemble_system()
     } // Loop over cells
 }
 
-/**
- * Solve the linear system by means of a sparse direct solver.
- */
+// Solve the linear system by means of a sparse direct solver.
 template <int dim>
 void
 Poisson<dim>::solve()
@@ -674,10 +639,9 @@ Poisson<dim>::solve()
   A_direct.vmult(solution, system_rhs);
 }
 
-/**
- * Write VTU output and compute the global $L^2$ and $H^1$-seminorm
- * errors of the agglomerated DG approximation.
- */
+
+// Write VTU output and compute the global $L^2$ and $H^1$-seminorm
+// errors of the agglomerated DG approximation.
 template <int dim>
 void
 Poisson<dim>::output_results()
@@ -713,8 +677,7 @@ Poisson<dim>::output_results()
       {
         const types::global_cell_index polytope_index = polytope->index();
         const auto &patch_of_cells = polytope->get_agglomerate(); // Fine cells
-        // Mark all fine cells belonging to the current agglomerate.
-        for (const auto &cell : patch_of_cells)
+        for (const auto &cell : patch_of_cells) // Mark all fine cells belonging to the current agglomerate.
           agglo_idx[cell->active_cell_index()] = polytope_index;
       }
 
@@ -725,22 +688,20 @@ Poisson<dim>::output_results()
     data_out.build_patches(mapping);
     data_out.write_vtu(output);
 
-    // Compute the global L2 and H1-seminorm errors.
     std::vector<double> errors;
     PolyUtils::compute_global_error(*ah,
                                     solution,
                                     *analytical_solution,
                                     {VectorTools::L2_norm,
                                      VectorTools::H1_seminorm},
-                                    errors);
+                                    errors); // Compute the global L2 and H1-seminorm errors.
     l2_err     = errors[0];
     semih1_err = errors[1];
   }
 }
 
-/**
- * Return the number of degrees of freedom on the agglomerated mesh.
- */
+
+// Return the number of degrees of freedom on the agglomerated mesh.
 template <int dim>
 inline types::global_dof_index
 Poisson<dim>::get_n_dofs() const
@@ -748,10 +709,8 @@ Poisson<dim>::get_n_dofs() const
   return ah->n_dofs();
 }
 
-/**
- * Return the pair consisting of the $L^2$ error and the $H^1$-seminorm
- * error of the numerical solution.
- */
+
+// Return the pair consisting of the $L^2$ error and the $H^1$-seminorm error of the numerical solution.
 template <int dim>
 inline std::pair<double, double>
 Poisson<dim>::get_error() const
@@ -759,10 +718,9 @@ Poisson<dim>::get_error() const
   return std::make_pair(l2_err, semih1_err);
 }
 
-/**
- * Run the full workflow: mesh generation, agglomeration setup,
- * assembly, solution, and postprocessing.
- */
+
+// Run the full workflow: mesh generation, agglomeration setup,
+// assembly, solution, and postprocessing.
 template <int dim>
 void
 Poisson<dim>::run()
