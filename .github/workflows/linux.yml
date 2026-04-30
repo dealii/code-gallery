@@ -58,16 +58,23 @@ jobs:
 
       - name: Compile all projects
         run: |
+          log="\nSummary:"
           for dir in */; do
             cd ${dir}
-            if [ -e CMakeLists.txt ]; then
-              echo "Current project: ${dir}"
-              (cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} . && make) || err="${err} ${dir}"
+            log="${log}\n  $(printf '%-70s' "${dir}")"
+            if cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} . ; then
+              if make ; then
+                log="${log} passed."
+              else
+                log="${log} FAILED."
+                err="${err} ${dir}"
+              fi
             else
-              echo "Skipping project: ${dir}"
+              log="${log} skipped."
             fi
             cd ..
           done
+          echo -e "${log}"
           if [ -n "${err}" ]; then
             echo "error_compile=${err}" >> $GITHUB_ENV
             exit 1
