@@ -82,7 +82,7 @@ The mesh skeleton is defined by
 @f}
 The mesh skeleton $\Gamma$ is decomposed into $(d-1)$–dimensional simplices $F$ representing the mesh faces, shared by at most two elements. These are distinct from elemental interfaces, which are defined as the simply connected components of the intersection between the boundary of an element and either a neighboring element or $\partial \Omega$. As such, an interface between two elements may consist of more than one face, separated by hanging nodes/edges shared by those two elements only. We denote by $\Gamma_{\mathrm{int}}$ the union of all interior faces, and by $\Gamma_{\mathrm D} := \Gamma \cap \partial\Omega$ the union of Dirichlet boundary faces.
 
-In practice, the polytopic mesh is obtained by agglomeration, so that each element $K \in T_h$ is the union of a collection of leaf cells. For each agglomerated element $K$, we associate an axis-aligned bounding box $B_K$. On $B_K$ we define the standard polynomial space $Q_p(B_K)$ spanned by tensor-product Lagrange polynomials of degree $p$ in each coordinate direction. Since $K \subset B_K$, the basis on $K$ is defined by restricting each basis function to $K$. In the implementation, this corresponds to using the deal.II finite element `FE_DGQ` on the bounding box and taking its restriction to the agglomerated element. The global discrete space $V_h$ is then obtained by assembling these local spaces in a discontinuous manner over all $K \in T_h$. For $u_h, v_h \in V_h$ we use the broken gradient $\nabla_h$ and the standard jump and average operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces. 
+In practice, the polytopic mesh is obtained by agglomeration, so that each element $K \in T_h$ is the union of a collection of leaf cells. For each agglomerated element $K$, we associate an axis-aligned bounding box $B_K$. On $B_K$ we define the standard polynomial space $Q_p(B_K)$ spanned by tensor-product Lagrange polynomials of degree $p$ in each coordinate direction. Since $K \subset B_K$, the basis on $K$ is defined by restricting each basis function to $K$. In the implementation, this corresponds to using the deal.II finite element `FE_DGQ` on the bounding box and taking its restriction to the agglomerated element. The global discrete space $V_h$ is then obtained by assembling these local spaces in a discontinuous manner over all $K \in T_h$. For $u_h, v_h \in V_h$ we use the broken gradient $\nabla_h$ and the standard jump and average operators $[\![\cdot]\!]$ and $\{\!\!\{\cdot\}\!\!\}$ on faces.
 
 The DG formulation reads: find $u_h \in V_h$ such that
 @f{align*}{
@@ -190,14 +190,7 @@ with their enclosing MBRs, while the right image shows the associated tree
 structure (leaf and internal nodes). This visual example helps explain how the
 hierarchical grouping is later used to extract agglomerates.
 
-<div align="center">
-  <img src="./doc/images/rtree_example.png" width="250">
-  <img src="./doc/images/Tree_A_F.png" width="280">
-  <br>
-  <span style="display:inline-block; width:250px;"><em>(1) Examples of MBRs holding geometric data and their MBRs</em></span>
-  <span style="display:inline-block; width:200px;"><em>(2) Corresponding R-tree data structure elements</em></span>
-  <br>
-</div>
+![](./doc/images/MBR_R_tree.png)
 
 #### Agglomeration extraction
 
@@ -215,7 +208,7 @@ Given a collection of fine-level cells, or of cut-cell bounding boxes, the agglo
   Construct an R-tree from the set of bounding boxes associated with the fine-level cells.
 
 - **Step 2: Select a target level**  
-  Choose a tree level $l \in {1,\dots,L}$ to control the agglomeration granularity.
+  Choose a tree level $l$ with $1\le l \le L$ to control the agglomeration granularity.
 
 - **Step 3: Collect leaf descendants**  
   For each node on level $l$, recursively traverse its children until leaf nodes are reached.
@@ -235,18 +228,7 @@ In the present setting, this makes the R-tree approach particularly convenient f
 
 For illustration, the following images show R-tree-based agglomeration on a structured fine mesh:
 
-<div align="center">
-  <img src="./doc/images/grid_raw.png" width="250">
-  <img src="./doc/images/grid_raw_rtree.png" width="280">
-  <br>
-  <span style="display:inline-block; width:250px;"><em>(3) Original 8x8 mesh</em></span>
-  <span style="display:inline-block; width:300px;"><em>(4) Bounding boxes and mesh elements</em></span>
-  <br>
-  <img src="./doc/images/tree_structure.png" width="550">
-  <br>
-  <em>(5) Tree hierarchy: root node, internal nodes, and leaf nodes from top to bottom (only two child subtrees of the root are shown for clarity)</em>
-  <br>
-</div>
+![](./doc/images/hierarchy.png)
 
 Figures (3)-(5) show, respectively, the original fine mesh, the blocks induced by the R-tree on the cell bounding boxes, and the corresponding tree structure.
 ### METIS-based partitioning
@@ -273,13 +255,9 @@ assess the quality of the numerical approximation.
 
 
 In this example, we start from an unstructured initial mesh and then perform five global refinement steps. The resulting meshes are shown below.
-<div align="center">
-  <img src="./doc/images/input_mesh.png" width="280">
-  <img src="./doc/images/mesh_refined_5times.png" width="280">
-  <br>
-  <span style="display:inline-block; width:280px;"><em>(6) Input mesh</em></span>
-  <span style="display:inline-block; width:300px;"><em>(7) Fine level mesh obtained by five global refinements of the input mesh </em></span>
-</div>
+
+![](./doc/images/input_refine_mesh.png)
+
 Agglomerates are then constructed from the fine level mesh by METIS and by the
 R-tree strategy, leading to different polytopal meshes. The following images
 compare the resulting agglomerates corresponding to two
@@ -287,27 +265,7 @@ different agglomeration levels (91 and 364 agglomerates).
 
 <h4>Comparison of agglomeration strategies</h4>
 
-<div align="center" style="white-space:nowrap;">
-  <img src="./doc/images/polygonmetis_91.png"
-       style="width:240px; display:inline-block; vertical-align:top; margin-right:18px;">
-  <img src="./doc/images/polygonmetis_364.png"
-       style="width:240px; display:inline-block; vertical-align:top;">
-  <br>
-  <span style="display:inline-block; width:200px;"><em>(8) METIS, 91 agglomerates</em></span>
-  <span style="display:inline-block; width:300px;"><em>(9) METIS, 364 agglomerates</em></span>
-  <br>
-</div>
-
-<div align="center" style="white-space:nowrap;">
-  <img src="./doc/images/polygonrtree_91.png"
-       style="width:240px; display:inline-block; vertical-align:top; margin-right:18px;">
-  <img src="./doc/images/polygonrtree_364.png"
-       style="width:240px; display:inline-block; vertical-align:top;">
-  <br>
-  <span style="display:inline-block; width:200px;"><em>(10) R-tree, 91 agglomerates </em></span>
-  <span style="display:inline-block; width:300px;"><em>(11) R-tree, 364 agglomerates</em></span>
-  <br>
-</div>
+![](./doc/images/agglomerates_comparison.png)
 
 These plots illustrate how the two strategies distribute and shape the
 agglomerates starting from the same fine level mesh. In particular, the R-tree approach produces
@@ -319,11 +277,9 @@ mesh refinement or increasing the polynomial degree. The plots below are obtaine
 collecting the program outputs over multiple runs and post-processing the
 reported error data.
 
-<div align="center">
-  <img src="./doc/images/test_result.png" width="660">
-  <br>
-  <span style="display:inline-block; width:700px;"><em>(12) h-convergence for Q_p elements (p=1,2,3) with METIS and R-tree agglomeration</em></span>
-</div>
+![](./doc/images/test_result.png)
+*(12) h-convergence for Q_p elements (p=1,2,3) with METIS and R-tree agglomeration*
+
 
 The figure reports the $L^2$-norm error with respect to the
 manufactured solution. Optimal convergence rates are observed for all
@@ -334,11 +290,8 @@ comparable to those obtained with METIS-based partitioning.
 We next compare p-convergence for the two agglomeration strategies in both
 the $L^2$-norm and the $H^1$-seminorm.
 
-<div align="center">
-  <img src="./doc/images/p_convergence.png" width="660">
-  <br>
-  <span style="display:inline-block; width:900px;"><em>(13) Convergence under p-refinement for METIS and R-tree agglomeration (p = 1,2,3,4,5)</em></span>
-</div>
+![](./doc/images/p_convergence.png)
+*(13) Convergence under p-refinement for METIS and R-tree agglomeration (p = 1,2,3,4,5)*
 
  
 In addition to accuracy, the cost of constructing the agglomerated polytopal
@@ -346,26 +299,20 @@ meshes is also relevant in practice. The following timing plot compares the
 wall-clock time required by the R-tree and METIS strategies. The timing values
 are collected from the program outputs and summarized in post-processing.
 
-<div align="center">
-  <img src="./doc/images/time_compare.png" width="700">
-  <br>
-  <span style="display:inline-block; width:700px;"><em>(14) Wall-clock time (seconds) for building polytopal grids with R-tree and METIS</em></span>
-</div>
+![](./doc/images/time_compare.png)
+*(14) Wall-clock time (seconds) for building polytopal grids with R-tree and METIS*
+
 
 Finally, the program also outputs VTU files for visualization in ParaView. Figures (15) and (16) show the solution computed on 91 agglomerates and then interpolated back onto the fine mesh, for the R-tree and METIS strategies, respectively, visualized in ParaView using Warp By Scalar together with the Surface representation.
 
-<div align="center">
-  <img src="./doc/images/final_solution_rtree.png" width="320">
-  <img src="./doc/images/final_solution_metis.png" width="320">
-  <br>
-  <span style="display:inline-block; width:350px;"><em>(15) Numerical solution using the R-tree strategy</em></span>
-  <span style="display:inline-block; width:350px;"><em>(16) Numerical solution using the METIS strategy</em></span>
-</div>
-
+![](./doc/images/numerical_solution_comparison.png)
 
 
 ## References
 * [1] Marco Feder, Andrea Cangiani and Luca Heltai (2025), R3MG: R-tree based agglomeration of polytopal grids with applications to multilevel methods. DOI: [10.1016/j.jcp.2025.113773](https://doi.org/10.1016/j.jcp.2025.113773)
+
 * [2] Daniele Antonio  Di Pietro and Alexandre Ern (2012), Mathematical Aspects of Discontinuous Galerkin Methods. DOI: [10.1007/978-3-642-22980-0](https://doi.org/10.1007/978-3-642-22980-0)
+
 * [3] Norbert Beckmann, Hans-Peter Kriegel, Ralf Schneider and Bernhard Seeger (1990), The R*-tree: an efficient and robust access method for points and rectangles. DOI: [10.1145/93597.98741](https://doi.org/10.1145/93597.98741)
+
 * [4] George Karypis and Vipin Kumar (1998), A fast and high quality multilevel scheme for partitioning irregular graphs. DOI: [10.1137/S1064827595287997](https://doi.org/10.1137/S1064827595287997)
