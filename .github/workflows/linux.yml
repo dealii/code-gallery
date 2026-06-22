@@ -54,7 +54,7 @@ jobs:
           make
           echo "BRAID_DIR=${PWD}" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Compile all projects
         run: |
