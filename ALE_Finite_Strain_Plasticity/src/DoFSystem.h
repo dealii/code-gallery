@@ -50,10 +50,9 @@ namespace PlasticityLab {
   void DoFSystem<dim, Number>::setup_dof_system (const FiniteElement<dim> &fe) {
     dof_handler.distribute_dofs(fe);
     locally_owned_dofs = dof_handler.locally_owned_dofs();
-    locally_relevant_dofs.clear();
-    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_relevant_dofs);
+    locally_relevant_dofs = DoFTools::extract_locally_relevant_dofs(dof_handler);
 
-    nodal_constraints.reinit(locally_relevant_dofs);
+    nodal_constraints.reinit(locally_owned_dofs, locally_relevant_dofs);
     DoFTools::make_hanging_node_constraints (dof_handler, nodal_constraints);
   }
 

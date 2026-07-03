@@ -30,9 +30,9 @@ namespace PlasticityLab {
 
   private:
     const unsigned int boundary_id;
-    const Number quadratic_spring_factor;
     const Number reference_displacement_increment;
     const Number residual_force;
+    const Number quadratic_spring_factor;
   };
 
 } /* namespace PlasticityLab */

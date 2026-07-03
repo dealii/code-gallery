@@ -181,7 +181,7 @@ namespace PlasticityLab {
   inline void
   ThermoPlasticMaterial<dim, ViscoplasticYieldLaw, Number>::
   compute_pressure(ConstitutiveModelRequest<dim, Number> &constitutive_request,
-                   const point_index_t &point_index) {
+                   const point_index_t &) {
     const Number J = constitutive_request.get_deformation_Jacobian();
     const Number temperature = constitutive_request.get_temperature();
     if (J > 0) {
@@ -246,7 +246,7 @@ namespace PlasticityLab {
         determine_delta_gamma(delta_gamma, alpha_n_plus_1, norm_ksi_trial,
                               mu_bar, hardening_parameters.equivalent_plastic_strain, temperature,
                               time_increment, 1e-04, 300);
-      } catch(MaterialDomainException exc) {
+      } catch(const MaterialDomainException &exc) {
         std::cout << "isochoric_deformation_gradient: " << isochoric_deformation_gradient
                   << "\nb_e: " << b_e
                   << "\nb_e_bar_next: " << b_e_bar_next
@@ -273,7 +273,7 @@ namespace PlasticityLab {
                                delta_gamma,
                                time_increment,
                                temperature);
-      const Number d_y_alpha_d_alpha = viscoplastic_yield_law.hardening_alpha_derivatives(
+      [[maybe_unused]] const Number d_y_alpha_d_alpha = viscoplastic_yield_law.hardening_alpha_derivatives(
                                          DH_alpha_n_plus_1,
                                          DK_alpha_n_plus_1,
                                          alpha_n_plus_1,
@@ -324,7 +324,7 @@ namespace PlasticityLab {
             det_plastic_strain = determinant(b_e_bar);
           }
 
-          const Tensor<2, dim, Number> inverse_isochoric_deformation_gradient = invert(isochoric_deformation_gradient);
+          [[maybe_unused]] const Tensor<2, dim, Number> inverse_isochoric_deformation_gradient = invert(isochoric_deformation_gradient);
           material_point_history[point_index].plastic_strain = b_e_bar;
         }
       } /*if(update_stress_deviator & update_flags)*/
@@ -382,7 +382,7 @@ namespace PlasticityLab {
   void ThermoPlasticMaterial<dim, ViscoplasticYieldLaw, Number>::
   compute_heat_flux(
         ConstitutiveModelRequest<dim, Number> &constitutive_request,
-        const point_index_t &point_index) {
+        const point_index_t &) {
     const Tensor<1, dim, Number> thermal_gradient = constitutive_request.get_thermal_gradient();
     constitutive_request.set_heat_flux(thermal_conductivity * thermal_gradient);
     constitutive_request.set_heat_flux_tangent_moduli(thermal_conductivity * unit_symmetric_tensor<dim, Number>());
@@ -396,9 +396,9 @@ namespace PlasticityLab {
     const auto point_history = material_point_history.at(point_index);
     const Number J = constitutive_request.get_deformation_Jacobian();
     const Number previous_J = constitutive_request.get_previous_deformation_Jacobian();
-    const Number J_time_rate = constitutive_request.get_deformation_Jacobian_time_rate();
+    [[maybe_unused]] const Number J_time_rate = constitutive_request.get_deformation_Jacobian_time_rate();
     const Number theta = constitutive_request.get_temperature();
-    const Number previous_theta = constitutive_request.get_previous_temperature();
+    [[maybe_unused]] const Number previous_theta = constitutive_request.get_previous_temperature();
     const Number time_increment = constitutive_request.get_time_increment();
     if (J != 0 and previous_J != 0) {
       const Number eta = (3.0/1000.0) * kappa * thermal_expansion_coefficient * (J - 1.0/J);
@@ -416,7 +416,7 @@ namespace PlasticityLab {
   void ThermoPlasticMaterial<dim, ViscoplasticYieldLaw, Number>::
   compute_stored_heat_rate(
         ConstitutiveModelRequest<dim, Number> &constitutive_request,
-        const point_index_t &point_index) {
+        const point_index_t &) {
     const Number stored_heat_rate = heat_capacity * constitutive_request.get_temperature_time_rate();
     constitutive_request.set_stored_heat_rate(stored_heat_rate);
     constitutive_request.set_stored_heat_rate_tangent_modulus(heat_capacity);

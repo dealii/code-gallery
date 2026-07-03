@@ -6,10 +6,10 @@
 
 namespace PlasticityLab {
 
-  static MPI_Comm mpi_communicator(MPI_COMM_WORLD);
+  [[maybe_unused]] static MPI_Comm mpi_communicator(MPI_COMM_WORLD);
 
   struct NotImplementedException : std::exception {
-    const char *what() const _GLIBCXX_USE_NOEXCEPT {
+    const char *what() const _GLIBCXX_USE_NOEXCEPT override {
       return "Not Implemented.!\n";
     }
   };

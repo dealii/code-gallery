@@ -21,7 +21,7 @@ namespace PlasticityLab {
    public:
     ScaleZFunction(const Number scale_factor, const unsigned int component=2);
     virtual ~ScaleZFunction();
-    virtual void vector_value(const Point<dim> &p, Vector<Number> &values) const;
+    virtual void vector_value(const Point<dim> &p, Vector<Number> &values) const override;
 
    private:
     Number scale_factor;

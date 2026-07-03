@@ -49,17 +49,17 @@ namespace PlasticityLab {
 
   template <int dim, typename Number>
   std::vector<Number> ExponentialHardeningElastoplasticMaterial<dim, Number>::get_state_parameters(
-      const point_index_t &point_index,
-      const Tensor<2, dim, Number> &reference_transformation) const {
+      const point_index_t &,
+      const Tensor<2, dim, Number> &) const {
     throw NotImplementedException();
   }
 
   template <int dim, typename Number>
   void ExponentialHardeningElastoplasticMaterial<dim, Number>::
   set_state_parameters(
-        const point_index_t &point_index,
-        const std::vector<Number> &state_parameters,
-        const Tensor<2, dim, Number> &reference_transformation) {
+        const point_index_t &,
+        const std::vector<Number> &,
+        const Tensor<2, dim, Number> &) {
     throw NotImplementedException();
   }
 
@@ -71,12 +71,12 @@ namespace PlasticityLab {
 
 
   template <int dim, typename Number>
-  Number ExponentialHardeningElastoplasticMaterial<dim, Number>::get_material_Jacobian(const point_index_t &point_index) const {
+  Number ExponentialHardeningElastoplasticMaterial<dim, Number>::get_material_Jacobian(const point_index_t &) const {
     throw NotImplementedException();
   }
 
   template <int dim, typename Number>
-  dealii::SymmetricTensor<2, dim, Number> ExponentialHardeningElastoplasticMaterial<dim, Number>::get_plastic_strain(const point_index_t &point_index) const {
+  dealii::SymmetricTensor<2, dim, Number> ExponentialHardeningElastoplasticMaterial<dim, Number>::get_plastic_strain(const point_index_t &) const {
     throw NotImplementedException();
   }
 
