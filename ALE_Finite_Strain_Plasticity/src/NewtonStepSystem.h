@@ -41,20 +41,31 @@ namespace PlasticityLab {
         dof_system.locally_owned_dofs,
         mpi_communicator);
       current_increment.reinit(
+        dof_system.locally_owned_dofs,
         dof_system.locally_relevant_dofs,
         mpi_communicator);
       Newton_step_residual.reinit(
         dof_system.locally_owned_dofs,
         mpi_communicator);
       previous_deformation.reinit(
+        dof_system.locally_owned_dofs,
         dof_system.locally_relevant_dofs,
         mpi_communicator);
 
       previous_time_derivative.reinit(
+        dof_system.locally_owned_dofs,
         dof_system.locally_relevant_dofs,
         mpi_communicator);
       previous_second_time_derivative.reinit(
+        dof_system.locally_owned_dofs,
         dof_system.locally_relevant_dofs,
+        mpi_communicator);
+
+      _locally_owned_current_increment.reinit(
+        dof_system.locally_owned_dofs,
+        mpi_communicator);
+      _locally_owned_previous_deformation.reinit(
+        dof_system.locally_owned_dofs,
         mpi_communicator);
 
       _locally_owned_previous_time_derivative.reinit(
@@ -110,7 +121,19 @@ namespace PlasticityLab {
         previous_second_time_derivative = _locally_owned_previous_second_time_derivative;
 
       }
-      previous_deformation += current_increment;
+      
+      // Update the deformation vector with the computed
+      // increment. Because 'previous_deformation' is a vector with
+      // ghost entries, it is a read-only vector and we cannot write
+      // into it -- so we have to create a temporary vector first and
+      // only copy it at the end:
+      {
+        _locally_owned_previous_deformation = previous_deformation;
+        _locally_owned_current_increment    = current_increment;
+        _locally_owned_previous_deformation += _locally_owned_current_increment;
+        previous_deformation = _locally_owned_previous_deformation;
+      }
+
       if(reset_increment) {
         current_increment = 0;
       }
@@ -125,9 +148,10 @@ namespace PlasticityLab {
     TrilinosWrappers::MPI::Vector   previous_time_derivative;
     TrilinosWrappers::MPI::Vector   previous_second_time_derivative;
 
+    TrilinosWrappers::MPI::Vector   _locally_owned_previous_deformation;
+    TrilinosWrappers::MPI::Vector   _locally_owned_current_increment;
     TrilinosWrappers::MPI::Vector   _locally_owned_previous_time_derivative;
     TrilinosWrappers::MPI::Vector   _locally_owned_previous_second_time_derivative;
-
   };
 
 } /* namespace PlasticityLab */

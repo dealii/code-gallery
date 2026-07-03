@@ -50,7 +50,19 @@ namespace PlasticityLab {
     therm_lbc_system.apply_constraints(therm_dof_system);
     therm_nonlinear_system.setup(therm_dof_system);
 
-    therm_nonlinear_system.previous_deformation = ambient_temperature;
+    // Initialize the temperature solution vector. Because we are
+    // initializing with a possibly non-zero value, we can't just
+    // assign that value to the vector in a parallel setting because
+    // the solution vector has ghost entries and so is
+    // read-only. Rather, we create a completely distributed vector,
+    // assign the value to it, and then copy that into the solution
+    // vector.
+    {
+      TrilinosWrappers::MPI::Vector tmp (therm_dof_system.locally_owned_dofs,
+                                         mpi_communicator);
+      tmp = ambient_temperature;
+      therm_nonlinear_system.previous_deformation = tmp;
+    }
 
     mixed_fe_dof_system.setup_dof_system(mixed_var_fe);
 
