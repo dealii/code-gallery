@@ -14,7 +14,7 @@
 #include <deal.II/lac/trilinos_precondition.h>
 #include <deal.II/lac/trilinos_solver.h>
 
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include "TimeRateUpdateFlags.h"
 #include "TimeRateRequest.h"
@@ -1000,8 +1000,9 @@ namespace PlasticityLab {
       // solve the thermal projection system
       TrilinosWrappers::PreconditionAMG preconditioner;
 
-      std::vector<std::vector<bool> > constant_modes;
-      DoFTools::extract_constant_modes(thermal_dof_system.dof_handler, ComponentMask(), constant_modes);
+      const std::vector<std::vector<bool> > constant_modes
+        = DoFTools::extract_constant_modes(thermal_dof_system.dof_handler,
+                                           ComponentMask());
 
       TrilinosWrappers::PreconditionAMG::AdditionalData additional_data;
       additional_data.constant_modes = constant_modes;
@@ -1487,8 +1488,9 @@ namespace PlasticityLab {
     // solve the projection system
     TrilinosWrappers::PreconditionAMG preconditioner;
 
-    std::vector<std::vector<bool> > constant_modes;
-    DoFTools::extract_constant_modes(mechanical_dof_system.dof_handler, ComponentMask(), constant_modes);
+    const std::vector<std::vector<bool> > constant_modes
+      = DoFTools::extract_constant_modes(mechanical_dof_system.dof_handler,
+                                         ComponentMask());
 
     TrilinosWrappers::PreconditionAMG::AdditionalData additional_data;
     additional_data.constant_modes = constant_modes;
@@ -3273,9 +3275,9 @@ namespace PlasticityLab {
     const bool reset_solution) {
     TrilinosWrappers::PreconditionAMG preconditioner;
 
-    std::vector<std::vector<bool> > constant_modes;
-    DoFTools::extract_constant_modes(dof_system.dof_handler, ComponentMask(),
-                                     constant_modes);
+    const std::vector<std::vector<bool> > constant_modes
+      = DoFTools::extract_constant_modes(dof_system.dof_handler,
+                                         ComponentMask());
 
     TrilinosWrappers::PreconditionAMG::AdditionalData additional_data;
     additional_data.constant_modes = constant_modes;
