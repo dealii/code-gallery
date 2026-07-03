@@ -577,7 +577,7 @@ namespace PlasticityLab {
 
       for (int i = 0; i < nprocesses; ++i) {
         MPI_Isend(
-          &local_state_parameter_groups.at(i)[0],
+          local_state_parameter_groups.at(i).data(),
           material_parameter_count * mapping_remote_reference_point_counts.at(i),
           MPI_DOUBLE, i, MATERIAL_STATE_PARAMETER,
           mpi_communicator,
@@ -586,7 +586,7 @@ namespace PlasticityLab {
 
       for (int i = 0; i < nprocesses; ++i) {
         MPI_Isend(
-          &local_deformation_gradient_groups.at(i)[0],
+          local_deformation_gradient_groups.at(i).data(),
           (dim+1) * (dim+1) * mapping_remote_reference_point_counts.at(i),
           MPI_DOUBLE, i, REMAPPED_DEFORMATION_GRADIENT,
           mpi_communicator,
@@ -597,14 +597,14 @@ namespace PlasticityLab {
         const unsigned int row_start = i + nprocesses * request_array_size;
 
         MPI_Irecv(
-          &remote_state_parameter_groups.at(i)[0],
+          remote_state_parameter_groups.at(i).data(),
           material_parameter_count * mapping_remote_remapped_point_counts.at(i),
           MPI_DOUBLE, i, MATERIAL_STATE_PARAMETER,
           mpi_communicator,
           &requests_vector[row_start + nprocesses * material_state_parameter_requests_offset]);
 
         MPI_Irecv(
-          &remote_deformation_gradient_groups.at(i)[0],
+          remote_deformation_gradient_groups.at(i).data(),
           (dim+1) * (dim+1) * mapping_remote_remapped_point_counts.at(i),
           MPI_DOUBLE, i, REMAPPED_DEFORMATION_GRADIENT,
           mpi_communicator,
@@ -909,7 +909,7 @@ namespace PlasticityLab {
 
       for (int i = 0; i < nprocesses; ++i) {
         MPI_Isend(
-          &local_previous_temperature_groups.at(i)[0],
+          local_previous_temperature_groups.at(i).data(),
           thermal_remote_reference_point_counts.at(i),
           MPI_DOUBLE, i, PREVIOUS_TEMPERATURE,
           mpi_communicator,
@@ -920,7 +920,7 @@ namespace PlasticityLab {
         const unsigned int row_start = i + nprocesses * request_array_size;
 
         MPI_Irecv(
-          &remote_previous_temperature_groups.at(i)[0],
+          remote_previous_temperature_groups.at(i).data(),
           thermal_remote_remapped_point_counts.at(i),
           MPI_DOUBLE, i, PREVIOUS_TEMPERATURE,
           mpi_communicator,
@@ -1330,21 +1330,21 @@ namespace PlasticityLab {
 
     for (int i = 0; i < nprocesses; ++i) {
       MPI_Isend(
-        &local_previous_deformation_groups.at(i)[0],
+        local_previous_deformation_groups.at(i).data(),
         (dim+1) * remote_reference_point_counts.at(i),
         MPI_DOUBLE, i, PREVIOUS_DEFORMATION,
         mpi_communicator,
         &requests_vector[i + nprocesses * previous_deformation_requests_offset]);
 
       MPI_Isend(
-        &local_previous_velocity_groups.at(i)[0],
+        local_previous_velocity_groups.at(i).data(),
         (dim+1) * remote_reference_point_counts.at(i),
         MPI_DOUBLE, i, PREVIOUS_VELOCITY,
         mpi_communicator,
         &requests_vector[i + nprocesses * previous_velocity_requests_offset]);
 
       MPI_Isend(
-        &local_previous_second_time_rate_groups.at(i)[0],
+        local_previous_second_time_rate_groups.at(i).data(),
         (dim+1) * remote_reference_point_counts.at(i),
         MPI_DOUBLE, i, PREVIOUS_SECOND_TIME_RATE,
         mpi_communicator,
@@ -1355,21 +1355,21 @@ namespace PlasticityLab {
       const unsigned int row_start = i + nprocesses * request_array_size;
 
       MPI_Irecv(
-        &remote_previous_deformation_groups.at(i)[0],
+        remote_previous_deformation_groups.at(i).data(),
         (dim+1) * remote_remapped_point_counts.at(i),
         MPI_DOUBLE, i, PREVIOUS_DEFORMATION,
         mpi_communicator,
         &requests_vector[row_start + nprocesses * previous_deformation_requests_offset]);
 
       MPI_Irecv(
-        &remote_previous_velocity_groups.at(i)[0],
+        remote_previous_velocity_groups.at(i).data(),
         (dim+1) * remote_remapped_point_counts.at(i),
         MPI_DOUBLE, i, PREVIOUS_VELOCITY,
         mpi_communicator,
         &requests_vector[row_start + nprocesses * previous_velocity_requests_offset]);
 
       MPI_Irecv(
-        &remote_previous_second_time_rate_groups.at(i)[0],
+        remote_previous_second_time_rate_groups.at(i).data(),
         (dim+1) * remote_remapped_point_counts.at(i),
         MPI_DOUBLE, i, PREVIOUS_SECOND_TIME_RATE,
         mpi_communicator,

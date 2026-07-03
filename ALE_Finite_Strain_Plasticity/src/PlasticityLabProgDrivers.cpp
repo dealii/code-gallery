@@ -98,9 +98,10 @@ namespace PlasticityLab {
         initial_velocity_interpolation_handler->interpolate(initial_velocity, mech_dof_system);
       }
 
+      // Assigning the locally-owned vector into the ghosted vector performs
+      // the necessary ghost import; compress() must not be called on a
+      // vector that has ghost elements (it is read-only).
       mech_nonlinear_system.previous_time_derivative = initial_velocity;
-      mech_nonlinear_system.previous_time_derivative.compress(
-        VectorOperation::insert);
     }
 
 
@@ -116,8 +117,6 @@ namespace PlasticityLab {
       }
 
       mech_nonlinear_system.previous_deformation = initial_deformation;
-      mech_nonlinear_system.previous_deformation.compress(
-        VectorOperation::insert);
     }
 
 
@@ -197,8 +196,6 @@ namespace PlasticityLab {
         }
 
         mech_nonlinear_system.current_increment = step_increment;
-        mech_nonlinear_system.current_increment.compress(
-          VectorOperation::insert);
       }
 
       solve_mesh_motion_step(
@@ -267,10 +264,8 @@ namespace PlasticityLab {
 
       mech_nonlinear_system.advance_time(time_increment, rho_infty, true);
       therm_nonlinear_system.previous_deformation += therm_nonlinear_system.current_increment;
-      therm_nonlinear_system.previous_deformation.compress(VectorOperation::add);
 
       therm_nonlinear_system.current_increment = 0;
-      therm_nonlinear_system.current_increment.compress(VectorOperation::insert);
 
       pcout << "Next timestep..." << std::endl;
 
@@ -354,7 +349,6 @@ namespace PlasticityLab {
           temp_locally_owned_increment.sadd(1, -alpha * clip_factor, mech_nonlinear_system.Newton_step_solution);
           temp_locally_owned_increment.compress(VectorOperation::insert);
           mech_nonlinear_system.current_increment = temp_locally_owned_increment;
-          mech_nonlinear_system.current_increment.compress(VectorOperation::insert);
 
           try {
             assemble_mechanical_system(
@@ -400,7 +394,6 @@ namespace PlasticityLab {
           temp_locally_owned_increment.sadd(1, -2 * alpha * clip_factor, mech_nonlinear_system.Newton_step_solution);
           temp_locally_owned_increment.compress(VectorOperation::insert);
           mech_nonlinear_system.current_increment = temp_locally_owned_increment;
-          mech_nonlinear_system.current_increment.compress(VectorOperation::insert);
           break;
         }
         previous_residual = current_residual;
@@ -465,14 +458,11 @@ namespace PlasticityLab {
         for (unsigned int i = 0; i < (NewtonStep > 0 ? 6 : 1); ++i) {
           const Number alpha = std::pow(0.5, static_cast<Number>(i));
 
-          mech_nonlinear_system.current_increment.compress(VectorOperation::insert);
-
           temp_locally_owned_increment = full_step_increment;
           temp_locally_owned_increment.sadd(1, -alpha, therm_nonlinear_system.Newton_step_solution);
           therm_dof_system.nodal_constraints.distribute(temp_locally_owned_increment);
           temp_locally_owned_increment.compress(VectorOperation::insert);
           therm_nonlinear_system.current_increment = temp_locally_owned_increment;
-          therm_nonlinear_system.current_increment.compress(VectorOperation::insert);
 
           assemble_thermal_system(
             therm_nonlinear_system,
@@ -577,7 +567,6 @@ namespace PlasticityLab {
           temp_locally_owned_increment.sadd(1, -alpha * clip_factor, mesh_motion_nonlinear_system.Newton_step_solution);
           temp_locally_owned_increment.compress(VectorOperation::insert);
           mesh_motion_nonlinear_system.current_increment = temp_locally_owned_increment;
-          mesh_motion_nonlinear_system.current_increment.compress(VectorOperation::insert);
 
           try {
             assemble_mesh_motion_system(
@@ -620,7 +609,6 @@ namespace PlasticityLab {
           temp_locally_owned_increment.sadd(1, -2 * alpha * clip_factor, mesh_motion_nonlinear_system.Newton_step_solution);
           temp_locally_owned_increment.compress(VectorOperation::insert);
           mesh_motion_nonlinear_system.current_increment = temp_locally_owned_increment;
-          mesh_motion_nonlinear_system.current_increment.compress(VectorOperation::insert);
           break;
         }
         previous_residual = current_residual;
