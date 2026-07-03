@@ -104,7 +104,6 @@ getJohnsonCookThermoPlasticMaterial() {
          melting_temperature(1356), // [K]
          reference_temperature(293.15), // [K]
          reference_strain_rate(1.0), // [s^-1]
-         beta(1.0), //dimensionless
          thermal_expansion_coefficient(1.0e-5), // [K^-1]
          thermal_conductivity(4.5e-2), // [J/mm.K.s] // http://www.matweb.com/search/datasheet_print.aspx?matguid=193434cf42e343fab880e1dabdb143ba
          heat_capacity(3.588e-3), // cp*rho: [J.mm^-3.K^-1]

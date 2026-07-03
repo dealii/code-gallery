@@ -129,7 +129,7 @@ namespace PlasticityLab {
       const Number minimum_strain_rate = creep_strain_rate_factor * epsilon_dot_0;
       const Number strain_rate = std::max(sqrt2thirds*gamma/time_increment, minimum_strain_rate);
       const Number softened_quasistatic_elastoplastic_stress = get_elastoplastic_factor(alpha) * get_softening_factor(temperature);
-      const Number Carreau_viscocity = get_Carreau_viscocity(strain_rate, softened_quasistatic_elastoplastic_stress);
+      [[maybe_unused]] const Number Carreau_viscocity = get_Carreau_viscocity(strain_rate, softened_quasistatic_elastoplastic_stress);
       const Number stress_temperature_tangent =
               get_elastoplastic_factor(alpha) * get_softening_factor_tangent(temperature);
       Number Carreau_viscocity_strain_rate_tangent, Carreau_viscocity_stress_tangent;

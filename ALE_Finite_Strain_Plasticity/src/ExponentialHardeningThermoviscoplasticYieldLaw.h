@@ -52,7 +52,7 @@ namespace PlasticityLab {
   Number hardening_alpha_derivatives(Number &D_isotropic_hardening,
                                           Number &D_kinematic_hardening,
                                           const Number alpha,
-                                          const Number gamma,
+                                          [[maybe_unused]] const Number gamma,
                                           const Number time_increment,
                                           const Number temperature) const {
     Number Dh = (delta * (K_infty - K_0) * exp(-delta * alpha) + H_bar) * (1 - std::min(softening_threshold, hardening_softening * (temperature - reference_temperature)))
@@ -65,8 +65,8 @@ namespace PlasticityLab {
   Number hardening_temperature_derivatives(Number &D_isotropic_hardening,
                                                 Number &D_kinematic_hardening,
                                                 const Number alpha,
-                                                const Number gamma,
-                                                const Number time_increment,
+                                                [[maybe_unused]] const Number gamma,
+                                                [[maybe_unused]] const Number time_increment,
                                                 const Number temperature) const {
     Number Dh = (hardening_softening * (temperature - reference_temperature) < softening_threshold)?
                 -flow_stress_softening * K_0

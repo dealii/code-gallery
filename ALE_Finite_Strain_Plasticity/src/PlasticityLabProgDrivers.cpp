@@ -87,14 +87,6 @@ namespace PlasticityLab {
       discontinuous_dof_system.locally_owned_dofs,
       mpi_communicator);
 
-    std::vector< MixedFEProjector<dim, Number> > mech_fe_projectors;
-
-    setup_mixed_fe_projection_data(
-      triangulation, mech_fe_projectors,
-      mech_fe, quadrature_formula);
-
-
-
     {
       TrilinosWrappers::MPI::Vector initial_velocity(
         mech_dof_system.locally_owned_dofs,
@@ -348,7 +340,7 @@ namespace PlasticityLab {
       if (clip_factor < 1.0) pcout << "clip factor: " << clip_factor << endl;
 
       pcout << "doing line search..." << endl;
-      bool hit_line_search_limit = false;
+      [[maybe_unused]] bool hit_line_search_limit = false;
       for (unsigned int i = 0; true/*i < 18*/; ++i) {
         const Number alpha = std::pow(0.5, static_cast<Number>(i));
         if (i > 5 && clip_factor * alpha * solution_norm < 1e-1) {
@@ -571,7 +563,7 @@ namespace PlasticityLab {
       if (clip_factor < 1.0) pcout << "clip factor: " << clip_factor << endl;
 
       pcout << "doing line search..." << endl;
-      bool hit_line_search_limit = false;
+      [[maybe_unused]] bool hit_line_search_limit = false;
       for (unsigned int i = 0; true/*i < 18*/; ++i) {
         const Number alpha = std::pow(0.5, static_cast<Number>(i));
         if (i > 5 && clip_factor * alpha * solution_norm < 1e-1) {
@@ -689,7 +681,7 @@ namespace PlasticityLab {
     LBCSystem<dim, Number, 1> &therm_lbc_system,
     int n_initial_global_refinements) {
 
-    const Number initial_velocity = 1.9e5; // [mm/s]
+    [[maybe_unused]] const Number initial_velocity = 1.9e5; // [mm/s]
     const Number height = 2.5*25.4; // [mm]
     const Number inner_radius = 12.5; // [mm]
     const Number radius = 12.5; // [mm]

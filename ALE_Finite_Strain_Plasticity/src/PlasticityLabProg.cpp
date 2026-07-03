@@ -36,7 +36,7 @@ namespace PlasticityLab {
     pcout(std::cout,
           (Utilities::MPI::this_mpi_process(mpi_communicator) == 0)),
     order(1),
-    mech_fe(FE_Q<dim>(order), dim, FE_Q<dim>(order), 2),
+    mech_fe(FE_Q<dim>(order), dim, FE_Q<dim>(order), 1),
     therm_fe(order),
     mixed_var_fe(order-1),
     mesh_motion_fe(FE_Q<dim>(order), dim),
@@ -205,7 +205,7 @@ namespace PlasticityLab {
       std::unordered_map<point_index_t, Tensor<2, dim+1, Number>> &remapped_deformation_gradients) {
 
     const unsigned int n_q_points = quadrature_formula.size();
-    const unsigned int dofs_per_cell = mesh_motion_fe.dofs_per_cell;
+    [[maybe_unused]] const unsigned int dofs_per_cell = mesh_motion_fe.dofs_per_cell;
     const unsigned int mixed_dofs_per_cell = mixed_fe_dof_system.dof_handler.get_fe().dofs_per_cell;
 
     FEValues<dim> mesh_motion_fe_values(
@@ -253,7 +253,7 @@ namespace PlasticityLab {
           mesh_motion_value_increments);
 
         for (unsigned int q_point = 0; q_point < n_q_points; ++q_point) {
-          const point_index_t quadrature_point_index = cell->user_index() + q_point;
+          [[maybe_unused]] const point_index_t quadrature_point_index = cell->user_index() + q_point;
           const Point<dim, Number> reference_point_position = mesh_motion_fe_values.quadrature_point(q_point);
           const Point<dim, Number> remapped_point_position = reference_point_position - mesh_motion_value_increments[q_point];
 
@@ -506,7 +506,7 @@ namespace PlasticityLab {
         for(unsigned int q_point=0; q_point<n_q_points; q_point++) {
           const point_index_t quadrature_point_index = remapped_point.mesh_motion_cell->user_index() + q_point;
 
-          const auto deformation_gradient =
+          [[maybe_unused]] const auto deformation_gradient =
             get_deformation_gradient(
               previous_deformation_gradients[q_point],
               previous_deformation_values[q_point][0]/mesh_motion_fe_values.quadrature_point(q_point)[0]);
@@ -648,7 +648,7 @@ namespace PlasticityLab {
           mesh_motion_nonlinear_system.current_increment,
           mesh_motion_value_increments);
 
-        const auto mesh_motion_gradient = get_deformation_gradient(
+        [[maybe_unused]] const auto mesh_motion_gradient = get_deformation_gradient(
                                             -mesh_motion_gradient_increments[reference_point.q_point],
                                             -mesh_motion_value_increments[reference_point.q_point][0]/mesh_motion_fe_values.quadrature_point(reference_point.q_point)[0]);
 
@@ -672,7 +672,7 @@ namespace PlasticityLab {
     const Quadrature<dim> thermal_fe_support_point_quadrature(therm_fe.get_unit_support_points());
 
     const unsigned int n_q_points = thermal_fe_support_point_quadrature.size();
-    const unsigned int dofs_per_cell = mesh_motion_fe.dofs_per_cell;
+    [[maybe_unused]] const unsigned int dofs_per_cell = mesh_motion_fe.dofs_per_cell;
     const unsigned int thermal_dofs_per_cell = therm_fe.dofs_per_cell;
 
     FEValues<dim> mesh_motion_fe_values(
@@ -1045,7 +1045,7 @@ namespace PlasticityLab {
     const Quadrature<dim> mechanical_fe_support_point_quadrature(mech_fe.base_element(0).get_unit_support_points());
 
     const unsigned int n_q_points = mechanical_fe_support_point_quadrature.size();
-    const unsigned int dofs_per_cell = mesh_motion_fe.dofs_per_cell;
+    [[maybe_unused]] const unsigned int dofs_per_cell = mesh_motion_fe.dofs_per_cell;
     const unsigned int mechanical_dofs_per_cell = mech_fe.dofs_per_cell;
 
     FEValues<dim> mesh_motion_fe_values(
@@ -1772,7 +1772,7 @@ namespace PlasticityLab {
             );
           const Number material_Jacobian = material.get_material_Jacobian(quadrature_point_index) / determinant(current_F);
 
-          const auto mesh_motion_gradient = get_deformation_gradient(
+          [[maybe_unused]] const auto mesh_motion_gradient = get_deformation_gradient(
             -mesh_motion_gradient_increments[q_point],
             -mesh_motion_value_increments[q_point][0]/fe_values.quadrature_point(q_point)[0]);
 
@@ -1877,7 +1877,7 @@ namespace PlasticityLab {
             (current_displacement_values[q_point][0] + displacement_value_increments[q_point][0])/radius);
 
           const Number material_Jacobian = material.get_material_Jacobian(quadrature_point_index) / determinant(current_F);
-          const Number mesh_motion_Jacobian = determinant(mesh_motion_gradient);
+          [[maybe_unused]] const Number mesh_motion_Jacobian = determinant(mesh_motion_gradient);
 
           const auto inv_updated_F = invert(updated_F);
           const Number Jacobian = determinant(updated_F) * material_Jacobian;
@@ -1986,23 +1986,23 @@ namespace PlasticityLab {
             * (-(1.0/radius) * one_plus_r_over_R_n * 2 * d_thR_d_t_n * d_time_rate_d_increment);
 
 
-          const auto d2_x_dt_2_n_plus_1_minus_alpha_m =
+          [[maybe_unused]] const auto d2_x_dt_2_n_plus_1_minus_alpha_m =
             alpha_m * displacement_previous_second_time_rate + (1-alpha_m)*d2_x_dt_2_n_plus_1;
-          const Number d2_x_dt_2_tangent_1_minus_alpha_m = (1-alpha_m)*d_second_time_rate_d_increment;
+          [[maybe_unused]] const Number d2_x_dt_2_tangent_1_minus_alpha_m = (1-alpha_m)*d_second_time_rate_d_increment;
 
-          const auto d_Fc_dt_vc_n_plus_1_minus_alpha_f =
+          [[maybe_unused]] const auto d_Fc_dt_vc_n_plus_1_minus_alpha_f =
                         alpha_m * displacement_gradient_previous_time_rate * vc_n
                         + (1-alpha_m) * Grad_d_x_d_t_n_plus_1 * vc_n_plus_1;
 
-          const auto d_Fc_dt_vc_n_plus_1_minus_alpha_f_F_tangent = (1-alpha_m) * d_time_rate_d_increment * vc_n_plus_1;
-          const auto d_Fc_dt_vc_n_plus_1_minus_alpha_f_v_tangent = (1-alpha_m) * Grad_d_x_d_t_n_plus_1;
+          [[maybe_unused]] const auto d_Fc_dt_vc_n_plus_1_minus_alpha_f_F_tangent = (1-alpha_m) * d_time_rate_d_increment * vc_n_plus_1;
+          [[maybe_unused]] const auto d_Fc_dt_vc_n_plus_1_minus_alpha_f_v_tangent = (1-alpha_m) * Grad_d_x_d_t_n_plus_1;
 
-          const auto F_c_d_vc_d_t_n_plus_1_minus_alpha_m =
+          [[maybe_unused]] const auto F_c_d_vc_d_t_n_plus_1_minus_alpha_m =
             alpha_m * current_F * d_vc_d_t_n
             + (1-alpha_m) * updated_F * d_vc_d_t_n_plus_1;
 
-          const auto F_c_d_vc_d_t_n_plus_1_minus_alpha_m_F_tangent = (1-alpha_m) * d_vc_d_t_n_plus_1;
-          const auto F_c_d_vc_d_t_n_plus_1_minus_alpha_m_V_tangent = (1-alpha_m) * updated_F * d_second_time_rate_d_increment;
+          [[maybe_unused]] const auto F_c_d_vc_d_t_n_plus_1_minus_alpha_m_F_tangent = (1-alpha_m) * d_vc_d_t_n_plus_1;
+          [[maybe_unused]] const auto F_c_d_vc_d_t_n_plus_1_minus_alpha_m_V_tangent = (1-alpha_m) * updated_F * d_second_time_rate_d_increment;
 
           std::vector<Tensor<2, dim+1, Number>> rate_gradients(dofs_per_cell);
           std::vector<Tensor<2, dim+1, Number>> angular_rate_gradients(dofs_per_cell);
@@ -2249,7 +2249,7 @@ namespace PlasticityLab {
 
         for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face) {
           for (auto boundaryForceSpec: mechanical_lbc_system.boundaryLoadAppliers) {
-            if (cell->face(face)->boundary_id() == boundaryForceSpec.first) {
+            if (cell->face(face)->boundary_id() == static_cast<types::boundary_id>(boundaryForceSpec.first)) {
               fe_face_values.reinit(cell, face);
               for (unsigned int q_point = 0; q_point < n_face_q_points; ++q_point) {
                 for (unsigned int i = 0; i < dofs_per_cell; ++i) {
@@ -2644,8 +2644,8 @@ namespace PlasticityLab {
 
           const auto inv_updated_F = invert(updated_F);
           const Number material_Jacobian = material.get_material_Jacobian(quadrature_point_index) / determinant(current_F);
-          const Number previous_Jacobian = determinant(current_F) * material_Jacobian;
-          const Number Jacobian = determinant(updated_F) * material_Jacobian;
+          [[maybe_unused]] const Number previous_Jacobian = determinant(current_F) * material_Jacobian;
+          [[maybe_unused]] const Number Jacobian = determinant(updated_F) * material_Jacobian;
 
           const Number radius = fe_values.quadrature_point(q_point)[0];
 
@@ -2796,7 +2796,7 @@ namespace PlasticityLab {
                 boundaryHeatSource = thermal_lbc_system.boundaryLoadAppliers.cbegin();
                 boundaryHeatSource != thermal_lbc_system.boundaryLoadAppliers.cend();
                 ++boundaryHeatSource) {
-            if (cell->face(face)->boundary_id() == boundaryHeatSource->first) {
+            if (cell->face(face)->boundary_id() == static_cast<types::boundary_id>(boundaryHeatSource->first)) {
               for (unsigned int i = 0; i < dofs_per_cell; ++i) {
                 for (unsigned int q_point = 0;
                      q_point < face_quadrature_formula.size();
@@ -2831,7 +2831,7 @@ namespace PlasticityLab {
                 convectionBC = thermal_lbc_system.convection_BC_appliers.cbegin();
                 convectionBC != thermal_lbc_system.convection_BC_appliers.cend();
                 ++convectionBC) {
-            if (cell->face(face)->boundary_id() == convectionBC->first) {
+            if (cell->face(face)->boundary_id() == static_cast<types::boundary_id>(convectionBC->first)) {
               for (unsigned int q_point = 0;
                    q_point < face_quadrature_formula.size();
                    ++q_point) {
@@ -2848,11 +2848,11 @@ namespace PlasticityLab {
                   (current_face_displacement_values[q_point][0]
                     + face_displacement_value_increments[q_point][0])/fe_mech_values.quadrature_point(q_point)[0]);
 
-                const Number J = determinant(updated_F);
+                [[maybe_unused]] const Number J = determinant(updated_F);
                 const Tensor<2, dim+1, Number> inv_deformation_gradient = invert(updated_F);
                 const Tensor<1, dim+1, Number> reference_normal = postprocess_tensor_dimension(mech_fe_face_values.normal_vector(q_point), 0);
                 const Tensor<1, dim+1, Number> F_inv_transpose_N = transpose(inv_deformation_gradient) * reference_normal;
-                const Number norm_F_inv_transpose_N = (F_inv_transpose_N).norm();
+                [[maybe_unused]] const Number norm_F_inv_transpose_N = (F_inv_transpose_N).norm();
 
                 const Number RJxW = fe_face_values.quadrature_point(q_point)[0] / material_area_factors.at(surface_point_key).norm() * fe_face_values.JxW(q_point);
 
@@ -2909,7 +2909,7 @@ namespace PlasticityLab {
   void PlasticityLabProg<dim, Number>::assemble_mesh_motion_system(
         NewtonStepSystem &mesh_motion_nonlinear_system,
         const DoFSystem<dim, Number> &mesh_motion_dof_system,
-        const LBCSystem<dim, Number, dim> &mesh_motion_lbc_system,
+        const LBCSystem<dim, Number, dim> &,
         const NewtonStepSystem &deformation_nonlinear_system,
         const DoFSystem<dim, Number> &deformation_dof_system,
         const DoFSystem<dim, Number> &mixed_fe_dof_system,
@@ -3086,7 +3086,7 @@ namespace PlasticityLab {
 
         for (unsigned int q_point = 0; q_point < n_q_points; ++q_point) {
 
-          const point_index_t quadrature_point_index = cell->user_index() + q_point;
+          [[maybe_unused]] const point_index_t quadrature_point_index = cell->user_index() + q_point;
 
           const Number cell_jacobian = determinant(static_cast<Tensor <2, dim, Number>>(mesh_motion_fe_values.jacobian(q_point)));
 
@@ -3106,7 +3106,7 @@ namespace PlasticityLab {
           const auto inv_mesh_motion_gradient = invert(mesh_motion_gradient);
           const auto inv_deformation_gradient = invert(deformation_gradient);
 
-          const Number deformation_Jacobian = determinant(deformation_gradient);
+          [[maybe_unused]] const Number deformation_Jacobian = determinant(deformation_gradient);
           const Number mesh_motion_Jacobian = determinant(mesh_motion_gradient);
 
           Number projected_jacobian = 0;
@@ -3494,7 +3494,7 @@ namespace PlasticityLab {
             (current_displacement_values[q_point][0]
               + displacement_value_increments[q_point][0])/fe_values.quadrature_point(q_point)[0]);
 
-          const auto inv_updated_F = invert(updated_F);
+          [[maybe_unused]] const auto inv_updated_F = invert(updated_F);
           const Number Jacobian = determinant(updated_F);
           const Number previous_Jacobian = determinant(current_F);
 

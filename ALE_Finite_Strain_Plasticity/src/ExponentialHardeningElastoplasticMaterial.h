@@ -31,22 +31,22 @@ namespace PlasticityLab {
 
     void compute_constitutive_request(
       ConstitutiveModelRequest<dim, Number> &constitutive_request,
-      const point_index_t &point_index);
+      const point_index_t &point_index) override;
 
-    Number get_material_Jacobian(const point_index_t &point_index) const;
-    dealii::SymmetricTensor<2, dim, Number> get_plastic_strain(const point_index_t &point_index) const;
+    Number get_material_Jacobian(const point_index_t &point_index) const override;
+    dealii::SymmetricTensor<2, dim, Number> get_plastic_strain(const point_index_t &point_index) const override;
 
-    void setup_point_history (const point_index_t point_count);
+    void setup_point_history (const point_index_t point_count) override;
 
     std::vector<Number> get_state_parameters(
               const point_index_t &point_index,
-              const Tensor<2, dim, Number> &reference_transformation=unit_symmetric_tensor<dim>()) const;
+              const Tensor<2, dim, Number> &reference_transformation=unit_symmetric_tensor<dim>()) const override;
 
     void  set_state_parameters(
               const point_index_t &point_index,
               const std::vector<Number> &state_parameters,
-              const Tensor<2, dim, Number> &reference_transformation);
-    size_t get_material_parameter_count() const;
+              const Tensor<2, dim, Number> &reference_transformation) override;
+    size_t get_material_parameter_count() const override;
 
    private:
     const Number kappa;
