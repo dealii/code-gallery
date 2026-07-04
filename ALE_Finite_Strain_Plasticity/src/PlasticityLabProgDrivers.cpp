@@ -221,8 +221,11 @@ namespace PlasticityLab {
         timeStep);
 
       mesh_motion_nonlinear_system.advance_time(time_increment, rho_infty, false);
-      mesh_motion_nonlinear_system.previous_deformation = mesh_motion_nonlinear_system.current_increment;
-      mesh_motion_nonlinear_system.previous_deformation *= -1;
+      // The mesh-motion deformation is the negative of the just-computed
+      // increment. 'previous_deformation' is a ghosted (read-only) vector, so
+      // this negation is delegated to the nonlinear system, which performs the
+      // arithmetic in fully-distributed temporaries.
+      mesh_motion_nonlinear_system.set_previous_deformation_to_negative_current_increment();
 
       std::unordered_map<point_index_t, Tensor<2, dim+1, Number>> remapped_deformation_gradients;
       remap_material_state_variables(
@@ -275,7 +278,10 @@ namespace PlasticityLab {
         true);
 
       mech_nonlinear_system.advance_time(time_increment, rho_infty, true);
-      therm_nonlinear_system.previous_deformation += therm_nonlinear_system.current_increment;
+      // Accumulate the thermal increment into the (ghosted, read-only)
+      // temperature field. The nonlinear system performs the addition in
+      // fully-distributed temporaries and assigns the result back.
+      therm_nonlinear_system.add_current_increment_to_previous_deformation();
 
       therm_nonlinear_system.current_increment = 0;
 

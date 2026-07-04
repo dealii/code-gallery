@@ -122,21 +122,40 @@ namespace PlasticityLab {
 
       }
       
-      // Update the deformation vector with the computed
-      // increment. Because 'previous_deformation' is a vector with
-      // ghost entries, it is a read-only vector and we cannot write
-      // into it -- so we have to create a temporary vector first and
-      // only copy it at the end:
-      {
-        _locally_owned_previous_deformation = previous_deformation;
-        _locally_owned_current_increment    = current_increment;
-        _locally_owned_previous_deformation += _locally_owned_current_increment;
-        previous_deformation = _locally_owned_previous_deformation;
-      }
+      // Update the deformation vector with the computed increment.
+      add_current_increment_to_previous_deformation();
 
       if(reset_increment) {
         current_increment = 0;
       }
+    }
+
+    // Add the current Newton increment into the deformation vector, i.e.
+    // compute previous_deformation += current_increment.
+    //
+    // 'previous_deformation' is a vector with ghost entries and therefore
+    // read-only: we are not allowed to write into it (with the exception of
+    // setting it to zero). We therefore carry out the arithmetic in
+    // fully-distributed (locally-owned) temporary vectors and only assign the
+    // result back into the ghosted vector at the very end; that assignment
+    // performs the necessary ghost-value communication.
+    void add_current_increment_to_previous_deformation() {
+      _locally_owned_previous_deformation = previous_deformation;
+      _locally_owned_current_increment    = current_increment;
+      _locally_owned_previous_deformation += _locally_owned_current_increment;
+      previous_deformation = _locally_owned_previous_deformation;
+    }
+
+    // Set the deformation vector to the negative of the current increment,
+    // i.e. compute previous_deformation = -current_increment.
+    //
+    // As above, 'previous_deformation' is a ghosted, read-only vector, so the
+    // negation is performed in a fully-distributed temporary and only the
+    // result is assigned back into the ghosted vector.
+    void set_previous_deformation_to_negative_current_increment() {
+      _locally_owned_current_increment = current_increment;
+      _locally_owned_current_increment *= -1;
+      previous_deformation = _locally_owned_current_increment;
     }
 
     TrilinosWrappers::SparseMatrix  Newton_step_matrix;
