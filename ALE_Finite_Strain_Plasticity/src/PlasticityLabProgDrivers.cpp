@@ -50,7 +50,19 @@ namespace PlasticityLab {
     therm_lbc_system.apply_constraints(therm_dof_system);
     therm_nonlinear_system.setup(therm_dof_system);
 
-    therm_nonlinear_system.previous_deformation = ambient_temperature;
+    // Initialize the temperature solution vector. Because we are
+    // initializing with a possibly non-zero value, we can't just
+    // assign that value to the vector in a parallel setting because
+    // the solution vector has ghost entries and so is
+    // read-only. Rather, we create a completely distributed vector,
+    // assign the value to it, and then copy that into the solution
+    // vector.
+    {
+      TrilinosWrappers::MPI::Vector tmp (therm_dof_system.locally_owned_dofs,
+                                         mpi_communicator);
+      tmp = ambient_temperature;
+      therm_nonlinear_system.previous_deformation = tmp;
+    }
 
     mixed_fe_dof_system.setup_dof_system(mixed_var_fe);
 
@@ -209,8 +221,11 @@ namespace PlasticityLab {
         timeStep);
 
       mesh_motion_nonlinear_system.advance_time(time_increment, rho_infty, false);
-      mesh_motion_nonlinear_system.previous_deformation = mesh_motion_nonlinear_system.current_increment;
-      mesh_motion_nonlinear_system.previous_deformation *= -1;
+      // The mesh-motion deformation is the negative of the just-computed
+      // increment. 'previous_deformation' is a ghosted (read-only) vector, so
+      // this negation is delegated to the nonlinear system, which performs the
+      // arithmetic in fully-distributed temporaries.
+      mesh_motion_nonlinear_system.set_previous_deformation_to_negative_current_increment();
 
       std::unordered_map<point_index_t, Tensor<2, dim+1, Number>> remapped_deformation_gradients;
       remap_material_state_variables(
@@ -263,7 +278,10 @@ namespace PlasticityLab {
         true);
 
       mech_nonlinear_system.advance_time(time_increment, rho_infty, true);
-      therm_nonlinear_system.previous_deformation += therm_nonlinear_system.current_increment;
+      // Accumulate the thermal increment into the (ghosted, read-only)
+      // temperature field. The nonlinear system performs the addition in
+      // fully-distributed temporaries and assigns the result back.
+      therm_nonlinear_system.add_current_increment_to_previous_deformation();
 
       therm_nonlinear_system.current_increment = 0;
 
