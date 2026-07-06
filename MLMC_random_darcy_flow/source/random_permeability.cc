@@ -11,8 +11,8 @@
 
 template <int dim>
 RandomField::RandomPermeability<dim>::RandomPermeability(std::vector<double> &xi, unsigned int n_terms, double domain_length, double correlation_length, double mu)
-: samples(xi)
-, kl_expansion(n_terms, domain_length, correlation_length, mu)
+: kl_expansion(n_terms, domain_length, correlation_length, mu)
+, samples(xi)
 {}
 
 template <int dim>

@@ -124,7 +124,6 @@ namespace TravelingWave
     double current_wave_speed(problem.wave_speed_init);
 
     double del_Pr_eps = (problem.Pr * 4 * problem.delta / (3 * problem.epsilon));
-    double del_Le = (problem.delta / problem.Le);
 
     auto u_init_guess_func = [&](double x) {
       if (x < 0.)

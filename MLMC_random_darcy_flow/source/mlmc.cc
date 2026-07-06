@@ -42,7 +42,7 @@ template <int dim>
 double MultilevelMonteCarlo::MLMC<dim>::compute_mean()
 {
     double mean = 0.0;
-    for(int i = 0; i<results.size(); i++)
+    for(unsigned int i = 0; i<results.size(); i++)
     {
         mean+=results[i];
     }
@@ -54,7 +54,7 @@ double MultilevelMonteCarlo::MLMC<dim>::compute_variance()
 {
     double mean = compute_mean();
     double var = 0.0;
-    for(int i = 0; i<results.size(); i++)
+    for(unsigned int i = 0; i<results.size(); i++)
     {
         var += std::pow((results[i]-mean),2);
     }

@@ -67,7 +67,7 @@ namespace TravelingWave
     : interpolant(ix_points, iy_points)
   {}
 
-  double Interpolant::value(const Point<1> &p, const unsigned int component) const
+  double Interpolant::value(const Point<1> &p, const unsigned int /*component*/) const
   {
     double x   = p[0];
     double res = interpolant.value(x);
