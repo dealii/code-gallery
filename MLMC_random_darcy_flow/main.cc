@@ -64,7 +64,7 @@ int main()
 
 
 
-    for(int i = 0; i<=levels; i++)
+    for(unsigned int i = 0; i<=levels; i++)
     {
         std::cout << "Level:" << i << std::endl;
         for(unsigned int j = 0; j<runs_per_level[i]; j++)

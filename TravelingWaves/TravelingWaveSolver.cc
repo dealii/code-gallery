@@ -286,13 +286,13 @@ namespace TravelingWave
         fe_values[temperature].get_function_gradients(evaluation_point, current_temperature_gradients);
         fe_values[lambda].get_function_gradients(evaluation_point, current_lambda_gradients);
 
-        auto kappa_1 = [=](double T, double lambda){
+        auto kappa_1 = [=,this](double T, double lambda){
           return problem.k * (1 - lambda) * std::exp(-problem.theta / T) * (
             problem.theta / (T * T) * Heaviside_func(T - problem.T_ign) /* + Delta_function(T - problem.T_ign) */
           );
         };
 
-        auto kappa_2 = [=](double T, double /*lambda*/){
+        auto kappa_2 = [=,this](double T, double /*lambda*/){
           return -problem.k * std::exp(-problem.theta / T) * Heaviside_func(T - problem.T_ign);
         };
 
@@ -516,7 +516,7 @@ namespace TravelingWave
       fe_values[lambda].get_function_values(evaluation_point, current_lambda_values);
       fe_values[lambda].get_function_gradients(evaluation_point, current_lambda_gradients);
 
-      auto omega = [=](double T, double lambda){
+      auto omega = [=,this](double T, double lambda){
         return problem.k * (1 - lambda) * std::exp(-problem.theta / T) * Heaviside_func(T - problem.T_ign);
       };
 
