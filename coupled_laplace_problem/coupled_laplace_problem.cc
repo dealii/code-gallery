@@ -212,8 +212,8 @@ Adapter<dim, ParameterClass>::initialize(
   interface_nodes_ids.resize(n_interface_nodes);
 
   // The node location is obtained using `map_dofs_to_support_points()`.
-  std::map<types::global_dof_index, Point<dim>> support_points;
-  DoFTools::map_dofs_to_support_points(mapping, dof_handler, support_points);
+  std::map<types::global_dof_index, Point<dim>> support_points =
+    DoFTools::map_dofs_to_support_points(mapping, dof_handler);
 
   // `support_points` contains now the coordinates of all DoFs. In the next
   // step, the relevant coordinates are extracted using the IndexSet with the
