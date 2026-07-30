@@ -24,11 +24,11 @@ jobs:
       matrix:
         build_type: ["Debug"]
         dealii_version: ["master", "v9.7.1", "v9.6.0"]
-        ubuntu_version: ["jammy"]
+        ubuntu_version: ["noble"]
         include:
           - build_type: "Debug"
             dealii_version: "master"
-            ubuntu_version: "noble"
+            ubuntu_version: "resolute"
 
     container:
       image: dealii/dealii:${{ matrix.dealii_version }}-${{ matrix.ubuntu_version }}
@@ -42,7 +42,7 @@ jobs:
 
       - name: Install preCICE
         run: |
-          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.2.0/libprecice3_3.2.0_${{ matrix.ubuntu_version }}.deb
+          wget -O libprecice.deb https://github.com/precice/precice/releases/download/v3.4.1/libprecice3_3.4.1_${{ matrix.ubuntu_version }}.deb
           apt-get -y install ./libprecice.deb
 
       - name: Install XBraid
@@ -83,9 +83,15 @@ jobs:
       - name: Test coupled_laplace_problem
         run: |
           cd coupled_laplace_problem
-          (./coupled_laplace_problem 2>&1 & ./fancy_boundary_condition >fbc.log)
+          ./coupled_laplace_problem &
+          pid=$!
+          ./fancy_boundary_condition
+          wait "$pid"
           sed -i '2d' solution-10.vtk
-          numdiff solution-10.vtk test_data/reference-10.vtk || (echo "error_test=coupled_laplace_problem/" >> $GITHUB_ENV && exit 1)
+          numdiff solution-10.vtk test_data/reference-10.vtk || {
+            echo "error_test=coupled_laplace_problem/" >> $GITHUB_ENV
+            exit 1
+          }
 
       - name: Create issue about failure
         if: failure() && github.event_name == 'schedule'
