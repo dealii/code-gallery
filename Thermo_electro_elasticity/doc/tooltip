@@ -1,0 +1,1 @@
+A parallelised nonlinear thermo-electroelastic formulation modelling an electro-active pump, using automatic differentiation and MPI from the Trilinos package.
