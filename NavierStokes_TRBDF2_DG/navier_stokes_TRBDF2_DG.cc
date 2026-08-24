@@ -59,7 +59,7 @@
 #include <deal.II/fe/component_mask.h>
 
 #include <deal.II/base/timer.h>
-#include <deal.II/distributed/solution_transfer.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/error_estimator.h>
 
 #include <deal.II/multigrid/multigrid.h>
@@ -2785,10 +2785,10 @@ namespace NS_TRBDF2 {
     std::vector<const LinearAlgebra::distributed::Vector<double>*> velocities;
     velocities.push_back(&u_n);
     velocities.push_back(&u_n_minus_1);
-    parallel::distributed::SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
+    SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
     solution_transfer_velocity(dof_handler_velocity);
     solution_transfer_velocity.prepare_for_coarsening_and_refinement(velocities);
-    parallel::distributed::SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
+    SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
     solution_transfer_pressure(dof_handler_pressure);
     solution_transfer_pressure.prepare_for_coarsening_and_refinement(pres_n);
 
@@ -2830,14 +2830,14 @@ namespace NS_TRBDF2 {
   //
   template<int dim>
   void NavierStokesProjection<dim>::interpolate_max_res(const unsigned int level) {
-    parallel::distributed::SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
+    SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
     solution_transfer_velocity(dof_handler_velocity);
     std::vector<const LinearAlgebra::distributed::Vector<double>*> velocities;
     velocities.push_back(&u_n);
     velocities.push_back(&u_n_minus_1);
     solution_transfer_velocity.prepare_for_coarsening_and_refinement(velocities);
 
-    parallel::distributed::SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
+    SolutionTransfer<dim, LinearAlgebra::distributed::Vector<double>>
     solution_transfer_pressure(dof_handler_pressure);
     solution_transfer_pressure.prepare_for_coarsening_and_refinement(pres_n);
 

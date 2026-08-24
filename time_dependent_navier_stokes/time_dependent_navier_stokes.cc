@@ -55,10 +55,10 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 
 #include <fstream>
@@ -1104,9 +1104,7 @@ namespace fluid
       }
 
     // Prepare to transfer
-    parallel::distributed::SolutionTransfer<dim,
-                                            PETScWrappers::MPI::BlockVector>
-      trans(dof_handler);
+    SolutionTransfer<dim, PETScWrappers::MPI::BlockVector> trans(dof_handler);
 
     triangulation.prepare_coarsening_and_refinement();
 

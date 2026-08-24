@@ -44,13 +44,13 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/lac/sparsity_tools.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/base/quadrature_point_data.h>
 #include <deal.II/base/tensor_function.h>
 #include <fstream>
@@ -1191,10 +1191,10 @@ namespace FracturePropagation
           { }, locally_relevant_solution_damage, estimated_error_per_cell);
 
     // Initialize SolutionTransfer object
-    parallel::distributed::SolutionTransfer<3, LA::MPI::Vector> soltransDamage (dof_handler_damage);
+    SolutionTransfer<3, LA::MPI::Vector> soltransDamage (dof_handler_damage);
 
     // Initialize SolutionTransfer object
-    parallel::distributed::SolutionTransfer<3, LA::MPI::Vector> soltransElastic (dof_handler_elastic);
+    SolutionTransfer<3, LA::MPI::Vector> soltransElastic (dof_handler_elastic);
 
     parallel::distributed::GridRefinement::refine_and_coarsen_fixed_fraction (
         triangulation, estimated_error_per_cell, 0.01, // top 1% cells marked for refinement

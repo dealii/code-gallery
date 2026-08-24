@@ -59,7 +59,6 @@
 // grid refine
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 
 // remember to use the namespace dealii before
 // defining a class that is inheritaged from Function<dim>

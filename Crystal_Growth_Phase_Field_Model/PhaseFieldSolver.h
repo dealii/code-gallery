@@ -45,8 +45,6 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/dofs/dof_renumbering.h>
 
-#include <deal.II/distributed/solution_transfer.h>
-
 #include <fstream>
 #include <iostream>
 
