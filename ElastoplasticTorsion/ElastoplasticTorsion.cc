@@ -45,7 +45,7 @@
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/convergence_table.h>
-#include <deal.II/base/smartpointer.h>
+#include <deal.II/base/observer_pointer.h>
 #include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/timer.h>
 
@@ -92,7 +92,7 @@ namespace nsp
   using namespace dealii;
 
 // ********************************************************//
-  class ParameterReader : public Subscriptor
+  class ParameterReader : public EnableObserverPointer
   {
   public:
     ParameterReader(ParameterHandler &);
