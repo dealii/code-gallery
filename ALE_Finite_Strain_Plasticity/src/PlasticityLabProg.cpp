@@ -3247,7 +3247,7 @@ namespace PlasticityLab {
   }
 
   template<typename BlockType>
-  class SumOfMatrices : public Subscriptor {
+  class SumOfMatrices : public EnableObserverPointer {
   public:
     SumOfMatrices(
         const BlockType &m1,
