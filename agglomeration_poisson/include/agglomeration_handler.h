@@ -14,7 +14,7 @@
 
 #include <deal.II/base/mpi.h>
 #include <deal.II/base/quadrature.h>
-#include <deal.II/base/subscriptor.h>
+#include <deal.II/base/enable_observer_pointer.h>
 
 #include <deal.II/distributed/shared_tria.h>
 #include <deal.II/distributed/tria.h>
@@ -168,7 +168,7 @@ namespace dealii
  *
  */
 template <int dim, int spacedim = dim>
-class AgglomerationHandler : public Subscriptor
+class AgglomerationHandler : public EnableObserverPointer
 {
 public:
   using agglomeration_iterator = AgglomerationIterator<dim, spacedim>;

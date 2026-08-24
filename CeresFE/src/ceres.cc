@@ -321,7 +321,7 @@ namespace Step22
 // Class for linear solvers and preconditioners
 
   template<class Matrix, class Preconditioner>
-  class InverseMatrix: public Subscriptor
+  class InverseMatrix: public EnableObserverPointer
   {
   public:
     InverseMatrix(const Matrix &m, const Preconditioner &preconditioner);
@@ -329,8 +329,8 @@ namespace Step22
     void vmult(Vector<double> &dst, const Vector<double> &src) const;
 
   private:
-    const SmartPointer<const Matrix> matrix;
-    const SmartPointer<const Preconditioner> preconditioner;
+    const ObserverPointer<const Matrix> matrix;
+    const ObserverPointer<const Preconditioner> preconditioner;
   };
 
   template<class Matrix, class Preconditioner>
@@ -356,7 +356,7 @@ namespace Step22
 // Class for the SchurComplement
 
   template<class Preconditioner>
-  class SchurComplement: public Subscriptor
+  class SchurComplement: public EnableObserverPointer
   {
   public:
     SchurComplement(const BlockSparseMatrix<double> &system_matrix,
@@ -365,8 +365,8 @@ namespace Step22
     void vmult(Vector<double> &dst, const Vector<double> &src) const;
 
   private:
-    const SmartPointer<const BlockSparseMatrix<double> > system_matrix;
-    const SmartPointer<const InverseMatrix<SparseMatrix<double>, Preconditioner> > A_inverse;
+    const ObserverPointer<const BlockSparseMatrix<double> > system_matrix;
+    const ObserverPointer<const InverseMatrix<SparseMatrix<double>, Preconditioner> > A_inverse;
 
     mutable Vector<double> tmp1, tmp2;
   };

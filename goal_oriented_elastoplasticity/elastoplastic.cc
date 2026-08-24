@@ -1566,7 +1566,7 @@ namespace ElastoPlastic
   {
 
     template <int dim>
-    class DualFunctionalBase : public Subscriptor
+    class DualFunctionalBase : public EnableObserverPointer
     {
     public:
       virtual
@@ -2188,8 +2188,8 @@ namespace ElastoPlastic
 
     protected:
       const unsigned int face_id;
-      const SmartPointer<const Function<dim> >       lambda_function;
-      const SmartPointer<const Function<dim> >       mu_function;
+      const ObserverPointer<const Function<dim> >       lambda_function;
+      const ObserverPointer<const Function<dim> >       mu_function;
     };
 
 
@@ -2412,8 +2412,8 @@ namespace ElastoPlastic
 
     const ConstitutiveLaw<dim> constitutive_law;
 
-    const SmartPointer<const Triangulation<dim> > triangulation;
-    const SmartPointer<const DualFunctional::DualFunctionalBase<dim> > dual_functional;
+    const ObserverPointer<const Triangulation<dim> > triangulation;
+    const ObserverPointer<const DualFunctional::DualFunctionalBase<dim> > dual_functional;
 
     unsigned int               timestep_no;
     std::string                output_dir;
