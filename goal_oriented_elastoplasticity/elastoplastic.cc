@@ -5606,7 +5606,6 @@ namespace ElastoPlastic
     // ---------------------------------------------------
     history_dof_handler.distribute_dofs (history_fe);
 
-#  if DEAL_II_VERSION_GTE(9, 7, 0)
     // stress
     for (unsigned int i=0; i<dim; ++i)
       for (unsigned int j=0; j<dim; ++j)
@@ -5640,49 +5639,6 @@ namespace ElastoPlastic
       {
         history_strain_field_transfer2.interpolate(history_strain_field[2]);
       }
-#  else
-    // stress
-    std::vector< std::vector< Vector<double> > >
-    distributed_history_stress_field (dim, std::vector< Vector<double> >(dim));
-    for (unsigned int i=0; i<dim; ++i)
-      for (unsigned int j=0; j<dim; ++j)
-        {
-          distributed_history_stress_field[i][j].reinit(history_dof_handler.n_dofs());
-        }
-
-    history_stress_field_transfer0.interpolate(history_stress_field[0], distributed_history_stress_field[0]);
-    if ( dim > 1)
-      {
-        history_stress_field_transfer1.interpolate(history_stress_field[1], distributed_history_stress_field[1]);
-      }
-    if ( dim == 3)
-      {
-        history_stress_field_transfer2.interpolate(history_stress_field[2], distributed_history_stress_field[2]);
-      }
-
-    history_stress_field = distributed_history_stress_field;
-
-    // strain
-    std::vector< std::vector< Vector<double> > >
-    distributed_history_strain_field (dim, std::vector< Vector<double> >(dim));
-    for (unsigned int i=0; i<dim; ++i)
-      for (unsigned int j=0; j<dim; ++j)
-        {
-          distributed_history_strain_field[i][j].reinit(history_dof_handler.n_dofs());
-        }
-
-    history_strain_field_transfer0.interpolate(history_strain_field[0], distributed_history_strain_field[0]);
-    if ( dim > 1)
-      {
-        history_strain_field_transfer1.interpolate(history_strain_field[1], distributed_history_strain_field[1]);
-      }
-    if ( dim == 3)
-      {
-        history_strain_field_transfer2.interpolate(history_strain_field[2], distributed_history_strain_field[2]);
-      }
-
-    history_strain_field = distributed_history_strain_field;
-#  endif
 
     // ---------------------------------------------------------------
     // Transfer the history data to the quadrature points of the new mesh

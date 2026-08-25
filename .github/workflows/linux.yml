@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         build_type: ["Debug"]
-        dealii_version: ["master", "v9.7.1", "v9.6.0"]
+        dealii_version: ["master", "v9.7.1"]
         ubuntu_version: ["noble"]
         include:
           - build_type: "Debug"
