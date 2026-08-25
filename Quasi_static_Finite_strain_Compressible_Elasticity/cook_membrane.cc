@@ -55,7 +55,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 #include <deal.II/base/config.h>
-#if DEAL_II_VERSION_MAJOR >= 9 && defined(DEAL_II_WITH_TRILINOS)
+#ifdef DEAL_II_WITH_TRILINOS
 #include <deal.II/differentiation/ad.h>
 #define ENABLE_SACADO_FORMULATION
 #endif
