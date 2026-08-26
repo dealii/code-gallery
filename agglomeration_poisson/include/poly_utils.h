@@ -485,7 +485,7 @@ namespace dealii::PolyUtils
 
       if constexpr (std::is_same_v<MatrixType, TrilinosWrappers::SparseMatrix>)
         {
-          const MPI_Comm &communicator = tria.get_communicator();
+          const MPI_Comm &communicator = tria.get_mpi_communicator();
           SparsityTools::distribute_sparsity_pattern(dsp,
                                                      locally_owned_dofs,
                                                      communicator,
@@ -945,7 +945,7 @@ namespace dealii::PolyUtils
     // Perform reduction and take sqrt of each error
     global_errors[0] = Utilities::MPI::reduce<double>(
       local_errors[0],
-      agglomeration_handler.get_triangulation().get_communicator(),
+      agglomeration_handler.get_triangulation().get_mpi_communicator(),
       [](const double a, const double b) { return a + b; });
 
     global_errors[0] = std::sqrt(global_errors[0]);
@@ -954,7 +954,7 @@ namespace dealii::PolyUtils
       {
         global_errors[1] = Utilities::MPI::reduce<double>(
           local_errors[1],
-          agglomeration_handler.get_triangulation().get_communicator(),
+          agglomeration_handler.get_triangulation().get_mpi_communicator(),
           [](const double a, const double b) { return a + b; });
         global_errors[1] = std::sqrt(global_errors[1]);
       }
@@ -983,7 +983,7 @@ namespace dealii::PolyUtils
     GridTools::Cache<dim> cached_tria(tria);
     Assert(parallel_tria->n_active_cells() > 0, ExcInternalError());
 
-    const MPI_Comm     comm = parallel_tria->get_communicator();
+    const MPI_Comm     comm = parallel_tria->get_mpi_communicator();
     ConditionalOStream pcout(std::cout,
                              (Utilities::MPI::this_mpi_process(comm) == 0));
 

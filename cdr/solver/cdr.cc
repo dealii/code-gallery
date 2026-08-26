@@ -23,13 +23,13 @@
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 
 #include <deal.II/numerics/error_estimator.h>
+#include <deal.II/numerics/solution_transfer.h>
 
 // These headers are for distributed computations:
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/utilities.h>
 
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 
 #include <deal.II/lac/sparsity_tools.h>
@@ -311,7 +311,7 @@ CDRProblem<dim>::refine_mesh()
 
   // Transferring the solution between different grids is ultimately just a
   // few function calls but they must be made in exactly the right order.
-  parallel::distributed::SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
+  SolutionTransfer<dim, TrilinosWrappers::MPI::Vector>
     solution_transfer(dof_handler);
 
   triangulation.prepare_coarsening_and_refinement();
@@ -323,7 +323,7 @@ CDRProblem<dim>::refine_mesh()
 
   // The <code>solution_transfer</code> object stores a pointer to
   // <code>locally_relevant_solution</code>, so when
-  // parallel::distributed::SolutionTransfer::interpolate is called it uses
+  // SolutionTransfer::interpolate is called it uses
   // those values to populate <code>temporary</code>.
   TrilinosWrappers::MPI::Vector temporary(locally_owned_dofs, mpi_communicator);
   solution_transfer.interpolate(temporary);

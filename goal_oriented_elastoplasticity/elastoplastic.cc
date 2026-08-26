@@ -56,7 +56,6 @@
 
 #include <deal.II/distributed/tria.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
@@ -5544,13 +5543,10 @@ namespace ElastoPlastic
 
     triangulation.prepare_coarsening_and_refinement();
 
-    parallel::distributed::SolutionTransfer<dim,
-             TrilinosWrappers::MPI::Vector> solution_transfer(dof_handler);
+    SolutionTransfer<dim, TrilinosWrappers::MPI::Vector> solution_transfer(dof_handler);
     solution_transfer.prepare_for_coarsening_and_refinement(solution);
 
-
-    parallel::distributed::SolutionTransfer<dim,
-             TrilinosWrappers::MPI::Vector> incremental_displacement_transfer(dof_handler);
+    SolutionTransfer<dim, TrilinosWrappers::MPI::Vector> incremental_displacement_transfer(dof_handler);
     if (transfer_solution)
       incremental_displacement_transfer.prepare_for_coarsening_and_refinement(incremental_displacement);
 

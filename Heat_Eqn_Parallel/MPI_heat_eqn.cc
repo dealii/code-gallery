@@ -28,7 +28,6 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/distributed/grid_refinement.h>
-#include <deal.II/distributed/solution_transfer.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -45,6 +44,7 @@ using namespace dealii::LinearAlgebraTrilinos;
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_creator.h>
 #include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/solution_transfer.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
@@ -359,8 +359,7 @@ void HeatEquation<dim>::refine_mesh(const unsigned int min_grid_level,
       cell->clear_coarsen_flag();
   }
 
-  parallel::distributed::SolutionTransfer<dim, LA::MPI::Vector> solution_trans(
-      dof_handler);
+  SolutionTransfer<dim, LA::MPI::Vector> solution_trans(dof_handler);
 
   LA::MPI::Vector previous_locally_relevant_solution(
       locally_owned_dofs, locally_relevant_dofs, mpi_communicator);

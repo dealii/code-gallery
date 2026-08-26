@@ -20,7 +20,7 @@ AgglomerationHandler<dim, spacedim>::AgglomerationHandler(
   : cached_tria(std::make_unique<GridTools::Cache<dim, spacedim>>(
       cache_tria.get_triangulation(),
       cache_tria.get_mapping()))
-  , communicator(cache_tria.get_triangulation().get_communicator())
+  , communicator(cache_tria.get_triangulation().get_mpi_communicator())
 {
   Assert(dim == spacedim, ExcNotImplemented("Not available with codim > 0"));
   Assert(dim == 2 || dim == 3, ExcImpossibleInDim(1));
