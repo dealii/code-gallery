@@ -11,7 +11,7 @@ In the implementation, the following vectors are transferred across refinement a
 - the two previous design iterates stored in `MMA_Optimizer.Old_Design_Variables`;
 - the maximum and minimum design-variable bounds, `Simp_Rho_Discrete_Max` and `Simp_Rho_Discrete_Min`.
 
-The transfer is performed with `parallel::distributed::SolutionTransfer` associated with the design-variable DoFHandler.
+The transfer is performed with `SolutionTransfer` associated with the design-variable DoFHandler.
 
 ## Refinement procedure
 
@@ -44,8 +44,8 @@ void Refine_Grid()
     &Simp_Rho_Discrete_Max,
     &Simp_Rho_Discrete_Min};
 
-  parallel::distributed::SolutionTransfer<dim, VectorType>
-    solution_transfer(dof_handler_rho);
+  SolutionTransfer<dim, VectorType>
+    solution_transfer(dof_handler_simp);
 
   triangulation.prepare_coarsening_and_refinement();
   solution_transfer.prepare_for_coarsening_and_refinement(vectors_in);
@@ -54,6 +54,8 @@ void Refine_Grid()
   // Rebuild the design DoFHandler and reinitialize the MMA vectors.
   setup_simp_system();
   MMA_Optimizer.Deal_II_MMA_Reinit(Simp_Rho_Discrete);
+  get_cell_volume();
+  Rmin = 2. * pow(Cell_Volume_Discrete.linfty_norm(), 1./(double)dim) / (2. * sqrt(3.));
 
   std::vector<VectorType *> vectors_out = {
     &Simp_Rho_Discrete,
@@ -72,11 +74,34 @@ void Refine_Grid()
   setup_filter_system();
   setup_multigrid_filter_system();
 
-  get_cell_volume();
+  // Print Freedom
+  pcout<<std::endl;
+  pcout<<"+---------------------------------------------------------------------------+"<<std::endl;
+  pcout<<"|                           REFINE GRID FREEDOM                             |"<<std::endl;
+  pcout<<"+---------------------------------------------------------------------------+"<<std::endl;
+  pcout<<std::endl;
+
+  pcout<<"+---------------------------------------------------------------------------+"<<std::endl;
+  pcout<<"                             "<< "Simp    : "<< dof_handler_simp.n_dofs() << std::endl;
+  pcout<<"                             "<< "Laplace : "<< dof_handler.n_dofs() << std::endl;
+  pcout<<"                             "<< "Filter  : "<< dof_handler_filter.n_dofs() << std::endl;
+  pcout<<"+---------------------------------------------------------------------------+"<<std::endl;
+  pcout<<std::endl;
+}
+// In topology optimization loop
+if(MMA_Optimizer.Loop_Iter % 30 == 0)
+{
+  Refine_Grid();
+  //
+  assemble_filter_rhs(Cell_Volume_Discrete);
+  solve_filter_chebyshev();
+  generate_average_vector(Constraint_Discrete_Derivative[0]);
+  Constraint_Discrete_Derivative[0] /=  (volfrac * Cell_Volume_Discrete.l1_norm());
 }
 ```
 
-The exact `SolutionTransfer` API can differ between deal.II releases. In the deal.II 9.8 configuration used for this project, the interface shown above is deprecated but remains available. Check the installed deal.II documentation when adapting the example to a newer release.
+Optimization Mesh look like
+![Mesh Adapt](../../fig/heat-4.png)
 
 ## Practical considerations
 
